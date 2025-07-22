@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "my_python_package"
+version = "0.1.0"
+description = "A short description of the package."
+authors = ["Diogo Ribeiro <dfr@esmad.ipp.pt>"]
+license = "MIT"
+readme = "README.md"
+packages = [{ include = "my_python_package", from = "src" }]
+repository = "https://github.com/DiogoRibeiro7/my_python_package"
+
+[tool.poetry.dependencies]
+python = ">=3.10"
+
+[tool.poetry.dev-dependencies]
+pytest = "^8.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
