@@ -7,130 +7,114 @@ A minimal but production-ready Python package scaffold configured for publishing
 ## 📁 File Tree
 
 ```text
-my_python_package/
-├── pyproject.toml            # Project metadata (PEP 621), dependencies
-├── README.md                 # Project overview and usage
-├── LICENSE                   # Recommended (MIT by default)
-├── .gitignore                # Git ignore rules
-├── .pypirc                   # (Optional) Config for PyPI uploads
+doe-python/
+├── README.md
+├── setup.py
+├── requirements.txt
+├── pyproject.toml
+├── .gitignore
+├── .github/
+│   └── workflows/
+│       └── ci.yml
+├── docs/
+│   ├── index.md
+│   ├── getting_started.md
+│   ├── tutorials/
+│   │   ├── basic_concepts.md
+│   │   ├── crd_tutorial.md
+│   │   ├── rcbd_tutorial.md
+│   │   ├── factorial_tutorial.md
+│   │   ├── response_surface_tutorial.md
+│   │   └── power_analysis.md
+│   ├── examples/
+│   │   ├── manufacturing.md
+│   │   ├── agriculture.md
+│   │   ├── marketing.md
+│   │   └── clinical_trials.md
+│   └── api_reference/
+│       ├── designs.md
+│       ├── analysis.md
+│       └── visualization.md
 ├── src/
-│   └── my_python_package/
-│       ├── __init__.py       # Package init
-│       └── core.py           # Main logic
-├── tests/
-│   └── test_core.py          # Unit tests
+│   └── doe_python/
+│       ├── __init__.py
+│       ├── designs/
+│       │   ├── __init__.py
+│       │   ├── base.py
+│       │   ├── crd.py
+│       │   ├── rcbd.py
+│       │   ├── factorial.py
+│       │   ├── fractional_factorial.py
+│       │   ├── response_surface.py
+│       │   ├── optimal.py
+│       │   └── screening.py
+│       ├── analysis/
+│       │   ├── __init__.py
+│       │   ├── anova.py
+│       │   ├── effects.py
+│       │   ├── model_fitting.py
+│       │   ├── diagnostics.py
+│       │   └── power_analysis.py
+│       ├── visualization/
+│       │   ├── __init__.py
+│       │   ├── plots.py
+│       │   ├── interaction_plots.py
+│       │   ├── response_surface_plots.py
+│       │   └── diagnostic_plots.py
+│       ├── utils/
+│       │   ├── __init__.py
+│       │   ├── data_generation.py
+│       │   ├── validation.py
+│       │   └── export.py
+│       └── datasets/
+│           ├── __init__.py
+│           └── sample_data.py
 ├── examples/
-│   └── usage.py              # Optional usage example
+│   ├── notebooks/
+│   │   ├── 01_introduction_to_doe.ipynb
+│   │   ├── 02_completely_randomized_design.ipynb
+│   │   ├── 03_randomized_complete_block_design.ipynb
+│   │   ├── 04_factorial_designs.ipynb
+│   │   ├── 05_fractional_factorial.ipynb
+│   │   ├── 06_response_surface_methodology.ipynb
+│   │   ├── 07_optimal_designs.ipynb
+│   │   ├── 08_screening_experiments.ipynb
+│   │   ├── 09_power_analysis.ipynb
+│   │   └── 10_case_studies.ipynb
+│   ├── scripts/
+│   │   ├── manufacturing_optimization.py
+│   │   ├── agricultural_experiment.py
+│   │   ├── web_ab_testing.py
+│   │   ├── pharmaceutical_study.py
+│   │   └── quality_control.py
+│   └── data/
+│       ├── manufacturing_data.csv
+│       ├── crop_yield_data.csv
+│       ├── clinical_trial_data.csv
+│       └── web_experiment_data.csv
+├── tests/
+│   ├── __init__.py
+│   ├── test_designs/
+│   │   ├── __init__.py
+│   │   ├── test_crd.py
+│   │   ├── test_rcbd.py
+│   │   ├── test_factorial.py
+│   │   ├── test_fractional_factorial.py
+│   │   └── test_response_surface.py
+│   ├── test_analysis/
+│   │   ├── __init__.py
+│   │   ├── test_anova.py
+│   │   ├── test_effects.py
+│   │   └── test_model_fitting.py
+│   ├── test_visualization/
+│   │   ├── __init__.py
+│   │   ├── test_plots.py
+│   │   └── test_interaction_plots.py
+│   └── test_utils/
+│       ├── __init__.py
+│       └── test_data_generation.py
+└── benchmarks/
+    ├── performance_tests.py
+    ├── memory_usage.py
+    └── comparison_with_r.py
 ```
-
----
-
-## 📦 pyproject.toml (using Poetry)
-
-```toml
-[tool.poetry]
-name = "my_python_package"
-version = "0.1.0"
-description = "A short description of the package."
-authors = ["Diogo Ribeiro <dfr@esmad.ipp.pt>"]
-license = "MIT"
-readme = "README.md"
-packages = [{ include = "my_python_package", from = "src" }]
-repository = "https://github.com/DiogoRibeiro7/my_python_package"
-
-[tool.poetry.dependencies]
-python = ">=3.10"
-
-[tool.poetry.dev-dependencies]
-pytest = "^8.0.0"
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
-```
-
----
-
-## 🧪 Example `src/my_python_package/core.py`
-
-```python
-def hello(name: str) -> str:
-    """Return a greeting message."""
-    return f"Hello, {name}!"
-```
-
----
-
-## 🧪 Example `tests/test_core.py`
-
-```python
-from my_python_package.core import hello
-
-def test_hello():
-    assert hello("Diogo") == "Hello, Diogo!"
-```
-
----
-
-## 🚀 Commands (Using Poetry)
-
-```bash
-# Install dependencies
-poetry install
-
-# Run tests
-poetry run pytest
-
-# Build wheel and source distribution
-poetry build
-
-# Publish to PyPI (use TestPyPI first!)
-poetry publish --username __token__ --password <pypi-token>
-```
-
-To test publishing:
-
-```bash
-poetry config repositories.testpypi https://test.pypi.org/legacy/
-poetry publish -r testpypi --username __token__ --password <your-test-token>
-```
-
----
-
-## 🛡️ .gitignore
-
-```text
-__pycache__/
-*.pyc
-*.pyo
-*.egg-info/
-dist/
-build/
-.env
-.venv
-```
-
----
-
-## 📄 LICENSE (MIT Example)
-
-```
-MIT License
-
-Copyright (c) 2025 Diogo Ribeiro
-
-Permission is hereby granted, free of charge...
-```
-
----
-
-## ✅ Summary
-
-This scaffold supports:
-
-* Modern packaging via `pyproject.toml`
-* Isolated source in `src/`
-* Unit testing via `pytest`
-* Easy publishing to PyPI (or TestPyPI)
-
-Just update the metadata and you're ready to go!
