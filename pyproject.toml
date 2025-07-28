@@ -1,19 +1,55 @@
 [tool.poetry]
-name = "my_python_package"
+name = "doe_python"
 version = "0.1.0"
-description = "A short description of the package."
-authors = ["Diogo Ribeiro <dfr@esmad.ipp.pt>"]
+description = "Design of Experiments package."
+authors = ["Diogo Ribeiro <diogo.debastos.ribeiro@gmail.com>"]
+maintainers = ["Diogo Ribeiro <dfr@esmad.ipp.pt>"]
 license = "MIT"
 readme = "README.md"
-packages = [{ include = "my_python_package", from = "src" }]
-repository = "https://github.com/DiogoRibeiro7/my_python_package"
+packages = [{ include = "doe_python", from = "src" }]
+repository = "https://github.com/DiogoRibeiro7/doe_python"
 
 [tool.poetry.dependencies]
 python = ">=3.10"
+numpy = "^2.3"
+pandas = "^2.3"
+scipy = "^1.16"
+matplotlib = "^3.10"
+seaborn = "^0.13"
+statsmodels = "^0.14"
+scikit-learn = "^1.5"
+openpyxl = "^3.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^8.0.0"
+black = "^24.4"
+isort = "^5.13"
+flake8 = "^7.0"
+mypy = "^1.9"
+pre-commit = "^3.7"
+
+[tool.poetry.scripts]
+doe-python = "doe_python.cli:main"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+[tool.flake8]
+max-line-length = 88
+extend-ignore = ["E203", "W503", "E501", "F401", "E402", "F841"]
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+show_error_codes = true
+pretty = true
+ignore_errors = true

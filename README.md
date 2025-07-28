@@ -4,7 +4,7 @@ A professional-grade Python package for Design of Experiments (DOE) with advance
 
 [![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/status-beta-orange.svg)](https://github.com/yourusername/doe-python)
+[![Status](https://img.shields.io/badge/status-beta-orange.svg)](https://github.com/DiogoRibeiro7/doe_python)
 
 ## 🎯 Overview
 
@@ -18,6 +18,7 @@ DOE Python provides a complete toolkit for experimental design and analysis, fro
 - **Response Surface Methodology** (Central Composite, Box-Behnken)
 - **Completely Randomized Design** (CRD)
 - **Randomized Complete Block Design** (RCBD)
+- **Plackett-Burman Screening Designs**
 - **Optimal Designs** (D, A, G, I-optimal with exchange algorithms)
 
 ### **Advanced Analysis**
@@ -48,7 +49,7 @@ DOE Python provides a complete toolkit for experimental design and analysis, fro
 pip install doe-python
 
 # Or install from source
-git clone https://github.com/yourusername/doe-python.git
+git clone https://github.com/DiogoRibeiro7/doe_python.git
 cd doe-python
 pip install -e .
 
@@ -193,6 +194,7 @@ doe-python/
 │   │   ├── test_fractional_factorial.py
 │   │   ├── test_crd.py
 │   │   ├── test_rcbd.py
+│   │   ├── test_screening.py
 │   │   ├── test_response_surface.py
 │   │   └── test_optimal.py
 │   ├── test_analysis/
@@ -251,6 +253,55 @@ model = analyzer.fit_model('Response ~ Temperature * Pressure * Material')
 anova_table = analyzer.anova_table_calculation()
 
 print(anova_table)
+```
+
+### Fractional Factorial Design
+
+```python
+from doe_python.designs.fractional_factorial import (
+    FractionalFactorialDesign,
+    Factor,
+)
+
+factors = [
+    Factor("A", [0, 1]),
+    Factor("B", [0, 1]),
+    Factor("C", [0, 1]),
+    Factor("D", [0, 1]),
+]
+
+ff = FractionalFactorialDesign(factors, fraction="1/2", generators=["ABC"])
+design_matrix = ff.generate_design()
+print(design_matrix.head())
+```
+
+### Randomized Complete Block Design
+
+```python
+from doe_python.designs.rcbd import RandomizedCompleteBlockDesign
+
+treatments = ["A", "B", "C"]
+blocks = ["Block1", "Block2", "Block3"]
+
+rcbd = RandomizedCompleteBlockDesign(treatments, blocks)
+design_matrix = rcbd.generate_design()
+print(design_matrix.head())
+```
+
+### Plackett-Burman Screening Design
+
+```python
+from doe_python.designs.screening import PlackettBurmanDesign, Factor
+
+factors = [
+    Factor("A", [1, -1]),
+    Factor("B", [1, -1]),
+    Factor("C", [1, -1]),
+]
+
+pb = PlackettBurmanDesign(factors)
+design_matrix = pb.generate_design()
+print(design_matrix.head())
 ```
 
 ### Response Surface Optimization
@@ -392,6 +443,22 @@ print(f"CV R²: {cv_result['overall_r2']:.3f}")
 print(f"CV RMSE: {cv_result['overall_rmse']:.3f}")
 ```
 
+### Mixed and Repeated Measures
+
+```python
+from doe_python.analysis.anova import ANOVAAnalysis
+
+# Mixed effects with "Subject" as random factor
+mixed = ANOVAAnalysis(data, 'Response')
+mixed_result = mixed.mixed_effects_model(['Treatment'], ['Subject'])
+
+# Nested design example
+nested_result = mixed.nested_anova({'Batch': 'Day'})
+
+# Repeated measures over time
+rm_result = mixed.repeated_measures_anova('Subject', ['Time'])
+```
+
 ## 📈 Visualization Examples
 
 ### Interactive Response Surfaces
@@ -449,19 +516,15 @@ normal_fig = effects.normal_probability_plot({**main_effects, **interactions})
 
 ## 🧪 Command Line Interface
 
+The package provides a lightweight command line tool `doe-python` for
+creating simple designs. For example:
+
 ```bash
-# Create experimental designs
-doe-designer create-design --type factorial --factors "A:0,1 B:0,1 C:0,1" --replicates 3 -o design.csv
-
-# Analyze experimental data
-doe-analyze data.csv --response strength --formula "strength ~ A * B * C" --output results.html
-
-# Power analysis
-doe-power factorial --effect-size 0.5 --alpha 0.05 --power 0.8 --factors 2,2,3
-
-# Generate sample data
-doe-generate-data --design factorial --factors 3 --levels 2 --replicates 2 --output sample_data.csv
+doe-python factorial -f A=0,1 -f B=0,1 -r 2 -o design.csv
 ```
+
+This generates a full factorial design with two factors and stores it in
+`design.csv`.
 
 ## 🧪 Testing
 
@@ -481,6 +544,80 @@ pytest tests/test_visualization/    # Plotting tests
 python benchmarks/performance_tests.py
 ```
 
+## 🛡️ Validation Utilities
+
+DOE Python ships with a flexible validation framework to check factor
+specifications and generated design matrices.
+
+### Key Classes
+- `DesignValidator` – found in `doe_python.utils.validation`
+
+### Usage Example
+```python
+from doe_python.designs.base import Factor
+from doe_python.utils.validation import DesignValidator
+
+factors = [Factor("A", [0, 1]), Factor("B", [1])]
+warnings = DesignValidator.validate_factors(factors)
+print(warnings)
+```
+
+The validator can also detect confounding patterns and estimate power
+based on an effect size using correlation and non‑central F
+distributions.
+
+## 🔗 Unified Design Interface
+
+Every design subclass inherits common utilities from ``ExperimentalDesign``.  Key
+properties include ``run_count`` for the number of generated runs and
+``factor_names`` for quick access to factors.
+
+```python
+from doe_python.designs.factorial import FactorialDesign
+from doe_python.designs.base import Factor
+
+design = FactorialDesign([Factor("A", [0, 1]), Factor("B", [0, 1])])
+design.generate_design()
+print(design.run_count)      # 4
+print(design.factor_names)  # ['A', 'B']
+```
+
+## 🎲 Data Simulation Utilities
+
+Experimental responses can be simulated using `DataSimulator` in
+`doe_python.utils.data_generation`.
+
+### Usage Example
+```python
+from doe_python.utils.data_generation import DataSimulator
+
+sim = DataSimulator(seed=42)
+responses = sim.simulate_factorial_response(design_matrix, noise_std=1.0)
+```
+
+These utilities are useful for teaching and benchmarking.  See Montgomery
+[1] and Box et al. [2] for the underlying statistical models.
+
+## 💾 Data Export and Transformation
+
+Design matrices can be exported and transformed using helpers in
+`doe_python.utils`.
+
+```python
+from doe_python.utils import (
+    export_to_csv,
+    export_to_excel,
+    export_to_json,
+    center,
+    standardize,
+    log_transform,
+)
+
+centered = center(design_matrix)
+export_to_csv(centered, "design.csv")
+```
+
+
 ## 📚 Contributing
 
 We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
@@ -489,7 +626,7 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/doe-python.git
+git clone https://github.com/DiogoRibeiro7/doe_python.git
 cd doe-python
 
 # Create development environment
@@ -536,11 +673,28 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **matplotlib/seaborn** - Visualization capabilities
 - **NumPy/SciPy** - Numerical computing foundation
 
+## 📚 Bibliography
+
+- **Factorial and Fractional Factorial Designs** – Montgomery, D.C. *Design and
+  Analysis of Experiments*, 9th ed., Wiley, 2017.
+- **Response Surface Methodology** – Myers, R.H., Montgomery, D.C.,
+  Anderson-Cook, C.M. *Response Surface Methodology: Process and Product
+  Optimization Using Designed Experiments*, 4th ed., Wiley, 2016.
+- **Optimal Design Algorithms** – Atkinson, A.C., Donev, A.N., Tobias, R.D.
+  *Optimum Experimental Designs, With SAS*, 2nd ed., Oxford University Press,
+  2007.
+- **Plackett–Burman Screening** – Plackett, R.L., Burman, J.P. "The Design of
+  Optimum Multifactorial Experiments," *Biometrika*, 1946.
+- **Randomized Block Designs** – Cochran, W.G., Cox, G.M. *Experimental
+  Designs*, 2nd ed., Wiley, 1957.
+- **ANOVA and Effects Analysis** – Box, G.E.P., Hunter, J.S., Hunter, W.G.
+  *Statistics for Experimenters*, 2nd ed., Wiley, 2005.
+
 ## 📞 Support
 
 - **Documentation**: [https://doe-python.readthedocs.io/](https://doe-python.readthedocs.io/)
-- **Issues**: [GitHub Issues](https://github.com/yourusername/doe-python/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/doe-python/discussions)
+- **Issues**: [GitHub Issues](https://github.com/DiogoRibeiro7/doe_python/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/DiogoRibeiro7/doe_python/discussions)
 - **Email**: support@doe-python.org
 
 ## 🚀 Citation
@@ -550,9 +704,9 @@ If you use DOE Python in your research, please cite:
 ```bibtex
 @software{doe_python,
   title = {DOE Python: A Comprehensive Design of Experiments Package},
-  author = {Your Name},
+  author = {Diogo Ribeiro},
   year = {2024},
-  url = {https://github.com/yourusername/doe-python},
+  url = {https://github.com/DiogoRibeiro7/doe_python},
   version = {0.1.0}
 }
 ```
@@ -561,5 +715,5 @@ If you use DOE Python in your research, please cite:
 
 **DOE Python** - Making experimental design accessible, powerful, and professional.
 
-[![GitHub stars](https://img.shields.io/github/stars/yourusername/doe-python.svg?style=social&label=Star)](https://github.com/yourusername/doe-python/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/yourusername/doe-python.svg?style=social&label=Fork)](https://github.com/yourusername/doe-python/network/members)
+[![GitHub stars](https://img.shields.io/github/stars/DiogoRibeiro7/doe_python.svg?style=social&label=Star)](https://github.com/DiogoRibeiro7/doe_python/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/DiogoRibeiro7/doe_python.svg?style=social&label=Fork)](https://github.com/DiogoRibeiro7/doe_python/network/members)
