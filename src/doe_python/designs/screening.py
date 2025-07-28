@@ -151,3 +151,73 @@ class PlackettBurmanDesign(ExperimentalDesign):
     def validate_design(self) -> bool:
         """Validate the design parameters."""
         return len(self.factors) >= 2
+
+
+class DefinitiveScreeningDesign(ExperimentalDesign):
+    """Simple Definitive Screening Design implementation.
+
+    This implementation generates a basic 3-level definitive screening design
+    using :math:`-1`, ``0`` and ``1`` levels. It creates ``2 * n + 1`` runs,
+    where ``n`` is the number of factors.
+
+    References
+    ----------
+    .. [1] Jones, B., Nachtsheim, C. (2011). A Class of Three-Level Designs for
+       Definitive Screening in the Presence of Second-Order Effects.
+    """
+
+    def __init__(self, factors: List[Factor], randomize: bool = True) -> None:
+        """Initialize the design.
+
+        Parameters
+        ----------
+        factors : List[Factor]
+            Factors to include in the screening design. Each factor should have
+            exactly three levels.
+        randomize : bool, optional
+            If ``True``, randomize the run order. Defaults to ``True``.
+        """
+
+        super().__init__("Definitive Screening Design")
+        self.factors = factors
+        self.randomize_flag = randomize
+
+        if not all(len(f.levels) == 3 for f in self.factors):
+            raise ValueError("Definitive screening requires 3-level factors")
+
+    def generate_design(self) -> pd.DataFrame:
+        """Generate the design matrix."""
+
+        if len(self.factors) < 2:
+            raise ValueError("At least two factors are required")
+
+        design_rows = []
+        run_id = 1
+        base_levels = [-1, 1]
+
+        for factor in self.factors:
+            for level in base_levels:
+                row = {f.name: 0 for f in self.factors}
+                row[factor.name] = level
+                design_rows.append({"RunID": run_id, **row})
+                run_id += 1
+
+        # Center run
+        design_rows.append({"RunID": run_id, **{f.name: 0 for f in self.factors}})
+
+        df = pd.DataFrame(design_rows)
+
+        if self.randomize_flag:
+            df = df.sample(frac=1).reset_index(drop=True)
+            df.insert(0, "RunOrder", range(1, len(df) + 1))
+            self.randomized = True
+        else:
+            df.insert(0, "RunOrder", range(1, len(df) + 1))
+
+        self.design_matrix = df
+        return df
+
+    def validate_design(self) -> bool:
+        """Validate design parameters."""
+
+        return len(self.factors) >= 2 and all(len(f.levels) == 3 for f in self.factors)

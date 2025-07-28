@@ -5,7 +5,7 @@ import unittest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 
 from doe_python.designs.base import Factor
-from doe_python.designs.screening import PlackettBurmanDesign
+from doe_python.designs.screening import DefinitiveScreeningDesign, PlackettBurmanDesign
 
 
 class TestPlackettBurmanDesign(unittest.TestCase):
@@ -46,6 +46,16 @@ class TestPlackettBurmanDesign(unittest.TestCase):
         fold = design.foldover()
         self.assertEqual(len(design.design_matrix), 2 * len(dm))
         self.assertTrue((fold["A"] == -dm["A"]).all())
+
+
+class TestDefinitiveScreeningDesign(unittest.TestCase):
+    def test_basic_design(self):
+        factors = [Factor("A", [-1, 0, 1]), Factor("B", [-1, 0, 1])]
+        design = DefinitiveScreeningDesign(factors, randomize=False)
+        dm = design.generate_design()
+        # Expect 2 * n + 1 runs
+        self.assertEqual(dm.shape[0], 2 * len(factors) + 1)
+        self.assertTrue({"A", "B"}.issubset(dm.columns))
 
 
 if __name__ == "__main__":

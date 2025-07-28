@@ -4,7 +4,7 @@ from .base import ExperimentalDesign, Factor
 from .factorial import FactorialDesign
 from .fractional_factorial import FractionalFactorialDesign
 from .rcbd import RandomizedCompleteBlockDesign
-from .screening import PlackettBurmanDesign
+from .screening import DefinitiveScreeningDesign, PlackettBurmanDesign
 
 __all__ = [
     "Factor",
@@ -13,4 +13,5 @@ __all__ = [
     "RandomizedCompleteBlockDesign",
     "FractionalFactorialDesign",
     "PlackettBurmanDesign",
+    "DefinitiveScreeningDesign",
 ]

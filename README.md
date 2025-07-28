@@ -19,6 +19,7 @@ DOE Python provides a complete toolkit for experimental design and analysis, fro
 - **Completely Randomized Design** (CRD)
 - **Randomized Complete Block Design** (RCBD)
 - **Plackett-Burman Screening Designs**
+- **Definitive Screening Designs**
 - **Optimal Designs** (D, A, G, I-optimal with exchange algorithms)
 
 ### **Advanced Analysis**
@@ -301,6 +302,21 @@ factors = [
 
 pb = PlackettBurmanDesign(factors)
 design_matrix = pb.generate_design()
+print(design_matrix.head())
+```
+
+### Definitive Screening Design
+
+```python
+from doe_python.designs.screening import DefinitiveScreeningDesign, Factor
+
+factors = [
+    Factor("A", [-1, 0, 1]),
+    Factor("B", [-1, 0, 1]),
+]
+
+dsd = DefinitiveScreeningDesign(factors)
+design_matrix = dsd.generate_design()
 print(design_matrix.head())
 ```
 
