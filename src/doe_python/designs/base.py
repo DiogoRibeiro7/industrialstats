@@ -14,10 +14,14 @@ import pandas as pd
 class Factor:
     """Represents an experimental factor.
 
-    Attributes:
-        name (str): Factor name.
-        levels (List[Union[str, float, int]]): Discrete factor levels.
-        factor_type (str): ``'categorical'`` or ``'continuous'``.
+    Attributes
+    ----------
+    name : str
+        Factor name.
+    levels : list of str or float or int
+        Discrete factor levels.
+    factor_type : str
+        ``"categorical"`` or ``"continuous"``.
     """
 
     name: str
@@ -27,8 +31,10 @@ class Factor:
     def __post_init__(self) -> None:
         """Validate factor parameters.
 
-        Raises:
-            ValueError: If ``factor_type`` is not valid.
+        Raises
+        ------
+        ValueError
+            If ``factor_type`` is not valid.
         """
         if self.factor_type not in ["categorical", "continuous"]:
             raise ValueError("factor_type must be 'categorical' or 'continuous'")
@@ -37,11 +43,13 @@ class Factor:
 class ExperimentalDesign(ABC):
     """Abstract base class for all experimental designs."""
 
-    def __init__(self, name: str):
+    def __init__(self, name: str) -> None:
         """Initialize the design container.
 
-        Args:
-            name (str): Name of the design.
+        Parameters
+        ----------
+        name : str
+            Name of the design.
         """
         self.name = name
         self.factors: List[Factor] = []
@@ -68,23 +76,27 @@ class ExperimentalDesign(ABC):
     def randomize(self, seed: Optional[int] = None) -> None:
         """Randomize the run order of the experiment.
 
-        Args:
-            seed (Optional[int]): Random seed for reproducibility.
+        Parameters
+        ----------
+        seed : int, optional
+            Random seed for reproducibility.
 
-        Raises:
-            ValueError: If the design matrix has not been generated.
+        Raises
+        ------
+        ValueError
+            If the design matrix has not been generated.
         """
         if self.design_matrix is None:
             raise ValueError(
                 "Design matrix not generated yet. Call generate_design() first."
             )
 
-        if seed is not None:
-            np.random.seed(seed)
-            self.seed = seed
+        self.seed = seed
 
-        # Shuffle the design matrix
-        self.design_matrix = self.design_matrix.sample(frac=1).reset_index(drop=True)
+        # Shuffle the design matrix using an integer seed for broad pandas compatibility
+        self.design_matrix = self.design_matrix.sample(
+            frac=1, random_state=seed
+        ).reset_index(drop=True)
 
         # Add run order column
         self.design_matrix.insert(0, "RunOrder", range(1, len(self.design_matrix) + 1))
@@ -93,11 +105,15 @@ class ExperimentalDesign(ABC):
     def to_csv(self, filename: str) -> None:
         """Export design to a CSV file.
 
-        Args:
-            filename (str): Destination file path.
+        Parameters
+        ----------
+        filename : str
+            Destination file path.
 
-        Raises:
-            ValueError: If no design matrix is available.
+        Raises
+        ------
+        ValueError
+            If no design matrix is available.
         """
         if self.design_matrix is None:
             raise ValueError("No design matrix to export.")
@@ -106,12 +122,17 @@ class ExperimentalDesign(ABC):
     def to_excel(self, filename: str, include_metadata: bool = True) -> None:
         """Export design to an Excel workbook.
 
-        Args:
-            filename (str): Destination file path.
-            include_metadata (bool, optional): Whether to add a summary sheet. Defaults to ``True``.
+        Parameters
+        ----------
+        filename : str
+            Destination file path.
+        include_metadata : bool, optional
+            Whether to add a summary sheet. Defaults to ``True``.
 
-        Raises:
-            ValueError: If no design matrix is available.
+        Raises
+        ------
+        ValueError
+            If no design matrix is available.
         """
         if self.design_matrix is None:
             raise ValueError("No design matrix to export.")
@@ -131,11 +152,15 @@ class ExperimentalDesign(ABC):
     def to_json(self, filename: str) -> None:
         """Export design to a JSON file.
 
-        Args:
-            filename (str): Destination file path.
+        Parameters
+        ----------
+        filename : str
+            Destination file path.
 
-        Raises:
-            ValueError: If no design matrix is available.
+        Raises
+        ------
+        ValueError
+            If no design matrix is available.
         """
         if self.design_matrix is None:
             raise ValueError("No design matrix to export.")
@@ -150,22 +175,30 @@ class ExperimentalDesign(ABC):
     def clone(self) -> "ExperimentalDesign":
         """Create a deep copy of the design.
 
-        Returns:
-            ExperimentalDesign: Cloned design instance.
+        Returns
+        -------
+        ExperimentalDesign
+            Cloned design instance.
         """
         return deepcopy(self)
 
     def merge_with(self, other_design: "ExperimentalDesign") -> "ExperimentalDesign":
         """Merge with another design for augmentation.
 
-        Args:
-            other_design (ExperimentalDesign): Design to merge with.
+        Parameters
+        ----------
+        other_design : ExperimentalDesign
+            Design to merge with.
 
-        Returns:
-            ExperimentalDesign: New design containing runs from both designs.
+        Returns
+        -------
+        ExperimentalDesign
+            New design containing runs from both designs.
 
-        Raises:
-            ValueError: If either design lacks a generated matrix.
+        Raises
+        ------
+        ValueError
+            If either design lacks a generated matrix.
         """
         if self.design_matrix is None or other_design.design_matrix is None:
             raise ValueError("Both designs must have generated matrices to merge")
@@ -179,14 +212,20 @@ class ExperimentalDesign(ABC):
     def compare_to(self, other_design: "ExperimentalDesign") -> Dict[str, Any]:
         """Compare this design with another design.
 
-        Args:
-            other_design: Design to compare against.
+        Parameters
+        ----------
+        other_design : ExperimentalDesign
+            Design to compare against.
 
-        Returns:
-            Dictionary summarizing differences such as run count and factor sets.
+        Returns
+        -------
+        Dict[str, Any]
+            Summary of differences such as run count and factor sets.
 
-        Raises:
-            ValueError: If either design lacks a generated matrix.
+        Raises
+        ------
+        ValueError
+            If either design lacks a generated matrix.
         """
         if self.design_matrix is None or other_design.design_matrix is None:
             raise ValueError("Both designs must have generated matrices to compare")
@@ -211,8 +250,10 @@ class ExperimentalDesign(ABC):
     def is_balanced(self) -> bool:
         """Check if the design is balanced across factor levels.
 
-        Returns:
-            bool: ``True`` if each factor level appears equally often.
+        Returns
+        -------
+        bool
+            ``True`` if each factor level appears equally often.
         """
         if self.design_matrix is None:
             return False
@@ -227,8 +268,10 @@ class ExperimentalDesign(ABC):
     def design_efficiency(self) -> Dict[str, float]:
         """Calculate basic design efficiency metrics.
 
-        Returns:
-            Dict[str, float]: Dictionary with run fraction relative to full factorial.
+        Returns
+        -------
+        Dict[str, float]
+            Dictionary with run fraction relative to full factorial.
         """
         if self.design_matrix is None or not self.factors:
             return {}
@@ -240,8 +283,10 @@ class ExperimentalDesign(ABC):
     def summary(self) -> Dict[str, Any]:
         """Return summary information about the design.
 
-        Returns:
-            Dict[str, Any]: Key characteristics of the design.
+        Returns
+        -------
+        Dict[str, Any]
+            Key characteristics of the design.
         """
         if self.design_matrix is None:
             return {"status": "Design not generated"}

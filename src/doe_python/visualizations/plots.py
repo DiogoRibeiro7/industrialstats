@@ -1,12 +1,13 @@
 """Visualization functions for experimental designs and analysis."""
 
-from typing import List, Dict, Optional, Tuple, Any, Union
-import pandas as pd
-import numpy as np
+import warnings
+from typing import Any, Dict, List, Optional, Tuple, Union
+
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 import seaborn as sns
 from scipy import stats
-import warnings
 
 # Set default style
 plt.style.use("default")
@@ -23,9 +24,12 @@ class ExperimentPlotter:
     ):
         """Initialize the plotter.
 
-        Args:
-            data (pd.DataFrame, optional): Data with responses.
-            design_matrix (pd.DataFrame, optional): Design matrix without responses.
+        Parameters
+        ----------
+        data : pd.DataFrame, optional
+            Data with responses.
+        design_matrix : pd.DataFrame, optional
+            Design matrix without responses.
         """
         self.data = data
         self.design_matrix = design_matrix
@@ -50,15 +54,22 @@ class ExperimentPlotter:
     ) -> plt.Figure:
         """Create a main-effects plot of factor level means.
 
-        Args:
-            response_column (str): Column name of the response variable.
-            figsize (Tuple[int, int], optional): Figure size. Defaults to ``(12, 8)``.
+        Parameters
+        ----------
+        response_column : str
+            Column name of the response variable.
+        figsize : tuple of int, optional
+            Figure size. Defaults to ``(12, 8)``.
 
-        Returns:
-            plt.Figure: Generated main-effects plot.
+        Returns
+        -------
+        matplotlib.figure.Figure
+            Generated main-effects plot.
 
-        Raises:
-            ValueError: If data is missing or response column is invalid.
+        Raises
+        ------
+        ValueError
+            If data is missing or response column is invalid.
         """
         if self.data is None:
             raise ValueError("Data required for main effects plot")
@@ -149,14 +160,21 @@ class ExperimentPlotter:
     ) -> plt.Figure:
         """Create an interaction plot between two factors.
 
-        Args:
-            factor1 (str): First factor name.
-            factor2 (str): Second factor name.
-            response_column (str): Response variable name.
-            figsize (Tuple[int, int], optional): Figure size. Defaults to ``(10, 6)``.
+        Parameters
+        ----------
+        factor1 : str
+            First factor name.
+        factor2 : str
+            Second factor name.
+        response_column : str
+            Response variable name.
+        figsize : tuple of int, optional
+            Figure size. Defaults to ``(10, 6)``.
 
-        Returns:
-            plt.Figure: Interaction plot figure.
+        Returns
+        -------
+        matplotlib.figure.Figure
+            Interaction plot figure.
         """
         if self.data is None:
             raise ValueError("Data required for interaction plot")
@@ -225,12 +243,17 @@ class ExperimentPlotter:
     ) -> plt.Figure:
         """Create comprehensive residual analysis plots.
 
-        Args:
-            model_results (Dict[str, np.ndarray]): Dictionary containing residuals, fitted values, etc.
-            figsize (Tuple[int, int], optional): Figure size. Defaults to ``(15, 10)``.
+        Parameters
+        ----------
+        model_results : dict[str, np.ndarray]
+            Dictionary containing residuals, fitted values, etc.
+        figsize : tuple of int, optional
+            Figure size. Defaults to ``(15, 10)``.
 
-        Returns:
-            plt.Figure: Residual analysis plots.
+        Returns
+        -------
+        matplotlib.figure.Figure
+            Residual analysis plots.
         """
         required_keys = ["residuals", "fitted_values"]
         for key in required_keys:
@@ -327,14 +350,21 @@ class ExperimentPlotter:
     ) -> plt.Figure:
         """Create design space plot showing experimental points.
 
-        Args:
-            factor1 (str): Factor for the x-axis.
-            factor2 (str): Factor for the y-axis.
-            response_column (str | None): Response variable for color coding.
-            figsize (Tuple[int, int], optional): Figure size. Defaults to ``(10, 8)``.
+        Parameters
+        ----------
+        factor1 : str
+            Factor for the x-axis.
+        factor2 : str
+            Factor for the y-axis.
+        response_column : str, optional
+            Response variable for color coding.
+        figsize : tuple of int, optional
+            Figure size. Defaults to ``(10, 8)``.
 
-        Returns:
-            plt.Figure: Design space plot.
+        Returns
+        -------
+        matplotlib.figure.Figure
+            Design space plot.
         """
         data_to_use = self.data if self.data is not None else self.design_matrix
 
@@ -411,13 +441,19 @@ class ExperimentPlotter:
     ) -> plt.Figure:
         """Create 3D cube plot for 3-factor designs.
 
-        Args:
-            factors (List[str]): List of exactly three factor names.
-            response_column (str | None): Response variable for color coding.
-            figsize (Tuple[int, int], optional): Figure size. Defaults to ``(10, 8)``.
+        Parameters
+        ----------
+        factors : list[str]
+            List of exactly three factor names.
+        response_column : str, optional
+            Response variable for color coding.
+        figsize : tuple of int, optional
+            Figure size. Defaults to ``(10, 8)``.
 
-        Returns:
-            plt.Figure: 3D factorial cube plot.
+        Returns
+        -------
+        matplotlib.figure.Figure
+            3D factorial cube plot.
         """
         if len(factors) != 3:
             raise ValueError("Exactly 3 factors required for cube plot")
@@ -506,12 +542,17 @@ class ExperimentPlotter:
     ) -> plt.Figure:
         """Create box plots for each factor.
 
-        Args:
-            response_column (str): Response variable name.
-            figsize (Tuple[int, int], optional): Figure size. Defaults to ``(15, 8)``.
+        Parameters
+        ----------
+        response_column : str
+            Response variable name.
+        figsize : tuple of int, optional
+            Figure size. Defaults to ``(15, 8)``.
 
-        Returns:
-            plt.Figure: Box plots by factor.
+        Returns
+        -------
+        matplotlib.figure.Figure
+            Box plots by factor.
         """
         if self.data is None:
             raise ValueError("Data required for box plots")

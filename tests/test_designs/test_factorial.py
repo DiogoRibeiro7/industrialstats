@@ -1,16 +1,12 @@
 """Unit tests for factorial designs."""
 
 import unittest
+
 import numpy as np
 import pandas as pd
-import sys
-import os
 
-# Add src to path for testing
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
-
-from doe_python.designs.factorial import FactorialDesign
 from doe_python.designs.base import Factor
+from doe_python.designs.factorial import FactorialDesign
 
 
 class TestFactorialDesign(unittest.TestCase):
@@ -406,8 +402,8 @@ class TestFactorialDesign(unittest.TestCase):
         # Test that methods exist and don't raise errors with valid design
         try:
             # These would normally write files, but we just test the method calls
-            import tempfile
             import os
+            import tempfile
 
             with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as f:
                 design.to_csv(f.name)
@@ -441,14 +437,13 @@ class TestFactorialDesign(unittest.TestCase):
         self.assertEqual(len(design.design_matrix), initial_runs * 2)
 
     def test_blocking_scheme(self):
-        """Test creation of blocking column."""
-        design = FactorialDesign(self.factors_2level, replicates=1, randomize=False)
-        design.generate_design()
-        design.blocking_scheme(block_size=2)
-        self.assertIn("Block", design.design_matrix.columns)
-        self.assertEqual(
-            design.design_matrix["Block"].max(), len(design.design_matrix) // 2
+        """Test creation of blocking column during generation."""
+        design = FactorialDesign(
+            self.factors_2level, replicates=1, blocks=2, randomize=False
         )
+        dm = design.generate_design()
+        self.assertIn("Block", dm.columns)
+        self.assertEqual(dm["Block"].nunique(), 2)
 
     def test_confounding_pattern(self):
         """Test confounding pattern detection."""
@@ -456,6 +451,13 @@ class TestFactorialDesign(unittest.TestCase):
         design.generate_design()
         pattern = design.confounding_pattern()
         self.assertIsInstance(pattern, dict)
+
+    def test_alias_matrix(self):
+        """Alias matrix should return correlation matrix of coded factors."""
+        design = FactorialDesign(self.factors_2level, replicates=1, randomize=False)
+        design.generate_design()
+        alias = design.alias_matrix()
+        self.assertTrue(isinstance(alias, pd.DataFrame))
 
     def test_design_generators(self):
         """Test generator string retrieval."""

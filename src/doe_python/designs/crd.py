@@ -1,8 +1,10 @@
 """Completely Randomized Design (CRD) implementation."""
 
-from typing import List, Optional, Dict, Any
-import pandas as pd
+from typing import Any, Dict, List, Optional
+
 import numpy as np
+import pandas as pd
+
 from .base import ExperimentalDesign, Factor
 
 
@@ -17,9 +19,12 @@ class CompletelyRandomizedDesign(ExperimentalDesign):
     def __init__(self, treatments: List[str], replicates: int):
         """Initialize CRD.
 
-        Args:
-            treatments (List[str]): List of treatment names or levels.
-            replicates (int): Number of replicates per treatment.
+        Parameters
+        ----------
+        treatments : list[str]
+            List of treatment names or levels.
+        replicates : int
+            Number of replicates per treatment.
         """
         super().__init__("Completely Randomized Design")
 
@@ -88,12 +93,17 @@ class CompletelyRandomizedDesign(ExperimentalDesign):
     def efficiency_vs_rcbd(self, block_variance: float, error_variance: float) -> float:
         """Calculate relative efficiency compared to RCBD.
 
-        Args:
-            block_variance (float): Estimated variance between blocks.
-            error_variance (float): Estimated experimental error variance.
+        Parameters
+        ----------
+        block_variance : float
+            Estimated variance between blocks.
+        error_variance : float
+            Estimated experimental error variance.
 
-        Returns:
-            float: Relative efficiency (> 1 means CRD is more efficient).
+        Returns
+        -------
+        float
+            Relative efficiency (> 1 means CRD is more efficient).
         """
         # Relative efficiency = (RCBD error MS) / (CRD error MS)
         rcbd_error_ms = error_variance
@@ -106,16 +116,23 @@ class CompletelyRandomizedDesign(ExperimentalDesign):
     ) -> int:
         """Calculate required sample size per treatment.
 
-        Args:
-            effect_size (float): Expected effect size (Cohen's f).
-            alpha (float, optional): Type I error rate. Defaults to ``0.05``.
-            power (float, optional): Desired statistical power. Defaults to ``0.8``.
+        Parameters
+        ----------
+        effect_size : float
+            Expected effect size (Cohen's ``f``).
+        alpha : float, optional
+            Type I error rate. Defaults to 0.05.
+        power : float, optional
+            Desired statistical power. Defaults to 0.8.
 
-        Returns:
-            int: Required number of replicates per treatment.
+        Returns
+        -------
+        int
+            Required number of replicates per treatment.
         """
-        from scipy.stats import f
         import math
+
+        from scipy.stats import f
 
         k = len(self.treatments)  # Number of treatments
 
@@ -146,11 +163,15 @@ class CompletelyRandomizedDesign(ExperimentalDesign):
     ) -> pd.DataFrame:
         """Create a data collection sheet for the experiment.
 
-        Args:
-            response_variables (List[str] | None): Names of response variables to measure.
+        Parameters
+        ----------
+        response_variables : list[str], optional
+            Names of response variables to measure.
 
-        Returns:
-            pd.DataFrame: Data collection sheet with empty response columns.
+        Returns
+        -------
+        pd.DataFrame
+            Data collection sheet with empty response columns.
         """
         if self.design_matrix is None:
             self.generate_design()
@@ -177,12 +198,17 @@ class CompletelyRandomizedDesign(ExperimentalDesign):
     ) -> pd.DataFrame:
         """Calculate summary statistics by treatment.
 
-        Args:
-            data (pd.DataFrame): Experimental data with results.
-            response_column (str): Name of the response variable column.
+        Parameters
+        ----------
+        data : pd.DataFrame
+            Experimental data with results.
+        response_column : str
+            Name of the response variable column.
 
-        Returns:
-            pd.DataFrame: Summary statistics by treatment.
+        Returns
+        -------
+        pd.DataFrame
+            Summary statistics by treatment.
         """
         if response_column not in data.columns:
             raise ValueError(f"Response column '{response_column}' not found in data")

@@ -1,11 +1,15 @@
 """Power analysis and sample size determination for experimental designs."""
 
-from typing import List, Dict, Optional, Any, Tuple, Union
-import pandas as pd
-import numpy as np
-from scipy import stats
-import matplotlib.pyplot as plt
+import logging
 from dataclasses import dataclass
+from typing import Any, Dict, List, Optional, Tuple, Union
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from scipy import stats
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -42,15 +46,24 @@ class PowerAnalysis:
     ) -> PowerAnalysisResult:
         """Power analysis for t-tests.
 
-        Args:
-            effect_size (float | None): Cohen's d effect size.
-            alpha (float, optional): Type I error rate. Defaults to ``0.05``.
-            power (float | None): Statistical power (1 - β).
-            sample_size (int | None): Sample size per group.
-            test_type (str, optional): Type of t-test ("one_sample", "two_sample", or "paired"). Defaults to "two_sample".
+        Parameters
+        ----------
+        effect_size : float, optional
+            Cohen's d effect size.
+        alpha : float, optional
+            Type I error rate. Defaults to 0.05.
+        power : float, optional
+            Statistical power (``1 - \beta``).
+        sample_size : int, optional
+            Sample size per group.
+        test_type : str, optional
+            Type of t-test (``"one_sample"``, ``"two_sample"``, or ``"paired"``).
+            Defaults to ``"two_sample"``.
 
-        Returns:
-            PowerAnalysisResult: Power analysis results.
+        Returns
+        -------
+        PowerAnalysisResult
+            Power analysis results.
         """
         # Validate inputs
         non_none_params = sum(x is not None for x in [effect_size, power, sample_size])
@@ -110,15 +123,23 @@ class PowerAnalysis:
     ) -> PowerAnalysisResult:
         """Power analysis for one-way ANOVA.
 
-        Args:
-            effect_size (float | None): Cohen's f effect size.
-            alpha (float, optional): Type I error rate. Defaults to ``0.05``.
-            power (float | None): Desired power.
-            sample_size (int | None): Sample size per group.
-            n_groups (int, optional): Number of groups. Defaults to ``3``.
+        Parameters
+        ----------
+        effect_size : float, optional
+            Cohen's ``f`` effect size.
+        alpha : float, optional
+            Type I error rate. Defaults to 0.05.
+        power : float, optional
+            Desired power.
+        sample_size : int, optional
+            Sample size per group.
+        n_groups : int, optional
+            Number of groups. Defaults to 3.
 
-        Returns:
-            PowerAnalysisResult: Power analysis results.
+        Returns
+        -------
+        PowerAnalysisResult
+            Power analysis results.
         """
         # Validate inputs
         non_none_params = sum(x is not None for x in [effect_size, power, sample_size])
@@ -180,15 +201,23 @@ class PowerAnalysis:
     ) -> PowerAnalysisResult:
         """Power analysis for factorial designs.
 
-        Args:
-            effect_size (float | None): Cohen's f effect size for main effects.
-            alpha (float, optional): Type I error rate. Defaults to ``0.05``.
-            power (float | None): Statistical power.
-            replicates (int | None): Number of replicates.
-            factor_levels (List[int], optional): Number of levels for each factor. Defaults to ``[2, 2]``.
+        Parameters
+        ----------
+        effect_size : float, optional
+            Cohen's ``f`` effect size for main effects.
+        alpha : float, optional
+            Type I error rate. Defaults to 0.05.
+        power : float, optional
+            Statistical power.
+        replicates : int, optional
+            Number of replicates.
+        factor_levels : list of int, optional
+            Number of levels for each factor. Defaults to ``[2, 2]``.
 
-        Returns:
-            PowerAnalysisResult: Power analysis results.
+        Returns
+        -------
+        PowerAnalysisResult
+            Power analysis results.
         """
         # Validate inputs
         non_none_params = sum(x is not None for x in [effect_size, power, replicates])
@@ -257,15 +286,23 @@ class PowerAnalysis:
     ) -> PowerAnalysisResult:
         """Power analysis for multiple regression.
 
-        Args:
-            effect_size (float | None): Cohen's f² effect size.
-            alpha (float, optional): Type I error rate. Defaults to ``0.05``.
-            power (float | None): Statistical power.
-            sample_size (int | None): Total sample size.
-            n_predictors (int, optional): Number of predictors in the model. Defaults to ``1``.
+        Parameters
+        ----------
+        effect_size : float, optional
+            Cohen's :math:`f^2` effect size.
+        alpha : float, optional
+            Type I error rate. Defaults to 0.05.
+        power : float, optional
+            Statistical power.
+        sample_size : int, optional
+            Total sample size.
+        n_predictors : int, optional
+            Number of predictors in the model. Defaults to 1.
 
-        Returns:
-            PowerAnalysisResult: Power analysis results.
+        Returns
+        -------
+        PowerAnalysisResult
+            Power analysis results.
         """
         # Validate inputs
         non_none_params = sum(x is not None for x in [effect_size, power, sample_size])
@@ -330,14 +367,21 @@ class PowerAnalysis:
     ) -> Dict[str, Any]:
         """Generate power curve by varying one parameter.
 
-        Args:
-            test_type (str): Type of test ("t_test", "anova", "factorial", "regression").
-            fixed_params (Dict[str, Any]): Fixed parameters for the analysis.
-            varying_param (str): Parameter to vary ("effect_size", "sample_size", "alpha", "power").
-            param_range (List[float]): Range of values for the varying parameter.
+        Parameters
+        ----------
+        test_type : str
+            Type of test (``"t_test"``, ``"anova"``, ``"factorial"``, ``"regression"``).
+        fixed_params : dict
+            Fixed parameters for the analysis.
+        varying_param : str
+            Parameter to vary (``"effect_size"``, ``"sample_size"``, ``"alpha"``, ``"power"``).
+        param_range : list of float
+            Range of values for the varying parameter.
 
-        Returns:
-            Dict[str, Any]: Power curve data and plot.
+        Returns
+        -------
+        Dict[str, Any]
+            Power curve data and the generated plot.
         """
         results = []
 
@@ -370,7 +414,12 @@ class PowerAnalysis:
                 )
 
             except Exception as e:
-                # Skip invalid parameter combinations
+                logger.debug(
+                    "Skipping invalid parameter combination (%s=%s): %s",
+                    varying_param,
+                    param_value,
+                    e,
+                )
                 continue
 
         if not results:
@@ -431,15 +480,23 @@ class PowerAnalysis:
     ) -> pd.DataFrame:
         """Generate sample size table for different effect sizes and powers.
 
-        Args:
-            test_type (str): Type of test.
-            effect_sizes (List[float]): Effect sizes to include.
-            powers (List[float], optional): Power levels to include. Defaults to ``[0.8, 0.9, 0.95]``.
-            alpha (float, optional): Type I error rate. Defaults to ``0.05``.
-            **kwargs: Additional parameters for specific tests.
+        Parameters
+        ----------
+        test_type : str
+            Type of test.
+        effect_sizes : list of float
+            Effect sizes to include.
+        powers : list of float, optional
+            Power levels to include. Defaults to ``[0.8, 0.9, 0.95]``.
+        alpha : float, optional
+            Type I error rate. Defaults to 0.05.
+        **kwargs
+            Additional parameters for specific tests.
 
-        Returns:
-            pd.DataFrame: Sample size table.
+        Returns
+        -------
+        pd.DataFrame
+            Sample size table.
         """
         table_data = []
 
@@ -470,7 +527,8 @@ class PowerAnalysis:
 
                     row[f"Power_{power}"] = result.sample_size
 
-                except Exception:
+                except Exception as e:
+                    logger.debug("Power calculation failed for power=%s: %s", power, e)
                     row[f"Power_{power}"] = np.nan
 
             table_data.append(row)
@@ -487,15 +545,23 @@ class PowerAnalysis:
     ) -> PowerAnalysisResult:
         """Calculate minimum detectable effect for a given design.
 
-        Args:
-            test_type (str): Type of test.
-            alpha (float, optional): Type I error rate. Defaults to ``0.05``.
-            power (float, optional): Statistical power. Defaults to ``0.8``.
-            sample_size (int, optional): Sample size. Defaults to ``20``.
-            **kwargs: Additional parameters for specific tests.
+        Parameters
+        ----------
+        test_type : str
+            Type of test.
+        alpha : float, optional
+            Type I error rate. Defaults to 0.05.
+        power : float, optional
+            Statistical power. Defaults to 0.8.
+        sample_size : int, optional
+            Sample size. Defaults to 20.
+        **kwargs
+            Additional parameters for specific tests.
 
-        Returns:
-            PowerAnalysisResult: Analysis with minimum detectable effect.
+        Returns
+        -------
+        PowerAnalysisResult
+            Analysis with minimum detectable effect.
         """
         if test_type == "t_test":
             return self.t_test_power(

@@ -1,11 +1,15 @@
 """Advanced model fitting and selection for experimental data."""
 
-from typing import List, Dict, Optional, Any, Tuple, Union
-import pandas as pd
-import numpy as np
-from scipy import stats
+import logging
 import warnings
 from itertools import combinations
+from typing import Any, Dict, List, Optional, Tuple, Union
+
+import numpy as np
+import pandas as pd
+from scipy import stats
+
+logger = logging.getLogger(__name__)
 
 
 class ModelFitting:
@@ -16,9 +20,12 @@ class ModelFitting:
     def __init__(self, data: pd.DataFrame, response_column: str):
         """Initialize model fitting.
 
-        Args:
-            data (pd.DataFrame): Experimental data.
-            response_column (str): Name of the response variable.
+        Parameters
+        ----------
+        data : pandas.DataFrame
+            Experimental data.
+        response_column : str
+            Name of the response variable.
         """
         if response_column not in data.columns:
             raise ValueError(f"Response column '{response_column}' not found")
@@ -49,13 +56,19 @@ class ModelFitting:
     ) -> Dict[str, Any]:
         """Perform stepwise model selection.
 
-        Args:
-            entry_threshold (float, optional): P-value threshold for entering terms. Defaults to ``0.05``.
-            removal_threshold (float, optional): P-value threshold for removing terms. Defaults to ``0.10``.
-            max_terms (int | None): Maximum number of terms in the model.
+        Parameters
+        ----------
+        entry_threshold : float, optional
+            P-value threshold for entering terms, by default ``0.05``.
+        removal_threshold : float, optional
+            P-value threshold for removing terms, by default ``0.10``.
+        max_terms : int, optional
+            Maximum number of terms in the model.
 
-        Returns:
-            Dict[str, Any]: Stepwise selection results.
+        Returns
+        -------
+        dict
+            Stepwise selection results.
         """
         # Generate candidate terms
         candidate_terms = self._generate_candidate_terms()
@@ -86,7 +99,8 @@ class ModelFitting:
                             if p_value < entry_threshold and p_value < best_p_value:
                                 best_addition = term
                                 best_p_value = p_value
-                    except:
+                    except Exception as e:
+                        logger.debug("Failed to fit trial terms %s: %s", trial_terms, e)
                         continue
 
             # Add best term if found
@@ -116,7 +130,8 @@ class ModelFitting:
                         if p_value > removal_threshold and p_value > worst_p_value:
                             worst_removal = term
                             worst_p_value = p_value
-                except:
+                except Exception as e:
+                    logger.debug("Failed to evaluate term %s: %s", term, e)
                     continue
 
             # Remove worst term if found
@@ -152,12 +167,17 @@ class ModelFitting:
     ) -> Dict[str, Any]:
         """Fit hierarchical models respecting effect hierarchy.
 
-        Args:
-            max_order (int, optional): Maximum interaction order. Defaults to ``3``.
-            significance_level (float, optional): Significance level for term inclusion. Defaults to ``0.05``.
+        Parameters
+        ----------
+        max_order : int, optional
+            Maximum interaction order, by default 3.
+        significance_level : float, optional
+            Significance level for term inclusion, by default 0.05.
 
-        Returns:
-            Dict[str, Any]: Hierarchical fitting results.
+        Returns
+        -------
+        dict
+            Hierarchical fitting results.
         """
         # Generate terms by hierarchy level
         terms_by_order = self._generate_hierarchical_terms(max_order)
@@ -167,7 +187,7 @@ class ModelFitting:
 
         # Fit each hierarchy level
         for order in sorted(terms_by_order.keys()):
-            print(f"Testing {order}-order terms...")
+            logger.debug("Testing %s-order terms...", order)
 
             significant_terms = []
 
@@ -191,7 +211,8 @@ class ModelFitting:
                                         ],
                                     }
                                 )
-                    except:
+                    except Exception as e:
+                        logger.debug("Error fitting term %s: %s", term, e)
                         continue
 
             # Add significant terms
@@ -276,7 +297,8 @@ class ModelFitting:
                         best_model = model_result
                         best_terms = terms
 
-                except:
+                except Exception as e:
+                    logger.debug("Failed to fit subset %s: %s", terms, e)
                     continue
 
             if best_model is not None:
@@ -317,27 +339,23 @@ class ModelFitting:
         k_folds: int = 5,
         random_state: Optional[int] = None,
     ) -> Dict[str, Any]:
-        """
-        Perform k-fold cross-validation.
+        """Perform k-fold cross-validation.
 
-        Parameters:
-        -----------
-        model_terms : List[str]
-            Model terms to validate
-        k_folds : int, default=5
-            Number of folds
+        Parameters
+        ----------
+        model_terms : list of str
+            Model terms to validate.
+        k_folds : int, optional
+            Number of folds, by default 5.
         random_state : int, optional
-            Random state for reproducibility
+            Seed for reproducible splitting.
 
-        Returns:
-        --------
-        Dict[str, Any]
-            Cross-validation results
+        Returns
+        -------
+        dict
+            Cross-validation results.
         """
         from sklearn.model_selection import KFold
-
-        if random_state is not None:
-            np.random.seed(random_state)
 
         kf = KFold(n_splits=k_folds, shuffle=True, random_state=random_state)
 
@@ -381,6 +399,7 @@ class ModelFitting:
                 cv_results["actuals"].extend(test_actuals)
 
             except Exception as e:
+                logger.debug("Cross-validation fold %s failed: %s", fold + 1, e)
                 cv_results["fold_results"].append({"fold": fold + 1, "error": str(e)})
 
         # Calculate overall CV metrics
@@ -412,26 +431,23 @@ class ModelFitting:
         n_bootstrap: int = 100,
         random_state: Optional[int] = None,
     ) -> Dict[str, Any]:
-        """
-        Perform bootstrap validation.
+        """Perform bootstrap validation.
 
-        Parameters:
-        -----------
-        model_terms : List[str]
-            Model terms to validate
-        n_bootstrap : int, default=100
-            Number of bootstrap samples
+        Parameters
+        ----------
+        model_terms : list of str
+            Model terms to validate.
+        n_bootstrap : int, optional
+            Number of bootstrap samples, by default 100.
         random_state : int, optional
-            Random state for reproducibility
+            Seed for reproducible resampling.
 
-        Returns:
-        --------
-        Dict[str, Any]
-            Bootstrap validation results
+        Returns
+        -------
+        dict
+            Bootstrap validation results.
         """
-        if random_state is not None:
-            np.random.seed(random_state)
-
+        rng = np.random.default_rng(random_state)
         n_samples = len(self.data)
         bootstrap_results = {
             "coefficients": {term: [] for term in model_terms},
@@ -445,9 +461,7 @@ class ModelFitting:
 
         for bootstrap_idx in range(n_bootstrap):
             # Create bootstrap sample
-            bootstrap_indices = np.random.choice(
-                n_samples, size=n_samples, replace=True
-            )
+            bootstrap_indices = rng.integers(0, n_samples, size=n_samples)
             bootstrap_data = self.data.iloc[bootstrap_indices].reset_index(drop=True)
 
             try:
@@ -478,8 +492,8 @@ class ModelFitting:
                 )
                 bootstrap_results["predictions"].append(predictions)
 
-            except Exception:
-                # Handle failed bootstrap samples
+            except Exception as e:
+                logger.debug("Bootstrap iteration failed: %s", e)
                 for term in model_terms:
                     bootstrap_results["coefficients"][term].append(np.nan)
                 bootstrap_results["r_squared"].append(np.nan)
@@ -529,18 +543,17 @@ class ModelFitting:
         }
 
     def model_comparison(self, model_list: List[List[str]]) -> pd.DataFrame:
-        """
-        Compare multiple models using various criteria.
+        """Compare multiple models using various criteria.
 
-        Parameters:
-        -----------
-        model_list : List[List[str]]
-            List of model term lists to compare
+        Parameters
+        ----------
+        model_list : list of list of str
+            List of model term lists to compare.
 
-        Returns:
-        --------
-        pd.DataFrame
-            Model comparison table
+        Returns
+        -------
+        pandas.DataFrame
+            Model comparison table.
         """
         comparison_results = []
 
@@ -571,6 +584,7 @@ class ModelFitting:
                 self.fitted_models[f"Model_{i+1}"] = model_result
 
             except Exception as e:
+                logger.debug("Model comparison failed for model %s: %s", i + 1, e)
                 comparison_results.append(
                     {
                         "Model": f"Model_{i+1}",
@@ -652,8 +666,8 @@ class ModelFitting:
 
     def _fit_terms(self, terms: List[str]) -> Dict[str, Any]:
         """Fit model with specified terms."""
-        from statsmodels.formula.api import ols
         import statsmodels.api as sm
+        from statsmodels.formula.api import ols
 
         # Build model formula
         if "Intercept" in terms:
@@ -765,9 +779,10 @@ class ModelFitting:
                 "shapiro_wilk_p_value": shapiro_p,
                 "normal_assumption": shapiro_p > 0.05,
             }
-        except:
+        except Exception as e:
+            logger.debug("Normality test failed: %s", e)
             diagnostics["normality_test"] = {
-                "error": "Unable to perform normality test"
+                "error": f"Unable to perform normality test: {e}"
             }
 
         # Homoscedasticity tests
@@ -784,9 +799,10 @@ class ModelFitting:
                 "breusch_pagan_p_value": bp_p,
                 "homoscedastic_assumption": bp_p > 0.05,
             }
-        except:
+        except Exception as e:
+            logger.debug("Homoscedasticity test failed: %s", e)
             diagnostics["homoscedasticity_test"] = {
-                "error": "Unable to perform homoscedasticity test"
+                "error": f"Unable to perform homoscedasticity test: {e}"
             }
 
         # Independence test
@@ -799,9 +815,10 @@ class ModelFitting:
                 "durbin_watson_statistic": dw_stat,
                 "independent_assumption": 1.5 <= dw_stat <= 2.5,
             }
-        except:
+        except Exception as e:
+            logger.debug("Independence test failed: %s", e)
             diagnostics["independence_test"] = {
-                "error": "Unable to perform independence test"
+                "error": f"Unable to perform independence test: {e}"
             }
 
         # Outlier detection
@@ -831,9 +848,10 @@ class ModelFitting:
                 "n_high_influence": np.sum(high_influence),
                 "high_influence_indices": np.where(high_influence)[0].tolist(),
             }
-        except:
+        except Exception as e:
+            logger.debug("Leverage and influence calculation failed: %s", e)
             diagnostics["leverage_influence"] = {
-                "error": "Unable to calculate leverage and influence"
+                "error": f"Unable to calculate leverage and influence: {e}"
             }
 
         return diagnostics

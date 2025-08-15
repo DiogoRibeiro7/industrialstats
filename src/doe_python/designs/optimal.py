@@ -1,9 +1,12 @@
 """Optimal experimental designs using algorithmic approaches."""
 
-from typing import List, Optional, Dict, Any, Tuple, Callable
-import pandas as pd
-import numpy as np
+import logging
 from itertools import combinations
+from typing import Any, Callable, Dict, List, Optional, Tuple
+
+import numpy as np
+import pandas as pd
+
 from .base import ExperimentalDesign, Factor
 
 
@@ -23,11 +26,16 @@ class OptimalDesign(ExperimentalDesign):
     ) -> None:
         """Initialize optimal design.
 
-        Args:
-            factors (List[Factor]): Experimental factors.
-            n_runs (int): Number of experimental runs.
-            criterion (str, optional): Optimality criterion ("D", "A", "G", or "I"). Defaults to "D".
-            model_terms (List[str] | None): Model terms to include. Defaults to main effects and interactions.
+        Parameters
+        ----------
+        factors : list[Factor]
+            Experimental factors.
+        n_runs : int
+            Number of experimental runs.
+        criterion : str, optional
+            Optimality criterion (``"D"``, ``"A"``, ``"G"``, or ``"I"``). Defaults to ``"D"``.
+        model_terms : list[str], optional
+            Model terms to include. Defaults to main effects and interactions.
         """
         super().__init__(f"{criterion}-Optimal Design")
 
@@ -62,11 +70,15 @@ class OptimalDesign(ExperimentalDesign):
     def generate_candidate_set(self, grid_density: int = 5) -> pd.DataFrame:
         """Generate candidate set of all possible design points.
 
-        Args:
-            grid_density (int, optional): Number of levels for continuous factors. Defaults to ``5``.
+        Parameters
+        ----------
+        grid_density : int, optional
+            Number of levels for continuous factors. Defaults to ``5``.
 
-        Returns:
-            pd.DataFrame: Candidate set of design points.
+        Returns
+        -------
+        pd.DataFrame
+            Candidate set of design points.
         """
         candidate_points = []
 
@@ -102,13 +114,19 @@ class OptimalDesign(ExperimentalDesign):
     ) -> pd.DataFrame:
         """Generate optimal design using coordinate exchange algorithm.
 
-        Args:
-            max_iterations (int, optional): Maximum number of exchange iterations. Defaults to ``1000``.
-            random_start (bool, optional): Whether to use random starting design. Defaults to ``True``.
-            n_random_starts (int, optional): Number of random starts to try. Defaults to ``5``.
+        Parameters
+        ----------
+        max_iterations : int, optional
+            Maximum number of exchange iterations. Defaults to ``1000``.
+        random_start : bool, optional
+            Whether to use random starting design. Defaults to ``True``.
+        n_random_starts : int, optional
+            Number of random starts to try. Defaults to ``5``.
 
-        Returns:
-            pd.DataFrame: Optimal design matrix.
+        Returns
+        -------
+        pd.DataFrame
+            Optimal design matrix.
         """
         if not self.validate_design():
             raise ValueError("Invalid design configuration")
@@ -194,12 +212,11 @@ class OptimalDesign(ExperimentalDesign):
 
     def _random_initial_design(self) -> pd.DataFrame:
         """Generate random initial design."""
-        np.random.seed()  # Use random seed
+        rng = np.random.default_rng()
 
         design_points = []
         for run in range(self.n_runs):
-            # Randomly select from candidate set
-            candidate_idx = np.random.randint(0, len(self.candidate_set))
+            candidate_idx = rng.integers(0, len(self.candidate_set))
             candidate = self.candidate_set.iloc[candidate_idx]
 
             point = {"RunID": run + 1}
@@ -361,11 +378,15 @@ class OptimalDesign(ExperimentalDesign):
     ) -> Dict[str, float]:
         """Calculate design efficiency metrics.
 
-        Args:
-            reference_design (pd.DataFrame | None): Reference design for comparison. Defaults to an orthogonal design.
+        Parameters
+        ----------
+        reference_design : pd.DataFrame, optional
+            Reference design for comparison. Defaults to an orthogonal design.
 
-        Returns:
-            Dict[str, float]: Efficiency metrics.
+        Returns
+        -------
+        dict[str, float]
+            Efficiency metrics.
         """
         if self.design_matrix is None:
             raise ValueError("Design not generated yet")
@@ -418,13 +439,19 @@ class OptimalDesign(ExperimentalDesign):
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Generate prediction variance map for two factors.
 
-        Args:
-            factor1 (str): First factor name.
-            factor2 (str): Second factor name.
-            grid_size (int, optional): Grid resolution. Defaults to ``20``.
+        Parameters
+        ----------
+        factor1 : str
+            First factor name.
+        factor2 : str
+            Second factor name.
+        grid_size : int, optional
+            Grid resolution. Defaults to ``20``.
 
-        Returns:
-            Tuple[np.ndarray, np.ndarray, np.ndarray]: X, Y, Z arrays for contour plotting.
+        Returns
+        -------
+        tuple[np.ndarray, np.ndarray, np.ndarray]
+            X, Y, Z arrays for contour plotting.
         """
         if self.design_matrix is None:
             raise ValueError("Design not generated yet")
@@ -485,12 +512,17 @@ class OptimalDesign(ExperimentalDesign):
     ) -> pd.DataFrame:
         """Augment existing design with additional runs.
 
-        Args:
-            additional_runs (int): Number of additional runs to add.
-            current_data (pd.DataFrame | None): Current experimental data. If ``None``, uses the generated design.
+        Parameters
+        ----------
+        additional_runs : int
+            Number of additional runs to add.
+        current_data : pd.DataFrame, optional
+            Current experimental data. If ``None``, uses the generated design.
 
-        Returns:
-            pd.DataFrame: Augmented design.
+        Returns
+        -------
+        pd.DataFrame
+            Augmented design.
         """
         if current_data is None:
             if self.design_matrix is None:
@@ -539,13 +571,17 @@ class OptimalDesign(ExperimentalDesign):
         return augmented_design
 
     def design_diagnostics(self) -> Dict[str, Any]:
-        """
-        Calculate design diagnostics and properties.
+        """Calculate design diagnostics and properties.
 
-        Returns:
-        --------
-        Dict[str, Any]
-            Diagnostic metrics
+        Returns
+        -------
+        dict[str, Any]
+            Diagnostic metrics for the current design.
+
+        Raises
+        ------
+        ValueError
+            If the design has not been generated.
         """
         if self.design_matrix is None:
             raise ValueError("Design not generated yet")
@@ -617,11 +653,16 @@ class CustomOptimalDesign(OptimalDesign):
     ) -> None:
         """Initialize custom optimal design.
 
-        Args:
-            factors (List[Factor]): Experimental factors.
-            n_runs (int): Number of experimental runs.
-            criterion_function (Callable[[np.ndarray], float]): Function that takes the model matrix ``X`` and returns a criterion value.
-            criterion_name (str, optional): Name for the custom criterion. Defaults to "Custom".
+        Parameters
+        ----------
+        factors : list[Factor]
+            Experimental factors.
+        n_runs : int
+            Number of experimental runs.
+        criterion_function : Callable[[np.ndarray], float]
+            Function that takes the model matrix ``X`` and returns a criterion value.
+        criterion_name : str, optional
+            Name for the custom criterion. Defaults to ``"Custom"``.
         """
         super().__init__(factors, n_runs, criterion="D")  # Dummy criterion
         self.name = f"{criterion_name}-Optimal Design"
@@ -633,5 +674,7 @@ class CustomOptimalDesign(OptimalDesign):
         X = self._build_model_matrix(design)
         try:
             return self.criterion_function(X)
-        except:
-            return float("-inf")  # Return bad value if function fails
+        except Exception as e:
+            logger = logging.getLogger(__name__)
+            logger.error("Custom criterion function failed", exc_info=e)
+            raise RuntimeError("Custom criterion function failed") from e

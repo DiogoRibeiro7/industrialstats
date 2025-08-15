@@ -1,9 +1,11 @@
 """Response Surface Methodology (RSM) designs."""
 
-from typing import List, Optional, Dict, Any, Tuple
-import pandas as pd
-import numpy as np
 from itertools import product
+from typing import Any, Dict, List, Optional, Tuple
+
+import numpy as np
+import pandas as pd
+
 from .base import ExperimentalDesign, Factor
 
 
@@ -24,11 +26,16 @@ class ResponseSurfaceDesign(ExperimentalDesign):
     ) -> None:
         """Initialize response surface design.
 
-        Args:
-            factors (List[Factor]): Continuous factors (must be 2-level for coding).
-            design_type (str, optional): "CCD" for Central Composite or "BBD" for Box-Behnken. Defaults to "CCD".
-            alpha (float | None): Alpha value for axial points (CCD only). If ``None``, calculated for rotatability.
-            center_points (int, optional): Number of center point replicates. Defaults to ``5``.
+        Parameters
+        ----------
+        factors : list[Factor]
+            Continuous factors (must be 2-level for coding).
+        design_type : str, optional
+            ``"CCD"`` for Central Composite or ``"BBD"`` for Box-Behnken. Defaults to ``"CCD"``.
+        alpha : float, optional
+            Alpha value for axial points (CCD only). If ``None``, calculated for rotatability.
+        center_points : int, optional
+            Number of center point replicates. Defaults to ``5``.
         """
         super().__init__(f"{design_type} Response Surface Design")
 
@@ -249,11 +256,15 @@ class ResponseSurfaceDesign(ExperimentalDesign):
     def prediction_variance(self, prediction_points: List[List[float]]) -> np.ndarray:
         """Calculate prediction variance at specified points.
 
-        Args:
-            prediction_points (List[List[float]]): Points in coded units where prediction variance is calculated.
+        Parameters
+        ----------
+        prediction_points : list[list[float]]
+            Points in coded units where prediction variance is calculated.
 
-        Returns:
-            np.ndarray: Prediction variances.
+        Returns
+        -------
+        np.ndarray
+            Prediction variances.
         """
         if self.design_matrix is None:
             raise ValueError("Design not generated yet")
@@ -319,11 +330,15 @@ class ResponseSurfaceDesign(ExperimentalDesign):
     def response_surface_analysis(self, response_data: List[float]) -> Dict[str, Any]:
         """Fit response surface model and analyze results.
 
-        Args:
-            response_data (List[float]): Response values for each design point.
+        Parameters
+        ----------
+        response_data : list[float]
+            Response values for each design point.
 
-        Returns:
-            Dict[str, Any]: Analysis results including coefficients, model fit, and optimum.
+        Returns
+        -------
+        dict[str, Any]
+            Analysis results including coefficients, model fit, and optimum.
         """
         if len(response_data) != len(self.design_matrix):
             raise ValueError("Response data length must match design matrix")
@@ -470,14 +485,21 @@ class ResponseSurfaceDesign(ExperimentalDesign):
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Generate contour plot data for two factors.
 
-        Args:
-            coefficients (Dict[str, float]): Model coefficients from ``response_surface_analysis``.
-            factor1 (str): Name of the first factor for the plot.
-            factor2 (str): Name of the second factor for the plot.
-            grid_size (int, optional): Grid resolution. Defaults to ``20``.
+        Parameters
+        ----------
+        coefficients : dict[str, float]
+            Model coefficients from :func:`response_surface_analysis`.
+        factor1 : str
+            Name of the first factor for the plot.
+        factor2 : str
+            Name of the second factor for the plot.
+        grid_size : int, optional
+            Grid resolution. Defaults to ``20``.
 
-        Returns:
-            Tuple[np.ndarray, np.ndarray, np.ndarray]: ``X``, ``Y``, ``Z`` arrays for contour plotting.
+        Returns
+        -------
+        tuple[np.ndarray, np.ndarray, np.ndarray]
+            ``X``, ``Y``, ``Z`` arrays for contour plotting.
         """
         # Find factor indices
         factor1_idx = next(i for i, f in enumerate(self.factors) if f.name == factor1)

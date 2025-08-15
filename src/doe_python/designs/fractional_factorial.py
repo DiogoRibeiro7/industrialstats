@@ -25,13 +25,20 @@ class FractionalFactorialDesign(ExperimentalDesign):
     ) -> None:
         """Initialize fractional factorial design.
 
-        Args:
-            factors: Factors in the experiment. Must all have two levels.
-            fraction: Fraction of the full design, e.g. ``"1/2"`` or ``"1/4"``.
-            generators: Optional generator strings using factor names.
-            resolution: Desired design resolution (for reference only).
-            replicates: Number of replicates.
-            randomize: Whether to randomize run order.
+        Parameters
+        ----------
+        factors : list[Factor]
+            Factors in the experiment. Must all have two levels.
+        fraction : str, optional
+            Fraction of the full design, e.g. ``"1/2"`` or ``"1/4"``.
+        generators : list[str], optional
+            Generator strings using factor names.
+        resolution : int, optional
+            Desired design resolution (for reference only).
+        replicates : int, optional
+            Number of replicates.
+        randomize : bool, optional
+            Whether to randomize run order.
         """
         super().__init__("Fractional Factorial Design")
         self.factors = factors

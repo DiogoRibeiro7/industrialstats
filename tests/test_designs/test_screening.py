@@ -1,8 +1,4 @@
-import os
-import sys
 import unittest
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 
 from doe_python.designs.base import Factor
 from doe_python.designs.screening import DefinitiveScreeningDesign, PlackettBurmanDesign

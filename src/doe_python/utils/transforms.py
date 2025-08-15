@@ -9,10 +9,14 @@ import pandas as pd
 def center(df: pd.DataFrame) -> pd.DataFrame:
     """Center numeric columns around zero.
 
-    Args:
-        df: Input DataFrame.
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Input DataFrame.
 
-    Returns:
+    Returns
+    -------
+    pandas.DataFrame
         Centered DataFrame.
     """
     centered = df.copy()
@@ -24,10 +28,14 @@ def center(df: pd.DataFrame) -> pd.DataFrame:
 def standardize(df: pd.DataFrame) -> pd.DataFrame:
     """Standardize numeric columns to unit variance.
 
-    Args:
-        df: Input DataFrame.
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Input DataFrame.
 
-    Returns:
+    Returns
+    -------
+    pandas.DataFrame
         Standardized DataFrame.
     """
     standardized = df.copy()
@@ -41,11 +49,16 @@ def standardize(df: pd.DataFrame) -> pd.DataFrame:
 def log_transform(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
     """Apply natural logarithm to specified columns.
 
-    Args:
-        df: Input DataFrame.
-        columns: Columns to transform.
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Input DataFrame.
+    columns : list[str]
+        Columns to transform.
 
-    Returns:
+    Returns
+    -------
+    pandas.DataFrame
         DataFrame with transformed columns.
     """
     transformed = df.copy()

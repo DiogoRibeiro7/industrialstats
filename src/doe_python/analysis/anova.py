@@ -17,12 +17,17 @@ class ANOVAAnalysis:
     def __init__(self, data: pd.DataFrame, response_column: str):
         """Initialize an ANOVA analysis instance.
 
-        Args:
-            data (pd.DataFrame): Experimental dataset.
-            response_column (str): Name of the response variable column.
+        Parameters
+        ----------
+        data : pd.DataFrame
+            Experimental dataset.
+        response_column : str
+            Name of the response variable column.
 
-        Raises:
-            ValueError: If ``response_column`` is missing or no rows remain after filtering.
+        Raises
+        ------
+        ValueError
+            If ``response_column`` is missing or no rows remain after filtering.
         """
         if response_column not in data.columns:
             raise ValueError(f"Response column '{response_column}' not found in data")
@@ -43,14 +48,20 @@ class ANOVAAnalysis:
     ) -> sm.regression.linear_model.RegressionResultsWrapper:
         """Fit a linear model using an R-style formula.
 
-        Args:
-            formula (str): Formula string such as ``'response ~ factor1 * factor2'``.
+        Parameters
+        ----------
+        formula : str
+            Formula string such as ``"response ~ factor1 * factor2"``.
 
-        Returns:
-            RegressionResultsWrapper: Fitted model instance.
+        Returns
+        -------
+        RegressionResultsWrapper
+            Fitted model instance.
 
-        Raises:
-            ValueError: If the model fails to fit.
+        Raises
+        ------
+        ValueError
+            If the model fails to fit.
         """
         try:
             self.model = ols(formula, data=self.data).fit()
@@ -61,14 +72,20 @@ class ANOVAAnalysis:
     def anova_table_calculation(self, typ: int = 2) -> pd.DataFrame:
         """Compute the ANOVA table for the fitted model.
 
-        Args:
-            typ (int, optional): ANOVA type (1, 2, or 3). Defaults to 2.
+        Parameters
+        ----------
+        typ : int, optional
+            ANOVA type (1, 2, or 3). Defaults to 2.
 
-        Returns:
-            pd.DataFrame: Table with sums of squares, degrees of freedom and statistics.
+        Returns
+        -------
+        pd.DataFrame
+            Table with sums of squares, degrees of freedom and statistics.
 
-        Raises:
-            ValueError: If no model has been fitted or calculation fails.
+        Raises
+        ------
+        ValueError
+            If no model has been fitted or calculation fails.
         """
         if self.model is None:
             raise ValueError("Model not fitted. Call fit_model() first.")
@@ -125,16 +142,25 @@ class ANOVAAnalysis:
     ) -> pd.DataFrame:
         """Run multiple comparison tests on a factor.
 
-        Args:
-            factor (str): Factor name for pairwise comparisons.
-            method (str, optional): Comparison method (``'tukey'``, ``'bonferroni'``, ``'holm'``). Defaults to ``'tukey'``.
-            alpha (float, optional): Family-wise error rate. Defaults to ``0.05``.
+        Parameters
+        ----------
+        factor : str
+            Factor name for pairwise comparisons.
+        method : str, optional
+            Comparison method (``"tukey"``, ``"bonferroni"``, ``"holm"``). Defaults to
+            ``"tukey"``.
+        alpha : float, optional
+            Family-wise error rate. Defaults to 0.05.
 
-        Returns:
-            pd.DataFrame: Pairwise comparison results.
+        Returns
+        -------
+        pd.DataFrame
+            Pairwise comparison results.
 
-        Raises:
-            ValueError: If the factor is not present in the data or the method is unsupported.
+        Raises
+        ------
+        ValueError
+            If the factor is not present in the data or the method is unsupported.
         """
         if factor not in self.data.columns:
             raise ValueError(f"Factor '{factor}' not found in data")
@@ -358,13 +384,12 @@ class ANOVAAnalysis:
         return results
 
     def model_summary(self) -> Dict[str, Any]:
-        """
-        Get comprehensive model summary.
+        """Get comprehensive model summary.
 
-        Returns:
-        --------
-        Dict[str, Any]
-            Model fit statistics and summary information
+        Returns
+        -------
+        dict
+            Model fit statistics and summary information.
         """
         if self.model is None:
             raise ValueError("Model not fitted. Call fit_model() first.")
@@ -388,12 +413,17 @@ class ANOVAAnalysis:
     ) -> pd.DataFrame:
         """Perform contrast analysis.
 
-        Args:
-            contrasts (Dict[str, List[float]]): Mapping of contrast names to coefficient vectors.
-            factor (str): Factor name for the contrasts.
+        Parameters
+        ----------
+        contrasts : dict[str, list[float]]
+            Mapping of contrast names to coefficient vectors.
+        factor : str
+            Factor name for the contrasts.
 
-        Returns:
-            pd.DataFrame: Contrast analysis results.
+        Returns
+        -------
+        pd.DataFrame
+            Contrast analysis results.
         """
         if self.model is None:
             raise ValueError("Model not fitted. Call fit_model() first.")
@@ -455,11 +485,15 @@ class ANOVAAnalysis:
     def power_analysis_post_hoc(self, alpha: float = 0.05) -> Dict[str, float]:
         """Calculate observed power for each effect in the model.
 
-        Args:
-            alpha (float, optional): Significance level. Defaults to ``0.05``.
+        Parameters
+        ----------
+        alpha : float, optional
+            Significance level. Defaults to 0.05.
 
-        Returns:
-            Dict[str, float]: Observed power for each effect.
+        Returns
+        -------
+        dict[str, float]
+            Observed power for each effect.
         """
         if self.anova_table is None:
             raise ValueError(
@@ -500,16 +534,23 @@ class ANOVAAnalysis:
     ) -> Dict[str, Any]:
         """Fit a mixed effects model.
 
-        Args:
-            fixed_effects: Factors treated as fixed.
-            random_effects: Factors treated as random. The first entry is used
-                as the grouping variable.
+        Parameters
+        ----------
+        fixed_effects : list[str]
+            Factors treated as fixed.
+        random_effects : list[str]
+            Factors treated as random. The first entry is used as the grouping
+            variable.
 
-        Returns:
+        Returns
+        -------
+        dict
             Dictionary with AIC and parameter estimates.
 
-        Raises:
-            ValueError: If any factor is missing in the data.
+        Raises
+        ------
+        ValueError
+            If any factor is missing in the data.
         """
 
         for eff in fixed_effects + random_effects:
@@ -527,11 +568,15 @@ class ANOVAAnalysis:
     def unbalanced_anova(self) -> Dict[str, Any]:
         """Perform Type II ANOVA for unbalanced designs.
 
-        Returns:
+        Returns
+        -------
+        dict
             Dictionary containing the ANOVA table.
 
-        Raises:
-            ValueError: If no model has been fitted.
+        Raises
+        ------
+        ValueError
+            If no model has been fitted.
         """
 
         if self.model is None:
@@ -543,10 +588,14 @@ class ANOVAAnalysis:
     def nested_anova(self, nesting_structure: Dict[str, str]) -> Dict[str, Any]:
         """Perform nested ANOVA for hierarchical designs.
 
-        Args:
-            nesting_structure: Mapping of nested factor to its parent factor.
+        Parameters
+        ----------
+        nesting_structure : dict[str, str]
+            Mapping of nested factor to its parent factor.
 
-        Returns:
+        Returns
+        -------
+        dict
             Dictionary with the ANOVA table.
         """
 
@@ -566,15 +615,22 @@ class ANOVAAnalysis:
     ) -> Dict[str, Any]:
         """Analyze repeated measures designs.
 
-        Args:
-            subject_column: Identifier for each experimental unit.
-            within_factors: Factors measured repeatedly.
+        Parameters
+        ----------
+        subject_column : str
+            Identifier for each experimental unit.
+        within_factors : list[str]
+            Factors measured repeatedly.
 
-        Returns:
+        Returns
+        -------
+        dict
             Dictionary with the ANOVA table.
 
-        Raises:
-            ValueError: If specified columns are not in the data.
+        Raises
+        ------
+        ValueError
+            If specified columns are not in the data.
         """
 
         if subject_column not in self.data.columns:

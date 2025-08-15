@@ -2,9 +2,10 @@ from __future__ import annotations
 
 """Randomized Complete Block Design implementation."""
 
-from typing import List, Optional, Dict, Any, Tuple
-import pandas as pd
+from typing import Any, Dict, List, Optional, Tuple
+
 import numpy as np
+import pandas as pd
 
 from .base import ExperimentalDesign, Factor
 
@@ -17,13 +18,25 @@ class RandomizedCompleteBlockDesign(ExperimentalDesign):
         treatments: List[str],
         blocks: List[str],
         blocking_factor: str = "Block",
+        seed: Optional[int] = None,
     ) -> None:
         """Initialize RCBD.
 
-        Args:
-            treatments (List[str]): List of treatment names or levels.
-            blocks (List[str]): Names of blocking levels.
-            blocking_factor (str): Column name for blocks in the design matrix.
+        Parameters
+        ----------
+        treatments : list of str
+            List of treatment names or levels.
+        blocks : list of str
+            Names of blocking levels.
+        blocking_factor : str, optional
+            Column name for blocks in the design matrix. Defaults to ``"Block"``.
+        seed : int, optional
+            Random seed for reproducibility.
+
+        Raises
+        ------
+        ValueError
+            If fewer than two treatments or blocks are provided.
         """
         super().__init__("Randomized Complete Block Design")
         if len(treatments) < 2:
@@ -34,17 +47,33 @@ class RandomizedCompleteBlockDesign(ExperimentalDesign):
         self.treatments = treatments
         self.blocks = blocks
         self.blocking_factor = blocking_factor
+        self.seed = seed
 
         self.factors = [
             Factor("Treatment", treatments, "categorical"),
             Factor(blocking_factor, blocks, "categorical"),
         ]
 
-    def generate_design(self) -> pd.DataFrame:
-        """Generate RCBD matrix with proper randomization."""
+    def generate_design(self, seed: Optional[int] = None) -> pd.DataFrame:
+        """Generate RCBD matrix with proper randomization.
+
+        Parameters
+        ----------
+        seed : int, optional
+            Random seed for reproducible shuffling. If not provided, uses the
+            seed supplied at initialization.
+
+        Returns
+        -------
+        pandas.DataFrame
+            The randomized design matrix.
+        """
+        if seed is not None:
+            self.seed = seed
+
         design_rows = []
         run_id = 1
-        for block in self.blocks:
+        for i, block in enumerate(self.blocks):
             block_rows = []
             for treatment in self.treatments:
                 block_rows.append(
@@ -56,7 +85,14 @@ class RandomizedCompleteBlockDesign(ExperimentalDesign):
                 )
                 run_id += 1
             # Randomize within block
-            block_df = pd.DataFrame(block_rows).sample(frac=1).reset_index(drop=True)
+            block_df = (
+                pd.DataFrame(block_rows)
+                .sample(
+                    frac=1,
+                    random_state=None if self.seed is None else self.seed + i,
+                )
+                .reset_index(drop=True)
+            )
             design_rows.extend(block_df.to_dict(orient="records"))
 
         self.design_matrix = pd.DataFrame(design_rows)

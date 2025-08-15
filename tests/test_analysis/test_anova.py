@@ -1,9 +1,4 @@
-import os
-import sys
-
 import pandas as pd
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 
 from doe_python.analysis.anova import ANOVAAnalysis
 from doe_python.designs.base import Factor

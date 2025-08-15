@@ -1,9 +1,11 @@
 """Full factorial experimental designs."""
 
-from typing import List, Optional, Dict, Any
-import pandas as pd
-import numpy as np
 from itertools import product
+from typing import Any, Dict, List, Optional
+
+import numpy as np
+import pandas as pd
+
 from .base import ExperimentalDesign, Factor
 
 
@@ -16,23 +18,39 @@ class FactorialDesign(ExperimentalDesign):
         replicates: int = 1,
         center_points: int = 0,
         randomize: bool = True,
-    ):
+        blocks: int | None = None,
+        seed: int | None = None,
+    ) -> None:
         """Create a full factorial design.
 
-        Args:
-            factors (List[Factor]): Factors included in the experiment.
-            replicates (int, optional): Number of replicates. Defaults to ``1``.
-            center_points (int, optional): Number of center points for continuous factors. Defaults to ``0``.
-            randomize (bool, optional): Whether to randomize run order. Defaults to ``True``.
+        Parameters
+        ----------
+        factors : list[Factor]
+            Factors included in the experiment.
+        replicates : int, optional
+            Number of replicates. Defaults to 1.
+        center_points : int, optional
+            Number of center points for continuous factors. Defaults to 0.
+        randomize : bool, optional
+            Whether to randomize run order. Defaults to ``True``.
+        blocks : int, optional
+            Number of blocks for the design. If ``None`` no blocking is
+            applied.
+        seed : int, optional
+            Random seed used for run order shuffling.
 
-        Raises:
-            ValueError: If ``center_points`` is negative.
+        Raises
+        ------
+        ValueError
+            If ``center_points`` is negative.
         """
         super().__init__("Full Factorial Design")
         self.factors = factors
         self.replicates = replicates
         self.center_points = center_points
         self.randomize_flag = randomize
+        self.blocks = blocks
+        self.seed = seed
 
         if center_points < 0:
             raise ValueError("Number of center points cannot be negative")
@@ -40,11 +58,15 @@ class FactorialDesign(ExperimentalDesign):
     def generate_design(self) -> pd.DataFrame:
         """Generate the full factorial design matrix.
 
-        Returns:
-            pd.DataFrame: Generated design matrix.
+        Returns
+        -------
+        pd.DataFrame
+            Generated design matrix.
 
-        Raises:
-            ValueError: If the design configuration is invalid.
+        Raises
+        ------
+        ValueError
+            If the design configuration is invalid.
         """
         if not self.validate_design():
             raise ValueError("Invalid design configuration")
@@ -87,18 +109,41 @@ class FactorialDesign(ExperimentalDesign):
                 run_id += 1
 
         self.design_matrix = pd.DataFrame(design_data)
+        # Apply blocking if requested
+        if self.blocks and self.blocks > 1:
+            blocks = [i % self.blocks + 1 for i in range(len(self.design_matrix))]
+            self.design_matrix["Block"] = blocks
 
         # Randomize if requested
         if self.randomize_flag:
-            self.randomize()
+            if self.blocks and self.blocks > 1:
+                rng = np.random.default_rng(self.seed)
+                self.design_matrix = (
+                    self.design_matrix.groupby("Block", group_keys=False)
+                    .apply(
+                        lambda df: df.sample(
+                            frac=1,
+                            random_state=int(rng.integers(0, np.iinfo("int32").max)),
+                        )
+                    )
+                    .reset_index(drop=True)
+                )
+                self.design_matrix.insert(
+                    0, "RunOrder", range(1, len(self.design_matrix) + 1)
+                )
+                self.randomized = True
+            else:
+                self.randomize(self.seed)
 
         return self.design_matrix
 
     def _calculate_center_points(self) -> List[float]:
         """Calculate center point values for continuous factors.
 
-        Returns:
-            List[float]: Center values for each factor.
+        Returns
+        -------
+        list[float]
+            Center values for each factor.
         """
         center_values = []
         for factor in self.factors:
@@ -114,8 +159,10 @@ class FactorialDesign(ExperimentalDesign):
     def validate_design(self) -> bool:
         """Validate factorial design parameters.
 
-        Returns:
-            bool: ``True`` if the configuration is valid.
+        Returns
+        -------
+        bool
+            ``True`` if the configuration is valid.
         """
         if not self.factors:
             return False
@@ -133,8 +180,10 @@ class FactorialDesign(ExperimentalDesign):
     def n_runs(self) -> int:
         """Calculate total number of experimental runs.
 
-        Returns:
-            int: Total run count including center points.
+        Returns
+        -------
+        int
+            Total run count including center points.
         """
         if not self.factors:
             return 0
@@ -146,8 +195,10 @@ class FactorialDesign(ExperimentalDesign):
     def n_factorial_runs(self) -> int:
         """Calculate number of factorial runs (excluding center points).
 
-        Returns:
-            int: Count of factorial runs.
+        Returns
+        -------
+        int
+            Count of factorial runs.
         """
         if not self.factors:
             return 0
@@ -156,8 +207,10 @@ class FactorialDesign(ExperimentalDesign):
     def degrees_of_freedom(self) -> Dict[str, int]:
         """Calculate degrees of freedom for ANOVA analysis.
 
-        Returns:
-            Dict[str, int]: Degrees of freedom by effect name.
+        Returns
+        -------
+        dict[str, int]
+            Degrees of freedom by effect name.
         """
         if not self.factors:
             return {}
@@ -199,14 +252,20 @@ class FactorialDesign(ExperimentalDesign):
     def calculate_effects(self, response_data: List[float]) -> Dict[str, float]:
         """Calculate main effects and interactions for 2-level factors.
 
-        Args:
-            response_data (List[float]): Response values for each run.
+        Parameters
+        ----------
+        response_data : list[float]
+            Response values for each run.
 
-        Returns:
-            Dict[str, float]: Calculated effect estimates.
+        Returns
+        -------
+        dict[str, float]
+            Calculated effect estimates.
 
-        Raises:
-            ValueError: If the design is not two-level or lengths mismatch.
+        Raises
+        ------
+        ValueError
+            If the design is not two-level or lengths mismatch.
         """
         if not self._is_two_level_design():
             raise ValueError("Effect calculation only supported for 2-level designs")
@@ -250,19 +309,25 @@ class FactorialDesign(ExperimentalDesign):
     def _is_two_level_design(self) -> bool:
         """Check if all factors have exactly two levels.
 
-        Returns:
-            bool: ``True`` if every factor has two levels.
+        Returns
+        -------
+        bool
+            ``True`` if every factor has two levels.
         """
         return all(len(factor.levels) == 2 for factor in self.factors)
 
     def _get_coded_matrix(self) -> pd.DataFrame:
         """Convert the design matrix to coded levels (-1, +1).
 
-        Returns:
-            pd.DataFrame: Coded design matrix.
+        Returns
+        -------
+        pd.DataFrame
+            Coded design matrix.
 
-        Raises:
-            ValueError: If the design matrix is not available.
+        Raises
+        ------
+        ValueError
+            If the design matrix is not available.
         """
         if self.design_matrix is None:
             raise ValueError("Design matrix not generated")
@@ -291,16 +356,24 @@ class FactorialDesign(ExperimentalDesign):
     ) -> Dict[str, Any]:
         """Calculate power analysis for the factorial design.
 
-        Args:
-            effect_size (float): Expected effect size (Cohen's f).
-            alpha (float, optional): Type I error rate. Defaults to ``0.05``.
-            power (float, optional): Desired statistical power. Defaults to ``0.8``.
+        Parameters
+        ----------
+        effect_size : float
+            Expected effect size (Cohen's ``f``).
+        alpha : float, optional
+            Type I error rate. Defaults to 0.05.
+        power : float, optional
+            Desired statistical power. Defaults to 0.8.
 
-        Returns:
-            Dict[str, Any]: Power analysis results.
+        Returns
+        -------
+        dict[str, Any]
+            Power analysis results.
 
-        Raises:
-            ValueError: If no factors are defined.
+        Raises
+        ------
+        ValueError
+            If no factors are defined.
         """
         from scipy.stats import f, ncf
 
@@ -338,18 +411,22 @@ class FactorialDesign(ExperimentalDesign):
     def add_star_points(self, alpha: float | None = None) -> pd.DataFrame:
         r"""Add star points to convert to a central composite design.
 
-        Args:
-            alpha: Distance of star points from the center. If ``None``, a
-                default of :math:`\sqrt{k}` is used where ``k`` is the number of
-                factors.
+        Parameters
+        ----------
+        alpha : float, optional
+            Distance of star points from the center. If ``None``, a default of
+            :math:`\sqrt{k}` is used where ``k`` is the number of factors.
 
-        Returns:
-            pd.DataFrame: Newly generated star points that were appended to the
-                design matrix.
+        Returns
+        -------
+        pd.DataFrame
+            Newly generated star points that were appended to the design matrix.
 
-        Raises:
-            ValueError: If the design matrix has not been generated or factors
-                are not all continuous.
+        Raises
+        ------
+        ValueError
+            If the design matrix has not been generated or factors are not all
+            continuous.
         """
         if self.design_matrix is None:
             raise ValueError("Design matrix not generated")
@@ -388,11 +465,15 @@ class FactorialDesign(ExperimentalDesign):
     def generate_foldover(self) -> pd.DataFrame:
         """Generate a foldover design for de-aliasing effects.
 
-        Returns:
-            pd.DataFrame: Foldover design appended to the current design matrix.
+        Returns
+        -------
+        pd.DataFrame
+            Foldover design appended to the current design matrix.
 
-        Raises:
-            ValueError: If the design matrix has not been generated.
+        Raises
+        ------
+        ValueError
+            If the design matrix has not been generated.
         """
         if self.design_matrix is None:
             raise ValueError("Design matrix not generated")
@@ -424,14 +505,20 @@ class FactorialDesign(ExperimentalDesign):
     def blocking_scheme(self, block_size: int) -> pd.DataFrame:
         """Create a simple blocking scheme column.
 
-        Args:
-            block_size: Number of runs per block.
+        Parameters
+        ----------
+        block_size : int
+            Number of runs per block.
 
-        Returns:
-            pd.DataFrame: Design matrix with an added ``Block`` column.
+        Returns
+        -------
+        pd.DataFrame
+            Design matrix with an added ``Block`` column.
 
-        Raises:
-            ValueError: If the design matrix has not been generated.
+        Raises
+        ------
+        ValueError
+            If the design matrix has not been generated.
         """
         if self.design_matrix is None:
             raise ValueError("Design matrix not generated")
@@ -444,11 +531,12 @@ class FactorialDesign(ExperimentalDesign):
     def confounding_pattern(self) -> Dict[str, List[str]]:
         """Return confounding pattern based on alias correlations.
 
-        Returns:
-            Dict[str, List[str]]: Mapping of factor names to aliased terms.
+        Returns
+        -------
+        dict[str, list[str]]
+            Mapping of factor names to aliased terms.
         """
-        coded = self._get_coded_matrix()
-        corr = coded.corr().abs()
+        corr = self.alias_matrix().abs()
         confound: Dict[str, List[str]] = {}
         cols = list(corr.columns)
         for i, c1 in enumerate(cols):
@@ -461,7 +549,25 @@ class FactorialDesign(ExperimentalDesign):
     def design_generators(self) -> List[str]:
         """Return generator strings for fractional factorial designs.
 
-        Returns:
-            List[str]: Generator expressions or an empty list for full factorials.
+        Returns
+        -------
+        list[str]
+            Generator expressions or an empty list for full factorials.
         """
         return []
+
+    def alias_matrix(self) -> pd.DataFrame:
+        """Calculate alias matrix showing confounding between effects.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Correlation matrix of coded factor columns.
+
+        Raises
+        ------
+        ValueError
+            If the design matrix has not been generated.
+        """
+        coded = self._get_coded_matrix()
+        return coded.corr()

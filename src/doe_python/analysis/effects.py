@@ -1,11 +1,15 @@
 """Effect calculation and analysis for experimental designs."""
 
-from typing import Dict, List, Tuple, Optional, Any
-import pandas as pd
-import numpy as np
-from scipy import stats
+import logging
+from typing import Any, Dict, List, Optional, Tuple
+
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 import seaborn as sns
+from scipy import stats
+
+logger = logging.getLogger(__name__)
 
 
 class EffectsAnalysis:
@@ -14,13 +18,18 @@ class EffectsAnalysis:
     def __init__(self, design_matrix: pd.DataFrame, response_data: List[float]):
         """Initialize effects analysis.
 
-        Args:
-            design_matrix (pd.DataFrame): Experimental design matrix.
-            response_data (List[float]): Responses for each design row.
+        Parameters
+        ----------
+        design_matrix : pd.DataFrame
+            Experimental design matrix.
+        response_data : list[float]
+            Responses for each design row.
 
-        Raises:
-            ValueError: If the response length does not match the design matrix
-                or if no factor columns are found.
+        Raises
+        ------
+        ValueError
+            If the response length does not match the design matrix or if no
+            factor columns are found.
         """
         if len(response_data) != len(design_matrix):
             raise ValueError("Response data length must match design matrix rows")
@@ -41,8 +50,10 @@ class EffectsAnalysis:
     def calculate_main_effects(self) -> Dict[str, float]:
         """Calculate main effects for all factors.
 
-        Returns:
-            Dict[str, float]: Mapping of factor names to effect estimates.
+        Returns
+        -------
+        dict[str, float]
+            Mapping of factor names to effect estimates.
         """
         effects = {}
 
@@ -76,11 +87,15 @@ class EffectsAnalysis:
     def calculate_interaction_effects(self, max_order: int = 2) -> Dict[str, float]:
         """Calculate interaction effects.
 
-        Args:
-            max_order (int, optional): Maximum interaction order to compute. Defaults to 2.
+        Parameters
+        ----------
+        max_order : int, optional
+            Maximum interaction order to compute. Defaults to 2.
 
-        Returns:
-            Dict[str, float]: Interaction effect estimates keyed by name.
+        Returns
+        -------
+        dict[str, float]
+            Interaction effect estimates keyed by name.
         """
         interactions = {}
 
@@ -110,12 +125,17 @@ class EffectsAnalysis:
     def _calculate_two_factor_interaction(self, factor1: str, factor2: str) -> float:
         """Calculate a two-factor interaction effect.
 
-        Args:
-            factor1 (str): First factor name.
-            factor2 (str): Second factor name.
+        Parameters
+        ----------
+        factor1 : str
+            First factor name.
+        factor2 : str
+            Second factor name.
 
-        Returns:
-            float: Estimated interaction effect.
+        Returns
+        -------
+        float
+            Estimated interaction effect.
         """
         levels1 = sorted(self.design_matrix[factor1].unique())
         levels2 = sorted(self.design_matrix[factor2].unique())
@@ -154,13 +174,19 @@ class EffectsAnalysis:
     ) -> float:
         """Calculate a three-factor interaction effect.
 
-        Args:
-            factor1 (str): First factor name.
-            factor2 (str): Second factor name.
-            factor3 (str): Third factor name.
+        Parameters
+        ----------
+        factor1 : str
+            First factor name.
+        factor2 : str
+            Second factor name.
+        factor3 : str
+            Third factor name.
 
-        Returns:
-            float: Estimated interaction effect.
+        Returns
+        -------
+        float
+            Estimated interaction effect.
         """
         levels1 = sorted(self.design_matrix[factor1].unique())
         levels2 = sorted(self.design_matrix[factor2].unique())
@@ -200,11 +226,15 @@ class EffectsAnalysis:
     def _anova_interaction_effect(self, *factors) -> float:
         """Calculate interaction effect using an ANOVA approach.
 
-        Args:
-            *factors: Factor names involved in the interaction.
+        Parameters
+        ----------
+        *factors
+            Factor names involved in the interaction.
 
-        Returns:
-            float: F statistic for the interaction term or 0.0 if unavailable.
+        Returns
+        -------
+        float
+            F statistic for the interaction term or 0.0 if unavailable.
         """
         try:
             from statsmodels.formula.api import ols
@@ -235,7 +265,10 @@ class EffectsAnalysis:
 
             return 0.0
 
-        except Exception:
+        except Exception as e:
+            logger.debug(
+                "Failed to compute interaction effect for factors %s: %s", factors, e
+            )
             return 0.0
 
     def normal_probability_plot(
@@ -243,15 +276,22 @@ class EffectsAnalysis:
     ) -> plt.Figure:
         """Create a normal probability plot for effect screening.
 
-        Args:
-            effects (Dict[str, float]): Dictionary of effect estimates.
-            figsize (Tuple[int, int], optional): Size of the figure. Defaults to ``(10, 6)``.
+        Parameters
+        ----------
+        effects : dict[str, float]
+            Dictionary of effect estimates.
+        figsize : tuple of int, optional
+            Size of the figure. Defaults to ``(10, 6)``.
 
-        Returns:
-            plt.Figure: Matplotlib figure with the probability plot.
+        Returns
+        -------
+        matplotlib.figure.Figure
+            Matplotlib figure with the probability plot.
 
-        Raises:
-            ValueError: If ``effects`` is empty.
+        Raises
+        ------
+        ValueError
+            If ``effects`` is empty.
         """
         if not effects:
             raise ValueError("No effects provided for plotting")
@@ -293,15 +333,22 @@ class EffectsAnalysis:
     ) -> plt.Figure:
         """Plot selected two-factor interactions.
 
-        Args:
-            max_interactions (int, optional): Number of interactions to display. Defaults to 3.
-            figsize (Tuple[int, int], optional): Size of the figure grid. Defaults to ``(15, 10)``.
+        Parameters
+        ----------
+        max_interactions : int, optional
+            Number of interactions to display. Defaults to 3.
+        figsize : tuple of int, optional
+            Size of the figure grid. Defaults to ``(15, 10)``.
 
-        Returns:
-            plt.Figure: Figure containing the interaction plots.
+        Returns
+        -------
+        matplotlib.figure.Figure
+            Figure containing the interaction plots.
 
-        Raises:
-            ValueError: If no two-factor interactions are present.
+        Raises
+        ------
+        ValueError
+            If no two-factor interactions are present.
         """
         # Calculate interaction effects
         interactions = self.calculate_interaction_effects()
@@ -389,11 +436,15 @@ class EffectsAnalysis:
     def effect_hierarchy_plot(self, figsize: Tuple[int, int] = (12, 8)) -> plt.Figure:
         """Plot a hierarchy diagram of effects.
 
-        Args:
-            figsize (Tuple[int, int], optional): Figure size. Defaults to ``(12, 8)``.
+        Parameters
+        ----------
+        figsize : tuple of int, optional
+            Figure size. Defaults to ``(12, 8)``.
 
-        Returns:
-            plt.Figure: Matplotlib figure with the hierarchy plot.
+        Returns
+        -------
+        matplotlib.figure.Figure
+            Matplotlib figure with the hierarchy plot.
         """
         # Get all effects
         main_effects = self.calculate_main_effects()
@@ -482,15 +533,22 @@ class EffectsAnalysis:
     ) -> plt.Figure:
         """Plot a Pareto chart of effect magnitudes.
 
-        Args:
-            effects (Dict[str, float]): Effects to visualize.
-            figsize (Tuple[int, int], optional): Size of the figure. Defaults to ``(12, 6)``.
+        Parameters
+        ----------
+        effects : dict[str, float]
+            Effects to visualize.
+        figsize : tuple of int, optional
+            Size of the figure. Defaults to ``(12, 6)``.
 
-        Returns:
-            plt.Figure: Pareto chart figure.
+        Returns
+        -------
+        matplotlib.figure.Figure
+            Pareto chart figure.
 
-        Raises:
-            ValueError: If ``effects`` is empty.
+        Raises
+        ------
+        ValueError
+            If ``effects`` is empty.
         """
         if not effects:
             raise ValueError("No effects provided for plotting")
@@ -566,8 +624,10 @@ class EffectsAnalysis:
     def effects_summary_table(self) -> pd.DataFrame:
         """Create a summary table of all effects.
 
-        Returns:
-            pd.DataFrame: Table with effect estimates, rankings, and percentages.
+        Returns
+        -------
+        pd.DataFrame
+            Table with effect estimates, rankings, and percentages.
         """
         # Calculate all effects
         main_effects = self.calculate_main_effects()
@@ -616,15 +676,22 @@ class EffectsAnalysis:
     ) -> plt.Figure:
         """Create a half-normal plot for effect screening.
 
-        Args:
-            effects (Dict[str, float]): Dictionary of effect estimates.
-            figsize (Tuple[int, int], optional): Size of the figure. Defaults to ``(10, 6)``.
+        Parameters
+        ----------
+        effects : dict[str, float]
+            Dictionary of effect estimates.
+        figsize : tuple of int, optional
+            Size of the figure. Defaults to ``(10, 6)``.
 
-        Returns:
-            plt.Figure: Matplotlib figure of the half-normal plot.
+        Returns
+        -------
+        matplotlib.figure.Figure
+            Matplotlib figure of the half-normal plot.
 
-        Raises:
-            ValueError: If ``effects`` is empty.
+        Raises
+        ------
+        ValueError
+            If ``effects`` is empty.
         """
         if not effects:
             raise ValueError("No effects provided for plotting")
