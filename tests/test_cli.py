@@ -124,3 +124,41 @@ def test_cli_anova(tmp_path):
     main(args)
     df = pd.read_csv(output)
     assert "sum_sq" in df.columns
+
+
+def test_cli_power(tmp_path):
+    output = tmp_path / "power.csv"
+    args = [
+        "power",
+        "--analysis",
+        "t-test",
+        "--effect-size",
+        "0.5",
+        "--power",
+        "0.8",
+        "-o",
+        str(output),
+    ]
+    main(args)
+    df = pd.read_csv(output)
+    assert "sample_size" in df.columns
+
+
+def test_cli_model(tmp_path):
+    data = tmp_path / "mf.csv"
+    pd.DataFrame({"y": [1, 2, 3, 4], "A": [0, 0, 1, 1], "B": [0, 1, 0, 1]}).to_csv(
+        data, index=False
+    )
+    output = tmp_path / "model.csv"
+    args = [
+        "model",
+        "--data",
+        str(data),
+        "--response",
+        "y",
+        "-o",
+        str(output),
+    ]
+    main(args)
+    df = pd.read_csv(output)
+    assert "selected_terms" in df.columns

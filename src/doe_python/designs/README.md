@@ -21,6 +21,12 @@ design_matrix = design.generate_design()
 
 screen = PlackettBurmanDesign([Factor("A", [1, -1]), Factor("B", [1, -1])], seed=7)
 pb_matrix = screen.generate_design()
+
+# Multi-response data sheet
+crd_multi = CompletelyRandomizedDesign(
+    ["T1", "T2"], replicates=2, seed=1, response_variables=["y1", "y2"]
+)
+sheet = crd_multi.create_data_collection_sheet()
 ```
 
 ## Mathematical Background
@@ -28,6 +34,7 @@ pb_matrix = screen.generate_design()
 - **CRD vs. RCBD efficiency**: relative efficiency is computed as
   :math:`(\sigma_e^2 + \sigma_b^2)/\sigma_e^2`, where :math:`\sigma_b^2` is block variance.
 - **Screening designs** leverage Hadamard matrices to ensure column orthogonality while minimizing runs.
+- **Run count** for a CRD equals :math:`t \times r` where :math:`t` is the number of treatments and :math:`r` the replicates.
 
 ## References
 1. Montgomery, D. C. (2017). *Design and Analysis of Experiments*.

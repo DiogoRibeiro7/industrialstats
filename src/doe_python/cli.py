@@ -8,6 +8,8 @@ from typing import List
 import pandas as pd
 
 from .analysis.anova import ANOVAAnalysis
+from .analysis.model_fitting import ModelFitting
+from .analysis.power_analysis import PowerAnalysis
 from .designs.base import Factor
 from .designs.crd import CompletelyRandomizedDesign
 from .designs.factorial import FactorialDesign
@@ -143,6 +145,59 @@ def anova_command(args: argparse.Namespace) -> None:
         table.to_csv(args.output)
     else:
         print(table.to_string())
+
+
+def power_command(args: argparse.Namespace) -> None:
+    """Execute the ``power`` CLI command.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed command-line arguments.
+    """
+    analysis = PowerAnalysis()
+    if args.analysis == "t-test":
+        result = analysis.t_test_power(
+            effect_size=args.effect_size,
+            alpha=args.alpha,
+            power=args.power,
+            sample_size=args.sample_size,
+            test_type=args.test_type,
+        )
+    else:
+        result = analysis.anova_power(
+            effect_size=args.effect_size,
+            alpha=args.alpha,
+            power=args.power,
+            sample_size=args.sample_size,
+            n_groups=args.n_groups,
+        )
+    df = pd.DataFrame([result.__dict__])
+    if args.output:
+        df.to_csv(args.output, index=False)
+    else:
+        print(df.to_string(index=False))
+
+
+def model_command(args: argparse.Namespace) -> None:
+    """Execute the ``model`` CLI command.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed command-line arguments.
+    """
+    data = pd.read_csv(args.data)
+    fitter = ModelFitting(data, response_column=args.response)
+    result = fitter.stepwise_selection(
+        entry_threshold=args.entry_threshold,
+        removal_threshold=args.removal_threshold,
+    )
+    df = pd.DataFrame({"selected_terms": result["selected_terms"]})
+    if args.output:
+        df.to_csv(args.output, index=False)
+    else:
+        print(df.to_string(index=False))
 
 
 def fractional_command(args: argparse.Namespace) -> None:
@@ -298,6 +353,40 @@ def build_parser() -> argparse.ArgumentParser:
     anova_parser.add_argument("--typ", type=int, default=2, help="ANOVA type")
     anova_parser.add_argument("-o", "--output", help="CSV file to save the table")
     anova_parser.set_defaults(func=anova_command)
+
+    power_parser = subparsers.add_parser("power", help="Perform power analysis")
+    power_parser.add_argument(
+        "--analysis", choices=["t-test", "anova"], default="t-test"
+    )
+    power_parser.add_argument("--effect-size", type=float)
+    power_parser.add_argument("--alpha", type=float, default=0.05)
+    power_parser.add_argument("--power", type=float)
+    power_parser.add_argument("--sample-size", type=int)
+    power_parser.add_argument(
+        "--test-type",
+        choices=["one_sample", "two_sample", "paired"],
+        default="two_sample",
+    )
+    power_parser.add_argument("--n-groups", type=int, default=3)
+    power_parser.add_argument("-o", "--output", help="CSV file to save results")
+    power_parser.set_defaults(func=power_command)
+
+    model_parser = subparsers.add_parser("model", help="Run stepwise model fitting")
+    model_parser.add_argument("--data", required=True, help="CSV file with data")
+    model_parser.add_argument(
+        "--response", required=True, help="Name of the response column"
+    )
+    model_parser.add_argument(
+        "--entry-threshold", type=float, default=0.05, help="Entry p-value"
+    )
+    model_parser.add_argument(
+        "--removal-threshold",
+        type=float,
+        default=0.10,
+        help="Removal p-value",
+    )
+    model_parser.add_argument("-o", "--output", help="CSV file to save selected terms")
+    model_parser.set_defaults(func=model_command)
 
     return parser
 

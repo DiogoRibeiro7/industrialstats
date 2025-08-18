@@ -17,7 +17,11 @@ class CompletelyRandomizedDesign(ExperimentalDesign):
     """
 
     def __init__(
-        self, treatments: List[str], replicates: int, seed: Optional[int] = None
+        self,
+        treatments: List[str],
+        replicates: int,
+        seed: Optional[int] = None,
+        response_variables: Optional[List[str]] = None,
     ) -> None:
         """Initialize CRD.
 
@@ -29,6 +33,8 @@ class CompletelyRandomizedDesign(ExperimentalDesign):
             Number of replicates per treatment.
         seed : int, optional
             Random seed for reproducible run ordering.
+        response_variables : list of str, optional
+            Names of response variables measured in the experiment.
         """
         super().__init__("Completely Randomized Design")
 
@@ -40,6 +46,7 @@ class CompletelyRandomizedDesign(ExperimentalDesign):
         self.treatments = treatments
         self.replicates = replicates
         self.seed = seed
+        self.response_variables = response_variables or []
 
         # Create a single factor with treatment levels
         treatment_factor = Factor("Treatment", treatments, "categorical")
@@ -79,6 +86,10 @@ class CompletelyRandomizedDesign(ExperimentalDesign):
         if len(self.treatments) < 2:
             return False
         if self.replicates < 1:
+            return False
+        if not all(isinstance(r, str) for r in self.response_variables):
+            return False
+        if len(self.response_variables) != len(set(self.response_variables)):
             return False
         return True
 
@@ -170,18 +181,20 @@ class CompletelyRandomizedDesign(ExperimentalDesign):
         return -1  # Could not find required sample size
 
     def create_data_collection_sheet(
-        self, response_variables: List[str] | None = None
+        self, response_variables: Optional[List[str]] = None
     ) -> pd.DataFrame:
         """Create a data collection sheet for the experiment.
 
         Parameters
         ----------
-        response_variables : list[str], optional
-            Names of response variables to measure.
+        response_variables : list of str, optional
+            Names of response variables to include. Defaults to the design's
+            stored ``response_variables`` or ``["Response"]`` if none were
+            specified.
 
         Returns
         -------
-        pd.DataFrame
+        pandas.DataFrame
             Data collection sheet with empty response columns.
         """
         if self.design_matrix is None:
@@ -189,11 +202,9 @@ class CompletelyRandomizedDesign(ExperimentalDesign):
 
         data_sheet = self.design_matrix.copy()
 
-        # Add response variable columns
-        if response_variables is None:
-            response_variables = ["Response"]
+        responses = response_variables or self.response_variables or ["Response"]
 
-        for response in response_variables:
+        for response in responses:
             data_sheet[response] = np.nan
 
         # Add columns for data collection
@@ -204,52 +215,80 @@ class CompletelyRandomizedDesign(ExperimentalDesign):
 
         return data_sheet
 
-    def summary_statistics(
-        self, data: pd.DataFrame, response_column: str
-    ) -> pd.DataFrame:
-        """Calculate summary statistics by treatment.
+    def _validate_response_data(
+        self, data: pd.DataFrame, response_columns: List[str]
+    ) -> None:
+        """Validate response data prior to analysis.
 
         Parameters
         ----------
-        data : pd.DataFrame
+        data : pandas.DataFrame
+            Experimental data containing response measurements.
+        response_columns : list of str
+            Names of response columns to validate.
+
+        Raises
+        ------
+        ValueError
+            If a response column is missing or contains NaNs.
+        TypeError
+            If a response column is non-numeric.
+        """
+        for col in response_columns:
+            if col not in data.columns:
+                raise ValueError(f"Response column '{col}' not found in data")
+            if data[col].isna().any():
+                raise ValueError(f"Missing values detected in column '{col}'")
+            if not np.issubdtype(data[col].dtype, np.number):
+                raise TypeError(f"Response column '{col}' must be numeric")
+
+    def summary_statistics(
+        self, data: pd.DataFrame, response_columns: List[str]
+    ) -> Dict[str, pd.DataFrame]:
+        """Calculate summary statistics for multiple responses.
+
+        Parameters
+        ----------
+        data : pandas.DataFrame
             Experimental data with results.
-        response_column : str
-            Name of the response variable column.
+        response_columns : list of str
+            Names of response variable columns to analyze.
 
         Returns
         -------
-        pd.DataFrame
-            Summary statistics by treatment.
+        dict of pandas.DataFrame
+            Mapping of response names to summary statistics by treatment.
         """
-        if response_column not in data.columns:
-            raise ValueError(f"Response column '{response_column}' not found in data")
+        self._validate_response_data(data, response_columns)
 
-        summary = (
-            data.groupby("Treatment")[response_column]
-            .agg(["count", "mean", "std", "min", "max", "median"])
-            .round(3)
-        )
-
-        # Add confidence intervals for means
+        summaries: Dict[str, pd.DataFrame] = {}
         from scipy.stats import t
 
-        ci_lower = []
-        ci_upper = []
+        for column in response_columns:
+            summary = (
+                data.groupby("Treatment")[column]
+                .agg(["count", "mean", "std", "min", "max", "median"])
+                .round(3)
+            )
 
-        for treatment in summary.index:
-            treatment_data = data[data["Treatment"] == treatment][response_column]
-            n = len(treatment_data)
-            mean = treatment_data.mean()
-            std = treatment_data.std()
+            ci_lower: List[float] = []
+            ci_upper: List[float] = []
 
-            # 95% confidence interval
-            t_critical = t.ppf(0.975, n - 1)
-            margin_error = t_critical * std / np.sqrt(n)
+            for treatment in summary.index:
+                treatment_data = data[data["Treatment"] == treatment][column]
+                n = len(treatment_data)
+                mean = treatment_data.mean()
+                std = treatment_data.std()
 
-            ci_lower.append(mean - margin_error)
-            ci_upper.append(mean + margin_error)
+                t_critical = t.ppf(0.975, n - 1)
+                margin_error = t_critical * std / np.sqrt(n)
 
-        summary["CI_Lower"] = np.round(ci_lower, 3)
-        summary["CI_Upper"] = np.round(ci_upper, 3)
+                ci_lower.append(mean - margin_error)
+                ci_upper.append(mean + margin_error)
 
-        return summary
+            summary["CI_Lower"] = np.round(ci_lower, 3)
+            summary["CI_Upper"] = np.round(ci_upper, 3)
+
+            summaries[column] = summary
+
+        return summaries
