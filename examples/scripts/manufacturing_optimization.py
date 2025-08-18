@@ -5,21 +5,15 @@ This script demonstrates a comprehensive DOE analysis for optimizing
 an injection molding process for plastic parts.
 """
 
-import os
-import sys
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
-# Add the src directory to Python path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 
 from industrialstats.analysis.anova import ANOVAAnalysis
 from industrialstats.analysis.effects import EffectsAnalysis
 from industrialstats.designs.base import Factor
 from industrialstats.designs.factorial import FactorialDesign
-from industrialstats.visualization.plots import ExperimentPlotter
+from industrialstats.visualizations.plots import ExperimentPlotter
 
 
 def main():

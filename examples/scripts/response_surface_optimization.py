@@ -5,21 +5,15 @@ This script demonstrates how to use RSM for finding optimal operating
 conditions in a chemical reaction optimization study.
 """
 
-import os
-import sys
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from mpl_toolkits.mplot3d import Axes3D
 
-# Add the src directory to Python path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
-
 from industrialstats.analysis.model_fitting import ModelFitting
 from industrialstats.designs.base import Factor
 from industrialstats.designs.response_surface import ResponseSurfaceDesign
-from industrialstats.visualization.plots import ExperimentPlotter
+from industrialstats.visualizations.plots import ExperimentPlotter
 
 
 def main():

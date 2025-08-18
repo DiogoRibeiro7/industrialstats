@@ -236,13 +236,12 @@ class ANOVAAnalysis:
             raise NotImplementedError(f"Method '{method}' not implemented")
 
     def residual_analysis(self) -> Dict[str, np.ndarray]:
-        """
-        Perform comprehensive residual analysis.
+        """Perform comprehensive residual analysis.
 
-        Returns:
-        --------
+        Returns
+        -------
         Dict[str, np.ndarray]
-            Dictionary containing various residual statistics
+            Dictionary containing various residual statistics.
         """
         if self.model is None:
             raise ValueError("Model not fitted. Call fit_model() first.")
@@ -276,13 +275,12 @@ class ANOVAAnalysis:
         }
 
     def assumptions_tests(self) -> Dict[str, Dict[str, Any]]:
-        """
-        Test ANOVA assumptions.
+        """Test ANOVA assumptions.
 
-        Returns:
-        --------
+        Returns
+        -------
         Dict[str, Dict[str, Any]]
-            Test results for normality, homogeneity of variance, and independence
+            Test results for normality, homogeneity of variance, and independence.
         """
         if self.model is None:
             raise ValueError("Model not fitted. Call fit_model() first.")

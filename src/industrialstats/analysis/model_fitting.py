@@ -236,18 +236,17 @@ class ModelFitting:
         }
 
     def all_subsets_selection(self, criterion: str = "AIC") -> Dict[str, Any]:
-        """
-        Perform all possible subsets selection.
+        """Perform all possible subsets selection.
 
-        Parameters:
-        -----------
-        criterion : str, default='AIC'
-            Selection criterion: 'AIC', 'BIC', 'R2', 'R2_adj'
+        Parameters
+        ----------
+        criterion : str, default="AIC"
+            Selection criterion: ``'AIC'``, ``'BIC'``, ``'R2'``, ``'R2_adj'``.
 
-        Returns:
-        --------
+        Returns
+        -------
         Dict[str, Any]
-            All subsets results
+            All subsets results.
         """
         candidate_terms = self._generate_candidate_terms()
         max_terms = min(len(candidate_terms), len(self.data) // 4)  # Conservative limit
@@ -742,18 +741,17 @@ class ModelFitting:
         return predictions.values
 
     def residual_diagnostics(self, model_terms: List[str]) -> Dict[str, Any]:
-        """
-        Perform comprehensive residual diagnostics.
+        """Perform comprehensive residual diagnostics.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         model_terms : List[str]
-            Model terms to diagnose
+            Model terms to diagnose.
 
-        Returns:
-        --------
+        Returns
+        -------
         Dict[str, Any]
-            Diagnostic results
+            Diagnostic results.
         """
         model_result = self._fit_terms(model_terms)
 
@@ -857,18 +855,17 @@ class ModelFitting:
         return diagnostics
 
     def lack_of_fit_test(self, model_terms: List[str]) -> Dict[str, Any]:
-        """
-        Perform lack-of-fit test for models with replicates.
+        """Perform lack-of-fit test for models with replicates.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         model_terms : List[str]
-            Model terms to test
+            Model terms to test.
 
-        Returns:
-        --------
+        Returns
+        -------
         Dict[str, Any]
-            Lack-of-fit test results
+            Lack-of-fit test results.
         """
         # Check if we have replicates
         factor_combinations = self.data[self.factor_columns].drop_duplicates()

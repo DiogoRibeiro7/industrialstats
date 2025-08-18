@@ -17,7 +17,9 @@ _MANUFACTURING_CSV = """Temperature,Pressure,Strength
 def load_manufacturing() -> pd.DataFrame:
     """Load a toy manufacturing dataset.
 
-    Returns:
+    Returns
+    -------
+    pd.DataFrame
         DataFrame with process conditions and response.
     """
     return pd.read_csv(StringIO(_MANUFACTURING_CSV))
