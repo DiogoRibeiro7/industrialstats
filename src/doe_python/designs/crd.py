@@ -16,15 +16,19 @@ class CompletelyRandomizedDesign(ExperimentalDesign):
     assigned to experimental units without any restrictions or blocking.
     """
 
-    def __init__(self, treatments: List[str], replicates: int):
+    def __init__(
+        self, treatments: List[str], replicates: int, seed: Optional[int] = None
+    ) -> None:
         """Initialize CRD.
 
         Parameters
         ----------
-        treatments : list[str]
-            List of treatment names or levels.
+        treatments : list of str
+            Names of treatment levels.
         replicates : int
             Number of replicates per treatment.
+        seed : int, optional
+            Random seed for reproducible run ordering.
         """
         super().__init__("Completely Randomized Design")
 
@@ -35,13 +39,20 @@ class CompletelyRandomizedDesign(ExperimentalDesign):
 
         self.treatments = treatments
         self.replicates = replicates
+        self.seed = seed
 
         # Create a single factor with treatment levels
         treatment_factor = Factor("Treatment", treatments, "categorical")
         self.factors = [treatment_factor]
 
     def generate_design(self) -> pd.DataFrame:
-        """Generate CRD matrix."""
+        """Generate the CRD design matrix.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Design matrix with randomized run order.
+        """
         if not self.validate_design():
             raise ValueError("Invalid design configuration")
 
@@ -59,7 +70,7 @@ class CompletelyRandomizedDesign(ExperimentalDesign):
         self.design_matrix = pd.DataFrame(design_data)
 
         # Always randomize CRD (that's the point!)
-        self.randomize()
+        self.randomize(seed=self.seed)
 
         return self.design_matrix
 

@@ -8,6 +8,7 @@ Provides helper classes and functions used across the DOE Python project.
 - `DataSimulator`: realistic response simulation supporting interactions and multiple noise/response models.
 - `export`: helpers for exporting designs to common formats.
 - `transforms`: basic data transformations such as centering and standardization.
+- `performance`: profiling utilities for identifying bottlenecks in design generation.
 
 ## Usage Example
 
@@ -15,6 +16,9 @@ Provides helper classes and functions used across the DOE Python project.
 from doe_python.utils.data_generation import DataSimulator
 sim = DataSimulator(seed=42)
 response = sim.simulate_factorial_response(design_matrix, noise_level=0.5)
+
+from doe_python.utils.performance import profile_function
+profile_stats = profile_function(design.generate_design)
 ```
 
 ## References

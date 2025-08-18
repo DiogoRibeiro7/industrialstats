@@ -82,13 +82,17 @@ class DataSimulator:
         )
         response = encoded_array @ coef_vector
 
-        for (f1, f2), coef in interactions.items():
-            if f1 in encoded_df.columns and f2 in encoded_df.columns:
-                response += (
-                    coef
-                    * encoded_df[f1].to_numpy(dtype=float)
-                    * encoded_df[f2].to_numpy(dtype=float)
-                )
+        if interactions:
+            cols = list(encoded_df.columns)
+            term_matrix = [
+                coef
+                * encoded_array[:, cols.index(f1)]
+                * encoded_array[:, cols.index(f2)]
+                for (f1, f2), coef in interactions.items()
+                if f1 in cols and f2 in cols
+            ]
+            if term_matrix:
+                response += np.sum(np.stack(term_matrix, axis=0), axis=0)
 
         if noise_dist == "normal":
             noise = self.random_state.normal(scale=noise_level, size=len(response))

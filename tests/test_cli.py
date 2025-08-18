@@ -64,3 +64,63 @@ def test_cli_fractional(tmp_path):
     main(args)
     df = pd.read_csv(output)
     assert set(df.columns).issuperset({"A", "B", "C"})
+
+
+def test_cli_crd(tmp_path):
+    output = tmp_path / "crd.csv"
+    args = [
+        "crd",
+        "-t",
+        "T1",
+        "-t",
+        "T2",
+        "-r",
+        "2",
+        "--seed",
+        "1",
+        "-o",
+        str(output),
+    ]
+    main(args)
+    df = pd.read_csv(output)
+    assert set(df["Treatment"]) == {"T1", "T2"}
+
+
+def test_cli_screening(tmp_path):
+    output = tmp_path / "screen.csv"
+    args = [
+        "screening",
+        "-f",
+        "A=1,-1",
+        "-f",
+        "B=1,-1",
+        "--seed",
+        "3",
+        "-o",
+        str(output),
+    ]
+    main(args)
+    df = pd.read_csv(output)
+    assert set(df.columns).issuperset({"A", "B"})
+
+
+def test_cli_anova(tmp_path):
+    data = tmp_path / "data.csv"
+    pd.DataFrame({"Treatment": ["T1", "T1", "T2", "T2"], "y": [1, 2, 3, 4]}).to_csv(
+        data, index=False
+    )
+    output = tmp_path / "anova.csv"
+    args = [
+        "anova",
+        "--data",
+        str(data),
+        "--response",
+        "y",
+        "--formula",
+        "y ~ Treatment",
+        "-o",
+        str(output),
+    ]
+    main(args)
+    df = pd.read_csv(output)
+    assert "sum_sq" in df.columns

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 """Screening designs such as Plackett-Burman."""
 
-from typing import List
+from typing import List, Optional
 
 import numpy as np
 import pandas as pd
@@ -12,17 +12,25 @@ from .base import ExperimentalDesign, Factor
 
 
 class PlackettBurmanDesign(ExperimentalDesign):
-    """Plackett-Burman screening design for two-level factors.
+    """Plackett--Burman screening design for two-level factors.
 
-    Supports any number of factors using a Hadamard-based construction and
-    optional randomization.
+    Parameters
+    ----------
+    factors : list of Factor
+        Factors to include in the design. Each factor must have two levels.
+    randomize : bool, optional
+        If ``True``, randomize the run order. Defaults to ``True``.
+    seed : int, optional
+        Random seed for deterministic run-order shuffling.
     """
 
-    def __init__(self, factors: List[Factor], randomize: bool = True) -> None:
-        """Initialize the design."""
+    def __init__(
+        self, factors: List[Factor], randomize: bool = True, seed: Optional[int] = None
+    ) -> None:
         super().__init__("Plackett-Burman Design")
         self.factors = factors
         self.randomize_flag = randomize
+        self.seed = seed
 
         if not all(len(f.levels) == 2 for f in self.factors):
             raise ValueError("Plackett-Burman design requires 2-level factors")
@@ -123,18 +131,24 @@ class PlackettBurmanDesign(ExperimentalDesign):
         """Generate the design matrix."""
         design_matrix = self._pb_matrix(len(self.factors))
         df = pd.DataFrame(design_matrix, columns=[f.name for f in self.factors])
-        df.insert(0, "RunOrder", range(1, len(df) + 1))
-
-        if self.randomize_flag:
-            df = df.sample(frac=1).reset_index(drop=True)
-            df.insert(0, "RunOrder", range(1, len(df) + 1))
-            self.randomized = True
 
         self.design_matrix = df
-        return df
+        if self.randomize_flag:
+            self.randomize(seed=self.seed)
+        else:
+            self.design_matrix.insert(
+                0, "RunOrder", range(1, len(self.design_matrix) + 1)
+            )
+        return self.design_matrix
 
     def foldover(self) -> pd.DataFrame:
-        """Create a foldover design to de-alias main effects."""
+        """Create a foldover design to de-alias main effects.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Foldover design matrix appended to the existing design.
+        """
         if self.design_matrix is None:
             self.generate_design()
 
@@ -154,11 +168,16 @@ class PlackettBurmanDesign(ExperimentalDesign):
 
 
 class DefinitiveScreeningDesign(ExperimentalDesign):
-    """Simple Definitive Screening Design implementation.
+    """Definitive screening design for three-level factors.
 
-    This implementation generates a basic 3-level definitive screening design
-    using :math:`-1`, ``0`` and ``1`` levels. It creates ``2 * n + 1`` runs,
-    where ``n`` is the number of factors.
+    Parameters
+    ----------
+    factors : list of Factor
+        Factors to include; each must have three levels.
+    randomize : bool, optional
+        If ``True``, shuffle the run order. Defaults to ``True``.
+    seed : int, optional
+        Random seed controlling the shuffle.
 
     References
     ----------
@@ -166,21 +185,13 @@ class DefinitiveScreeningDesign(ExperimentalDesign):
        Definitive Screening in the Presence of Second-Order Effects.
     """
 
-    def __init__(self, factors: List[Factor], randomize: bool = True) -> None:
-        """Initialize the design.
-
-        Parameters
-        ----------
-        factors : List[Factor]
-            Factors to include in the screening design. Each factor should have
-            exactly three levels.
-        randomize : bool, optional
-            If ``True``, randomize the run order. Defaults to ``True``.
-        """
-
+    def __init__(
+        self, factors: List[Factor], randomize: bool = True, seed: Optional[int] = None
+    ) -> None:
         super().__init__("Definitive Screening Design")
         self.factors = factors
         self.randomize_flag = randomize
+        self.seed = seed
 
         if not all(len(f.levels) == 3 for f in self.factors):
             raise ValueError("Definitive screening requires 3-level factors")
@@ -207,15 +218,14 @@ class DefinitiveScreeningDesign(ExperimentalDesign):
 
         df = pd.DataFrame(design_rows)
 
-        if self.randomize_flag:
-            df = df.sample(frac=1).reset_index(drop=True)
-            df.insert(0, "RunOrder", range(1, len(df) + 1))
-            self.randomized = True
-        else:
-            df.insert(0, "RunOrder", range(1, len(df) + 1))
-
         self.design_matrix = df
-        return df
+        if self.randomize_flag:
+            self.randomize(seed=self.seed)
+        else:
+            self.design_matrix.insert(
+                0, "RunOrder", range(1, len(self.design_matrix) + 1)
+            )
+        return self.design_matrix
 
     def validate_design(self) -> bool:
         """Validate design parameters."""

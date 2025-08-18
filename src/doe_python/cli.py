@@ -5,10 +5,15 @@ from __future__ import annotations
 import argparse
 from typing import List
 
+import pandas as pd
+
+from .analysis.anova import ANOVAAnalysis
 from .designs.base import Factor
+from .designs.crd import CompletelyRandomizedDesign
 from .designs.factorial import FactorialDesign
 from .designs.fractional_factorial import FractionalFactorialDesign
 from .designs.rcbd import RandomizedCompleteBlockDesign
+from .designs.screening import DefinitiveScreeningDesign, PlackettBurmanDesign
 
 
 def parse_factors(factors: List[str]) -> List[Factor]:
@@ -100,6 +105,44 @@ def rcbd_command(args: argparse.Namespace) -> None:
         design_matrix.to_csv(args.output, index=False)
     else:
         print(design_matrix.to_string(index=False))
+
+
+def crd_command(args: argparse.Namespace) -> None:
+    """Execute the ``crd`` CLI command."""
+    design = CompletelyRandomizedDesign(
+        treatments=args.treatment, replicates=args.replicates, seed=args.seed
+    )
+    design_matrix = design.generate_design()
+    if args.output:
+        design_matrix.to_csv(args.output, index=False)
+    else:
+        print(design_matrix.to_string(index=False))
+
+
+def screening_command(args: argparse.Namespace) -> None:
+    """Execute the ``screening`` CLI command."""
+    factors = parse_factors(args.factor)
+    if args.design == "pb":
+        design = PlackettBurmanDesign(factors, seed=args.seed)
+    else:
+        design = DefinitiveScreeningDesign(factors, seed=args.seed)
+    design_matrix = design.generate_design()
+    if args.output:
+        design_matrix.to_csv(args.output, index=False)
+    else:
+        print(design_matrix.to_string(index=False))
+
+
+def anova_command(args: argparse.Namespace) -> None:
+    """Execute the ``anova`` CLI command."""
+    data = pd.read_csv(args.data)
+    analysis = ANOVAAnalysis(data, response_column=args.response)
+    analysis.fit_model(args.formula)
+    table = analysis.anova_table_calculation(typ=args.typ)
+    if args.output:
+        table.to_csv(args.output)
+    else:
+        print(table.to_string())
 
 
 def fractional_command(args: argparse.Namespace) -> None:
@@ -200,6 +243,61 @@ def build_parser() -> argparse.ArgumentParser:
     )
     fractional_parser.add_argument("-o", "--output", help="CSV file to save the design")
     fractional_parser.set_defaults(func=fractional_command)
+
+    crd_parser = subparsers.add_parser(
+        "crd", help="Generate a completely randomized design"
+    )
+    crd_parser.add_argument(
+        "-t",
+        "--treatment",
+        action="append",
+        required=True,
+        help="Treatment levels",
+    )
+    crd_parser.add_argument(
+        "-r",
+        "--replicates",
+        type=int,
+        default=1,
+        help="Replicates per treatment",
+    )
+    crd_parser.add_argument("--seed", type=int, help="Random seed")
+    crd_parser.add_argument("-o", "--output", help="CSV file to save the design")
+    crd_parser.set_defaults(func=crd_command)
+
+    screening_parser = subparsers.add_parser(
+        "screening", help="Generate a screening design"
+    )
+    screening_parser.add_argument(
+        "-f",
+        "--factor",
+        action="append",
+        required=True,
+        help="Factor specification NAME=level1,level2",
+    )
+    screening_parser.add_argument(
+        "--design",
+        choices=["pb", "dsd"],
+        default="pb",
+        help="Screening design type: pb (Plackett-Burman) or dsd (definitive)",
+    )
+    screening_parser.add_argument("--seed", type=int, help="Random seed")
+    screening_parser.add_argument("-o", "--output", help="CSV file to save the design")
+    screening_parser.set_defaults(func=screening_command)
+
+    anova_parser = subparsers.add_parser("anova", help="Run a simple ANOVA")
+    anova_parser.add_argument("--data", required=True, help="CSV file with data")
+    anova_parser.add_argument(
+        "--response", required=True, help="Name of the response column"
+    )
+    anova_parser.add_argument(
+        "--formula",
+        required=True,
+        help='Model formula e.g. "y ~ A * B"',
+    )
+    anova_parser.add_argument("--typ", type=int, default=2, help="ANOVA type")
+    anova_parser.add_argument("-o", "--output", help="CSV file to save the table")
+    anova_parser.set_defaults(func=anova_command)
 
     return parser
 
