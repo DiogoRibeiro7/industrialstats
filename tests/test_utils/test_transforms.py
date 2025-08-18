@@ -2,7 +2,7 @@ import unittest
 
 import pandas as pd
 
-from doe_python.utils.transforms import center, log_transform, standardize
+from industrialstats.utils.transforms import center, log_transform, standardize
 
 
 class TestTransforms(unittest.TestCase):

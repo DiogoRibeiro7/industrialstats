@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it."
-title: "DOE Python"
+title: "industrialstats"
 version: "0.1.0"
 DOI: "10.5281/zenodo.1234567"
 authors:

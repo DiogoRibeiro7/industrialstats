@@ -2,9 +2,9 @@ import unittest
 
 import numpy as np
 
-from doe_python.designs.base import Factor
-from doe_python.designs.factorial import FactorialDesign
-from doe_python.utils.data_generation import DataSimulator
+from industrialstats.designs.base import Factor
+from industrialstats.designs.factorial import FactorialDesign
+from industrialstats.utils.data_generation import DataSimulator
 
 
 class TestDataSimulator(unittest.TestCase):

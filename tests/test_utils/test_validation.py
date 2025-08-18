@@ -2,8 +2,8 @@ import unittest
 
 import pandas as pd
 
-from doe_python.designs.base import Factor
-from doe_python.utils.validation import DesignValidator
+from industrialstats.designs.base import Factor
+from industrialstats.utils.validation import DesignValidator
 
 
 class TestDesignValidator(unittest.TestCase):

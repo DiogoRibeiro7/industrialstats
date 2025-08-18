@@ -1,14 +1,14 @@
-# DOE Python - Comprehensive Design of Experiments Package
+# industrialstats - Industrial Statistics for Python
 
-A professional-grade Python package for Design of Experiments (DOE) with advanced statistical analysis, optimization methods, and industrial applications.
+A professional-grade Python package for Industrial Statistics with advanced experimental design, analysis, optimization methods, and industrial applications.
 
 [![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/status-beta-orange.svg)](https://github.com/DiogoRibeiro7/doe_python)
+[![Status](https://img.shields.io/badge/status-beta-orange.svg)](https://github.com/DiogoRibeiro7/industrialstats)
 
 ## 🎯 Overview
 
-DOE Python provides a complete toolkit for experimental design and analysis, from basic factorial designs to advanced response surface methodology and optimal designs. Whether you're optimizing manufacturing processes, conducting scientific research, or teaching DOE concepts, this package offers the tools you need.
+industrialstats provides a complete toolkit for experimental design and analysis, from basic factorial designs to advanced response surface methodology and optimal designs. Whether you're optimizing manufacturing processes, conducting scientific research, or teaching DOE concepts, this package offers the tools you need.
 
 ## 🚀 Key Features
 
@@ -47,11 +47,11 @@ DOE Python provides a complete toolkit for experimental design and analysis, fro
 
 ```bash
 # Install from PyPI (when available)
-pip install doe-python
+pip install industrialstats
 
 # Or install from source
-git clone https://github.com/DiogoRibeiro7/doe_python.git
-cd doe-python
+git clone https://github.com/DiogoRibeiro7/industrialstats.git
+cd industrialstats
 pip install -e .
 
 # Install with all optional dependencies
@@ -90,7 +90,7 @@ black>=22.0          # Code formatting
 ## 📁 Repository Structure
 
 ```
-doe-python/
+industrialstats/
 ├── README.md
 ├── setup.py
 ├── requirements.txt
@@ -122,7 +122,7 @@ doe-python/
 │       ├── visualization.md
 │       └── utils.md
 ├── src/
-│   └── doe_python/
+│   └── industrialstats/
 │       ├── __init__.py
 │       ├── designs/
 │       │   ├── __init__.py
@@ -229,7 +229,7 @@ doe-python/
 ### Basic Factorial Design
 
 ```python
-from doe_python import FactorialDesign, Factor, ANOVAAnalysis
+from industrialstats import FactorialDesign, Factor, ANOVAAnalysis
 
 # Define experimental factors
 factors = [
@@ -259,7 +259,7 @@ print(anova_table)
 ### Fractional Factorial Design
 
 ```python
-from doe_python.designs.fractional_factorial import (
+from industrialstats.designs.fractional_factorial import (
     FractionalFactorialDesign,
     Factor,
 )
@@ -279,7 +279,7 @@ print(design_matrix.head())
 ### Randomized Complete Block Design
 
 ```python
-from doe_python.designs.rcbd import RandomizedCompleteBlockDesign
+from industrialstats.designs.rcbd import RandomizedCompleteBlockDesign
 
 treatments = ["A", "B", "C"]
 blocks = ["Block1", "Block2", "Block3"]
@@ -292,7 +292,7 @@ print(design_matrix.head())
 ### Plackett-Burman Screening Design
 
 ```python
-from doe_python.designs.screening import PlackettBurmanDesign, Factor
+from industrialstats.designs.screening import PlackettBurmanDesign, Factor
 
 factors = [
     Factor("A", [1, -1]),
@@ -308,7 +308,7 @@ print(design_matrix.head())
 ### Definitive Screening Design
 
 ```python
-from doe_python.designs.screening import DefinitiveScreeningDesign, Factor
+from industrialstats.designs.screening import DefinitiveScreeningDesign, Factor
 
 factors = [
     Factor("A", [-1, 0, 1]),
@@ -323,7 +323,7 @@ print(design_matrix.head())
 ### Response Surface Optimization
 
 ```python
-from doe_python import ResponseSurfaceDesign, Factor
+from industrialstats import ResponseSurfaceDesign, Factor
 
 # Define continuous factors for optimization
 factors = [
@@ -349,7 +349,7 @@ print(f"Model R²: {results['r_squared']:.3f}")
 ### Power Analysis
 
 ```python
-from doe_python import PowerAnalysis
+from industrialstats import PowerAnalysis
 
 # Determine sample size for desired power
 power_analyzer = PowerAnalysis()
@@ -371,7 +371,7 @@ print(f"Total runs needed: {result.additional_info['total_sample_size']}")
 
 ```python
 # Complete manufacturing optimization workflow
-from doe_python import FactorialDesign, Factor, EffectsAnalysis, ExperimentPlotter
+from industrialstats import FactorialDesign, Factor, EffectsAnalysis, ExperimentPlotter
 
 # Run the complete example
 python examples/scripts/manufacturing_optimization.py
@@ -416,7 +416,7 @@ python examples/scripts/quality_control_study.py
 ### Custom Optimal Designs
 
 ```python
-from doe_python import OptimalDesign
+from industrialstats import OptimalDesign
 
 # Create D-optimal design for specific model
 optimal_design = OptimalDesign(
@@ -438,7 +438,7 @@ print(f"D-efficiency: {efficiency['D_efficiency']:.3f}")
 ### Model Selection and Validation
 
 ```python
-from doe_python import ModelFitting
+from industrialstats import ModelFitting
 
 # Advanced model selection
 fitter = ModelFitting(data, 'response')
@@ -462,7 +462,7 @@ print(f"CV RMSE: {cv_result['overall_rmse']:.3f}")
 ### Mixed and Repeated Measures
 
 ```python
-from doe_python.analysis.anova import ANOVAAnalysis
+from industrialstats.analysis.anova import ANOVAAnalysis
 
 # Mixed effects with "Subject" as random factor
 mixed = ANOVAAnalysis(data, 'Response')
@@ -480,7 +480,7 @@ rm_result = mixed.repeated_measures_anova('Subject', ['Time'])
 ### Interactive Response Surfaces
 
 ```python
-from doe_python import ExperimentPlotter
+from industrialstats import ExperimentPlotter
 
 plotter = ExperimentPlotter(data)
 
@@ -497,7 +497,7 @@ fig3 = plotter.factorial_cube_plot(['A', 'B', 'C'], 'Response')
 ### Effects Screening
 
 ```python
-from doe_python import EffectsAnalysis
+from industrialstats import EffectsAnalysis
 
 effects = EffectsAnalysis(design_matrix, response_data)
 
@@ -532,11 +532,11 @@ normal_fig = effects.normal_probability_plot({**main_effects, **interactions})
 
 ## 🧪 Command Line Interface
 
-The package provides a lightweight command line tool `doe-python` for
+The package provides a lightweight command line tool `industrialstats` for
 creating simple designs. For example:
 
 ```bash
-doe-python factorial -f A=0,1 -f B=0,1 -r 2 -o design.csv
+industrialstats factorial -f A=0,1 -f B=0,1 -r 2 -o design.csv
 ```
 
 This generates a full factorial design with two factors and stores it in
@@ -549,7 +549,7 @@ This generates a full factorial design with two factors and stores it in
 pytest
 
 # Run with coverage
-pytest --cov=doe_python --cov-report=html
+pytest --cov=industrialstats --cov-report=html
 
 # Run specific test categories
 pytest tests/test_designs/          # Design generation tests
@@ -562,16 +562,16 @@ python benchmarks/performance_tests.py
 
 ## 🛡️ Validation Utilities
 
-DOE Python ships with a flexible validation framework to check factor
+industrialstats ships with a flexible validation framework to check factor
 specifications and generated design matrices.
 
 ### Key Classes
-- `DesignValidator` – found in `doe_python.utils.validation`
+- `DesignValidator` – found in `industrialstats.utils.validation`
 
 ### Usage Example
 ```python
-from doe_python.designs.base import Factor
-from doe_python.utils.validation import DesignValidator
+from industrialstats.designs.base import Factor
+from industrialstats.utils.validation import DesignValidator
 
 factors = [Factor("A", [0, 1]), Factor("B", [1])]
 warnings = DesignValidator.validate_factors(factors)
@@ -589,8 +589,8 @@ properties include ``run_count`` for the number of generated runs and
 ``factor_names`` for quick access to factors.
 
 ```python
-from doe_python.designs.factorial import FactorialDesign
-from doe_python.designs.base import Factor
+from industrialstats.designs.factorial import FactorialDesign
+from industrialstats.designs.base import Factor
 
 design = FactorialDesign([Factor("A", [0, 1]), Factor("B", [0, 1])])
 design.generate_design()
@@ -601,11 +601,11 @@ print(design.factor_names)  # ['A', 'B']
 ## 🎲 Data Simulation Utilities
 
 Experimental responses can be simulated using `DataSimulator` in
-`doe_python.utils.data_generation`.
+`industrialstats.utils.data_generation`.
 
 ### Usage Example
 ```python
-from doe_python.utils.data_generation import DataSimulator
+from industrialstats.utils.data_generation import DataSimulator
 
 sim = DataSimulator(seed=42)
 responses = sim.simulate_factorial_response(design_matrix, noise_std=1.0)
@@ -617,10 +617,10 @@ These utilities are useful for teaching and benchmarking.  See Montgomery
 ## 💾 Data Export and Transformation
 
 Design matrices can be exported and transformed using helpers in
-`doe_python.utils`.
+`industrialstats.utils`.
 
 ```python
-from doe_python.utils import (
+from industrialstats.utils import (
     export_to_csv,
     export_to_excel,
     export_to_json,
@@ -642,8 +642,8 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 ```bash
 # Clone repository
-git clone https://github.com/DiogoRibeiro7/doe_python.git
-cd doe-python
+git clone https://github.com/DiogoRibeiro7/industrialstats.git
+cd industrialstats
 
 # Create development environment
 python -m venv venv
@@ -708,28 +708,28 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- **Documentation**: [https://doe-python.readthedocs.io/](https://doe-python.readthedocs.io/)
-- **Issues**: [GitHub Issues](https://github.com/DiogoRibeiro7/doe_python/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/DiogoRibeiro7/doe_python/discussions)
-- **Email**: support@doe-python.org
+- **Documentation**: [https://industrialstats.readthedocs.io/](https://industrialstats.readthedocs.io/)
+- **Issues**: [GitHub Issues](https://github.com/DiogoRibeiro7/industrialstats/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/DiogoRibeiro7/industrialstats/discussions)
+- **Email**: support@industrialstats.org
 
 ## 🚀 Citation
 
-If you use DOE Python in your research, please cite:
+If you use industrialstats in your research, please cite:
 
 ```bibtex
-@software{doe_python,
-  title = {DOE Python: A Comprehensive Design of Experiments Package},
+@software{industrialstats,
+  title = {industrialstats: A Comprehensive Design of Experiments Package},
   author = {Diogo Ribeiro},
   year = {2024},
-  url = {https://github.com/DiogoRibeiro7/doe_python},
+  url = {https://github.com/DiogoRibeiro7/industrialstats},
   version = {0.1.0}
 }
 ```
 
 ---
 
-**DOE Python** - Making experimental design accessible, powerful, and professional.
+**industrialstats** - Making experimental design accessible, powerful, and professional.
 
-[![GitHub stars](https://img.shields.io/github/stars/DiogoRibeiro7/doe_python.svg?style=social&label=Star)](https://github.com/DiogoRibeiro7/doe_python/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/DiogoRibeiro7/doe_python.svg?style=social&label=Fork)](https://github.com/DiogoRibeiro7/doe_python/network/members)
+[![GitHub stars](https://img.shields.io/github/stars/DiogoRibeiro7/industrialstats.svg?style=social&label=Star)](https://github.com/DiogoRibeiro7/industrialstats/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/DiogoRibeiro7/industrialstats.svg?style=social&label=Fork)](https://github.com/DiogoRibeiro7/industrialstats/network/members)

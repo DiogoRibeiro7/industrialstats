@@ -1,4 +1,4 @@
-from doe_python.utils.performance import profile_function
+from industrialstats.utils.performance import profile_function
 
 
 def sample_func():

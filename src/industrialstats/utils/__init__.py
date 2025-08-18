@@ -1,4 +1,4 @@
-"""Utility subpackage for DOE Python."""
+"""Utility subpackage for industrialstats."""
 
 from .data_generation import DataSimulator
 from .export import export_to_csv, export_to_excel, export_to_json

@@ -2,8 +2,11 @@ import unittest
 
 import pandas as pd
 
-from doe_python.designs.base import Factor
-from doe_python.designs.screening import DefinitiveScreeningDesign, PlackettBurmanDesign
+from industrialstats.designs.base import Factor
+from industrialstats.designs.screening import (
+    DefinitiveScreeningDesign,
+    PlackettBurmanDesign,
+)
 
 
 class TestPlackettBurmanDesign(unittest.TestCase):

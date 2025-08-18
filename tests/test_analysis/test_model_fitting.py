@@ -3,7 +3,7 @@ import logging
 import pandas as pd
 import pytest
 
-from doe_python.analysis.model_fitting import ModelFitting
+from industrialstats.analysis.model_fitting import ModelFitting
 
 
 def test_hierarchical_fitting_logging_and_errors(caplog, capsys, monkeypatch):

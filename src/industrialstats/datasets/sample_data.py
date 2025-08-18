@@ -1,4 +1,4 @@
-"""Small example datasets shipped with DOE Python."""
+"""Small example datasets shipped with industrialstats."""
 
 from __future__ import annotations
 

@@ -4,7 +4,7 @@ import unittest
 
 import pandas as pd
 
-from doe_python.utils.export import export_to_csv, export_to_excel, export_to_json
+from industrialstats.utils.export import export_to_csv, export_to_excel, export_to_json
 
 
 class TestExportUtilities(unittest.TestCase):

@@ -1,4 +1,4 @@
-from doe_python.analysis.power_analysis import PowerAnalysis
+from industrialstats.analysis.power_analysis import PowerAnalysis
 
 
 def test_t_test_power_calculation():

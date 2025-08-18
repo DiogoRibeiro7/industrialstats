@@ -1,8 +1,8 @@
 import pandas as pd
 
-from doe_python.analysis.anova import ANOVAAnalysis
-from doe_python.designs.base import Factor
-from doe_python.designs.factorial import FactorialDesign
+from industrialstats.analysis.anova import ANOVAAnalysis
+from industrialstats.designs.base import Factor
+from industrialstats.designs.factorial import FactorialDesign
 
 
 def test_anova_analysis_basic():

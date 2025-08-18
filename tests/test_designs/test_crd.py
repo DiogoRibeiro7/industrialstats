@@ -1,6 +1,6 @@
 import pandas as pd
 
-from doe_python.designs.crd import CompletelyRandomizedDesign
+from industrialstats.designs.crd import CompletelyRandomizedDesign
 
 
 def test_crd_seed_reproducibility():

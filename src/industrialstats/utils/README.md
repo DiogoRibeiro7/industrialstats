@@ -1,6 +1,6 @@
 # Utilities Module
 
-Provides helper classes and functions used across the DOE Python project.
+Provides helper classes and functions used across the industrialstats project.
 
 ## Key Components
 
@@ -13,11 +13,11 @@ Provides helper classes and functions used across the DOE Python project.
 ## Usage Example
 
 ```python
-from doe_python.utils.data_generation import DataSimulator
+from industrialstats.utils.data_generation import DataSimulator
 sim = DataSimulator(seed=42)
 response = sim.simulate_factorial_response(design_matrix, noise_level=0.5)
 
-from doe_python.utils.performance import profile_function
+from industrialstats.utils.performance import profile_function
 profile_stats = profile_function(design.generate_design)
 ```
 

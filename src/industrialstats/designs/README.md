@@ -12,9 +12,9 @@ The design package contains classes for generating and managing experimental des
 
 ## Usage Examples
 ```python
-from doe_python.designs.base import Factor
-from doe_python.designs.crd import CompletelyRandomizedDesign
-from doe_python.designs.screening import PlackettBurmanDesign
+from industrialstats.designs.base import Factor
+from industrialstats.designs.crd import CompletelyRandomizedDesign
+from industrialstats.designs.screening import PlackettBurmanDesign
 
 design = CompletelyRandomizedDesign(["T1", "T2"], replicates=3, seed=42)
 design_matrix = design.generate_design()

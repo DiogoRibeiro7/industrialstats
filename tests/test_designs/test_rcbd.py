@@ -2,7 +2,7 @@ import unittest
 
 import pandas as pd
 
-from doe_python.designs.rcbd import RandomizedCompleteBlockDesign
+from industrialstats.designs.rcbd import RandomizedCompleteBlockDesign
 
 
 class TestRCBD(unittest.TestCase):

@@ -1,6 +1,6 @@
 import unittest
 
-from doe_python.datasets.sample_data import load_manufacturing
+from industrialstats.datasets.sample_data import load_manufacturing
 
 
 class TestSampleData(unittest.TestCase):

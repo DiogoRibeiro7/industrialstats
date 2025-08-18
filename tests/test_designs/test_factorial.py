@@ -5,8 +5,8 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from doe_python.designs.base import Factor
-from doe_python.designs.factorial import FactorialDesign
+from industrialstats.designs.base import Factor
+from industrialstats.designs.factorial import FactorialDesign
 
 
 class TestFactorialDesign(unittest.TestCase):

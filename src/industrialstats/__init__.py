@@ -1,4 +1,4 @@
-"""DOE Python package."""
+"""industrialstats package."""
 
 from .datasets.sample_data import load_manufacturing
 from .designs.factorial import FactorialDesign

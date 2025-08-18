@@ -1,4 +1,4 @@
-"""Command line interface for DOE Python."""
+"""Command line interface for industrialstats."""
 
 from __future__ import annotations
 
@@ -224,7 +224,9 @@ def fractional_command(args: argparse.Namespace) -> None:
 
 def build_parser() -> argparse.ArgumentParser:
     """Build the top-level CLI argument parser."""
-    parser = argparse.ArgumentParser(description="DOE Python command line interface")
+    parser = argparse.ArgumentParser(
+        description="industrialstats command line interface"
+    )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     factorial_parser = subparsers.add_parser(

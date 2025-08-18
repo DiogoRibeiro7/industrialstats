@@ -1,4 +1,4 @@
-"""Data export utilities for DOE Python."""
+"""Data export utilities for industrialstats."""
 
 from __future__ import annotations
 

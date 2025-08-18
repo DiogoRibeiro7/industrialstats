@@ -1,6 +1,6 @@
 import pandas as pd
 
-from doe_python.cli import main
+from industrialstats.cli import main
 
 
 def test_cli_factorial(tmp_path):
