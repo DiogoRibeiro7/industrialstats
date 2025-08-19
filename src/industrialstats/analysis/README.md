@@ -7,6 +7,7 @@ The analysis package provides tools for evaluating experimental results.
 - `PowerAnalysis`: performs prospective and retrospective power calculations.
 - `EffectsAnalysis`: estimates main and interaction effects with visualization helpers.
 - `ModelFitting`: utilities for hierarchical model fitting and validation.
+- `ModelDiagnostics`: assumption testing, outlier detection, and influence plots.
 
 ## Usage
 ```python
@@ -26,9 +27,14 @@ result = pa.t_test_power(effect_size=0.5, power=0.8)
 
 # Stepwise model fitting
 from industrialstats.analysis.model_fitting import ModelFitting
+from industrialstats.analysis.diagnostics import ModelDiagnostics
 
 mf = ModelFitting(df.assign(B=[1, 0, 1, 0]), response_column="y")
 fit = mf.stepwise_selection()
+
+# Model diagnostics
+md = ModelDiagnostics(fit["model"])
+summary = md.assumption_tests()
 ```
 
 ## Mathematical Background
