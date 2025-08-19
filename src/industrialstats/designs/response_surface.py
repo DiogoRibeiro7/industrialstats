@@ -1,4 +1,8 @@
-"""Response Surface Methodology (RSM) designs."""
+"""Response surface methodology (RSM) designs.
+
+This module implements the :class:`ResponseSurfaceDesign` class for constructing
+central composite and Box–Behnken designs used in process optimization.
+"""
 
 from itertools import product
 from typing import Any, Dict, List, Optional, Tuple
@@ -10,11 +14,33 @@ from .base import ExperimentalDesign, Factor
 
 
 class ResponseSurfaceDesign(ExperimentalDesign):
-    """
-    Response Surface Design for optimization studies.
+    """Response surface design for optimization studies.
 
-    Supports Central Composite Design (CCD), Box-Behnken Design (BBD),
-    and custom response surface designs.
+    Parameters
+    ----------
+    factors : list[Factor]
+        Continuous factors (must be 2-level for coding).
+    design_type : str, optional
+        ``"CCD"`` for Central Composite or ``"BBD"`` for Box-Behnken. Defaults
+        to ``"CCD"``.
+    alpha : float, optional
+        Alpha value for axial points (CCD only). If ``None``, calculated for
+        rotatability.
+    center_points : int, optional
+        Number of center point replicates. Defaults to ``5``.
+
+    Examples
+    --------
+    Generate a Box-Behnken design with three factors and one center point::
+
+        >>> factors = [
+        ...     Factor("A", [-1, 1]),
+        ...     Factor("B", [-1, 1]),
+        ...     Factor("C", [-1, 1]),
+        ... ]
+        >>> design = ResponseSurfaceDesign(factors, design_type="BBD", center_points=1)
+        >>> design.generate_design().shape[0]
+        13
     """
 
     def __init__(
@@ -128,7 +154,18 @@ class ResponseSurfaceDesign(ExperimentalDesign):
         return self.design_matrix
 
     def _generate_bbd(self) -> pd.DataFrame:
-        """Generate Box-Behnken Design."""
+        """Generate a Box-Behnken design.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Design matrix with factors in actual levels.
+
+        Raises
+        ------
+        ValueError
+            If the design cannot be verified as orthogonal.
+        """
         k = len(self.factors)
 
         if k < 3:
@@ -140,7 +177,6 @@ class ResponseSurfaceDesign(ExperimentalDesign):
         # Box-Behnken points: each pair of factors at ±1, others at 0
         for i in range(k):
             for j in range(i + 1, k):
-                # Four combinations for factors i and j
                 for level_i in [-1, 1]:
                     for level_j in [-1, 1]:
                         point = {
@@ -166,12 +202,17 @@ class ResponseSurfaceDesign(ExperimentalDesign):
             design_points.append(point)
             run_id += 1
 
-        # Convert to DataFrame
-        self.design_matrix = pd.DataFrame(design_points)
+        design_df = pd.DataFrame(design_points)
 
-        # Convert from coded to actual levels
+        # Verify orthogonality in coded units
+        coded = design_df[[factor.name for factor in self.factors]].to_numpy()
+        xtx = coded.T @ coded
+        off_diag = xtx - np.diag(np.diag(xtx))
+        if not np.allclose(off_diag, 0):
+            raise ValueError("Generated Box-Behnken design is not orthogonal")
+
+        self.design_matrix = design_df
         self._convert_to_actual_levels()
-
         return self.design_matrix
 
     def _convert_to_actual_levels(self):
@@ -248,7 +289,10 @@ class ResponseSurfaceDesign(ExperimentalDesign):
             properties["center_fraction"] = center_runs / self.n_runs()
 
         elif self.design_type == "BBD":
-            properties["orthogonal"] = True  # Box-Behnken is always orthogonal
+            coded = self._get_design_matrix_coded()
+            xtx = coded.T @ coded
+            off_diag = xtx - np.diag(np.diag(xtx))
+            properties["orthogonal"] = bool(np.allclose(off_diag, 0))
             properties["rotatable"] = False  # Box-Behnken is not rotatable
 
         return properties
