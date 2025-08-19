@@ -9,6 +9,7 @@ The design package contains classes for generating and managing experimental des
 - `RandomizedCompleteBlockDesign`: implements block designs with seedable randomization.
 - `PlackettBurmanDesign` and `DefinitiveScreeningDesign`: screening designs for identifying important factors.
 - `ResponseSurfaceDesign`: supports central composite and Box–Behnken designs for optimization.
+- `SplitPlotDesign`: handles hard-to-change whole-plot factors with restricted sub-plot randomization.
 
 ## Usage Examples
 ```python
