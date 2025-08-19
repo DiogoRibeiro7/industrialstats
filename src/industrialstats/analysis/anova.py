@@ -529,39 +529,109 @@ class ANOVAAnalysis:
         self,
         fixed_effects: List[str],
         random_effects: List[str],
+        nested_effects: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
-        """Fit a mixed effects model.
+        """Fit a mixed-effects model with optional nesting.
 
         Parameters
         ----------
         fixed_effects : list[str]
-            Factors treated as fixed.
+            Factors treated as fixed effects in the model.
         random_effects : list[str]
-            Factors treated as random. The first entry is used as the grouping
-            variable.
+            Random-effect factors. The first entry specifies the grouping
+            variable used for the random intercept.
+        nested_effects : list[str], optional
+            Random effects nested within the main grouping factor. Each entry is
+            treated as a variance component.
 
         Returns
         -------
         dict
-            Dictionary with AIC and parameter estimates.
+            Contains the following keys:
+
+            ``aic``
+                Model Akaike Information Criterion.
+            ``params``
+                Estimated fixed-effect parameters.
+            ``random_effects_var``
+                Estimated variances for random effects.
+            ``lrt``
+                Likelihood-ratio test statistics for each random effect.
 
         Raises
         ------
         ValueError
-            If any factor is missing in the data.
+            If a specified factor is not present in the data.
         """
 
-        for eff in fixed_effects + random_effects:
+        for eff in fixed_effects + random_effects + (nested_effects or []):
             if eff not in self.data.columns:
                 raise ValueError(f"Factor '{eff}' not found in data")
 
-        from statsmodels.formula.api import mixedlm
+        import statsmodels.api as sm
 
         formula = f"{self.response} ~ " + " + ".join(fixed_effects)
-        group = self.data[random_effects[0]]
-        model = mixedlm(formula, self.data, groups=group)
+        group_col = random_effects[0]
+
+        vc_formula: Dict[str, str] = {}
+        if nested_effects:
+            for effect in nested_effects:
+                vc_formula[effect] = f"0 + C({effect})"
+
+        model = sm.MixedLM.from_formula(
+            formula,
+            self.data,
+            groups=group_col,
+            re_formula="1",
+            vc_formula=vc_formula or None,
+        )
         result = model.fit()
-        return {"aic": float(result.aic), "params": result.params.to_dict()}
+
+        random_vars: Dict[str, float] = {
+            random_effects[0]: float(result.cov_re.iloc[0, 0])
+        }
+        if nested_effects:
+            for idx, effect in enumerate(nested_effects):
+                random_vars[effect] = float(result.vcomp[idx])
+
+        lrt_results: Dict[str, Dict[str, float]] = {}
+
+        ols_model = sm.OLS.from_formula(formula, self.data).fit()
+        lr_stat = 2 * (result.llf - ols_model.llf)
+        df = result.df_modelwc - (ols_model.df_model + 1)
+        pvalue = stats.chi2.sf(lr_stat, df)
+        lrt_results[random_effects[0]] = {
+            "lr_stat": float(lr_stat),
+            "p_value": float(pvalue),
+            "df": int(df),
+        }
+
+        if nested_effects:
+            for effect in nested_effects:
+                reduced_vc = {k: v for k, v in vc_formula.items() if k != effect}
+                reduced_model = sm.MixedLM.from_formula(
+                    formula,
+                    self.data,
+                    groups=group_col,
+                    re_formula="1",
+                    vc_formula=reduced_vc or None,
+                )
+                reduced_result = reduced_model.fit()
+                lr_stat = 2 * (result.llf - reduced_result.llf)
+                df = result.df_modelwc - reduced_result.df_modelwc
+                pvalue = stats.chi2.sf(lr_stat, df)
+                lrt_results[effect] = {
+                    "lr_stat": float(lr_stat),
+                    "p_value": float(pvalue),
+                    "df": int(df),
+                }
+
+        return {
+            "aic": float(result.aic),
+            "params": result.params.to_dict(),
+            "random_effects_var": random_vars,
+            "lrt": lrt_results,
+        }
 
     def unbalanced_anova(self) -> Dict[str, Any]:
         """Perform Type II ANOVA for unbalanced designs.
