@@ -3,8 +3,9 @@
 import logging
 import warnings
 from itertools import combinations
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -539,6 +540,109 @@ class ModelFitting:
             "original_model": original_model,
             "n_bootstrap": n_bootstrap,
             "success_rate": len(valid_r2) / n_bootstrap,
+        }
+
+    def regularized_fitting(
+        self,
+        method: str = "lasso",
+        alphas: Optional[Sequence[float]] = None,
+        cv: int = 5,
+        l1_ratio: float = 0.5,
+        plot_path: bool = False,
+        random_state: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Fit linear models with regularization and cross-validation.
+
+        Parameters
+        ----------
+        method : {"lasso", "ridge", "elasticnet"}, optional
+            Regularization technique to use. Default is ``"lasso"``.
+        alphas : sequence of float, optional
+            Grid of regularization strengths to evaluate. If ``None``,
+            scikit-learn chooses an appropriate set.
+        cv : int, optional
+            Number of cross-validation folds. Default is ``5``.
+        l1_ratio : float, optional
+            Elastic net mixing parameter, with ``0`` = ridge and ``1`` = lasso.
+            Used only when ``method="elasticnet"``. Default is ``0.5``.
+        plot_path : bool, optional
+            If ``True``, plot coefficient paths across regularization strengths.
+        random_state : int, optional
+            Seed for reproducible cross-validation splits.
+
+        Returns
+        -------
+        dict
+            Results containing fitted model, selected features, and path data.
+
+        References
+        ----------
+        .. [1] Tibshirani, R. (1996). Regression shrinkage and selection via the
+               lasso. Journal of the Royal Statistical Society: Series B.
+        .. [2] Zou, H., & Hastie, T. (2005). Regularization and variable
+               selection via the elastic net. Journal of the Royal Statistical
+               Society: Series B.
+        """
+
+        from sklearn.linear_model import (
+            ElasticNetCV,
+            LassoCV,
+            Ridge,
+            RidgeCV,
+            enet_path,
+            lasso_path,
+        )
+
+        X = pd.get_dummies(self.data[self.factor_columns], drop_first=True)
+        y = self.data[self.response].values
+
+        if method.lower() == "lasso":
+            model = LassoCV(alphas=alphas, cv=cv, random_state=random_state).fit(X, y)
+            path_alphas, coefs, _ = lasso_path(X, y, alphas=alphas)
+        elif method.lower() == "ridge":
+            if alphas is None:
+                alphas = np.logspace(-6, 6, 100)
+            model = RidgeCV(alphas=alphas, cv=cv).fit(X, y)
+            path_alphas = np.array(alphas)
+            coefs = []
+            for a in path_alphas:
+                coefs.append(Ridge(alpha=a).fit(X, y).coef_)
+            coefs = np.array(coefs).T
+        elif method.lower() == "elasticnet":
+            model = ElasticNetCV(
+                l1_ratio=l1_ratio,
+                alphas=alphas,
+                cv=cv,
+                random_state=random_state,
+            ).fit(X, y)
+            path_alphas, coefs, _ = enet_path(X, y, l1_ratio=l1_ratio, alphas=alphas)
+        else:
+            raise ValueError("method must be 'lasso', 'ridge', or 'elasticnet'")
+
+        coefficients = dict(zip(X.columns, model.coef_))
+        selected_features = [
+            feat for feat, coef in coefficients.items() if not np.isclose(coef, 0.0)
+        ]
+
+        if plot_path:
+            for idx, feat in enumerate(X.columns):
+                plt.plot(path_alphas, coefs[idx], label=feat)
+            plt.xscale("log")
+            plt.gca().invert_xaxis()
+            plt.xlabel("alpha")
+            plt.ylabel("coefficient")
+            plt.title(f"{method.title()} coefficient paths")
+            plt.legend(loc="best")
+            plt.tight_layout()
+
+        return {
+            "model": model,
+            "best_alpha": getattr(model, "alpha_", None),
+            "coefficients": coefficients,
+            "selected_features": selected_features,
+            "path_alphas": path_alphas,
+            "path_coefficients": coefs,
+            "method": method.lower(),
         }
 
     def model_comparison(self, model_list: List[List[str]]) -> pd.DataFrame:
