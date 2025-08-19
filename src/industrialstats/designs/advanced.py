@@ -3,10 +3,11 @@ from __future__ import annotations
 """Advanced experimental designs."""
 
 from itertools import product
-from typing import List, Optional
+from typing import Callable, List, Optional
 
 import numpy as np
 import pandas as pd
+from matplotlib.axes import Axes
 
 from .base import ExperimentalDesign, Factor
 
@@ -134,3 +135,144 @@ class SplitPlotDesign(ExperimentalDesign):
             and bool(self.sub_plot_factors)
             and self.replicates >= 1
         )
+
+
+class MixtureDesign(ExperimentalDesign):
+    """Simplex-lattice mixture design.
+
+    Parameters
+    ----------
+    factors : list[Factor]
+        Mixture components. Must contain at least three continuous factors.
+    order : int, optional
+        Simplex-lattice degree :math:`m`. Defaults to ``2``.
+    constraints : list[Callable[[numpy.ndarray], bool]], optional
+        Constraint functions applied to candidate mixtures. Each function
+        receives an array of component proportions and returns ``True`` if the
+        point satisfies the constraint. Defaults to ``None``.
+    randomize : bool, optional
+        Whether to randomize run order. Defaults to ``False``.
+    seed : int, optional
+        Random seed for reproducible randomization.
+
+    Examples
+    --------
+    Generate a simplex-lattice design for a three-component mixture::
+
+        >>> from industrialstats.designs.base import Factor
+        >>> from industrialstats.designs.advanced import MixtureDesign
+        >>> comps = [
+        ...     Factor("A", [], "continuous"),
+        ...     Factor("B", [], "continuous"),
+        ...     Factor("C", [], "continuous"),
+        ... ]
+        >>> design = MixtureDesign(comps, order=2)
+        >>> design.generate_design()
+             A    B    C
+        0  1.0  0.0  0.0
+        1  0.0  1.0  0.0
+        2  0.0  0.0  1.0
+        3  0.5  0.5  0.0
+        4  0.5  0.0  0.5
+        5  0.0  0.5  0.5
+
+    References
+    ----------
+    .. [1] Cornell, J. A. (2011). *Experiments with Mixtures*.
+    """
+
+    def __init__(
+        self,
+        factors: List[Factor],
+        order: int = 2,
+        constraints: Optional[List[Callable[[np.ndarray], bool]]] = None,
+        randomize: bool = False,
+        seed: Optional[int] = None,
+    ) -> None:
+        super().__init__("Mixture Design")
+        if len(factors) < 3:
+            raise ValueError("MixtureDesign requires at least three factors")
+        self.factors = factors
+        self.order = order
+        self.constraints = constraints or []
+        self.randomize_flag = randomize
+        self.seed = seed
+
+    def _generate_simplex_lattice(self) -> np.ndarray:
+        q = len(self.factors)
+        m = self.order
+        grids = [np.arange(m + 1) for _ in range(q)]
+        combos = np.stack(np.meshgrid(*grids), -1).reshape(-1, q)
+        combos = combos[combos.sum(axis=1) == m]
+        points = combos / m
+        return points
+
+    def generate_design(self) -> pd.DataFrame:
+        """Generate the mixture design matrix."""
+        if not self.validate_design():
+            raise ValueError("Invalid mixture design configuration")
+
+        points = self._generate_simplex_lattice()
+        valid_points = []
+        for pt in points:
+            if all(constraint(pt) for constraint in self.constraints):
+                if not np.isclose(pt.sum(), 1.0):
+                    raise ValueError("Mixture components must sum to 1")
+                valid_points.append(pt)
+
+        design = pd.DataFrame(valid_points, columns=[f.name for f in self.factors])
+
+        if self.randomize_flag:
+            rng = np.random.default_rng(self.seed)
+            design = design.sample(
+                frac=1,
+                random_state=int(rng.integers(0, np.iinfo("int32").max)),
+            ).reset_index(drop=True)
+            design.insert(0, "RunOrder", range(1, len(design) + 1))
+            self.randomized = True
+
+        self.design_matrix = design
+        return design
+
+    def plot_simplex(self, ax: Optional[Axes] = None) -> Axes:
+        """Plot mixture design points for three components.
+
+        Parameters
+        ----------
+        ax : matplotlib.axes.Axes, optional
+            Axes object to plot on. Created if ``None``.
+
+        Returns
+        -------
+        matplotlib.axes.Axes
+            Axes containing the simplex plot.
+
+        Raises
+        ------
+        ValueError
+            If the design has not been generated or the number of factors is
+            not three.
+        """
+        if self.design_matrix is None:
+            raise ValueError("Generate design before plotting")
+        if len(self.factors) != 3:
+            raise ValueError("Simplex plot currently supports three factors")
+
+        import matplotlib.pyplot as plt
+
+        if ax is None:
+            _, ax = plt.subplots()
+
+        data = self.design_matrix[[f.name for f in self.factors]].to_numpy()
+        x = data[:, 1] + 0.5 * data[:, 2]
+        y = (np.sqrt(3) / 2) * data[:, 2]
+        ax.scatter(x, y)
+        ax.set_xlabel(self.factors[1].name)
+        ax.set_ylabel(self.factors[2].name)
+        ax.set_title("Mixture Simplex")
+        ax.set_aspect("equal")
+        return ax
+
+    def validate_design(self) -> bool:
+        """Validate mixture design parameters."""
+        return len(self.factors) >= 3 and self.order >= 1

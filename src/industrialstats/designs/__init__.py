@@ -1,6 +1,6 @@
 """Designs subpackage initialization."""
 
-from .advanced import SplitPlotDesign
+from .advanced import MixtureDesign, SplitPlotDesign
 from .base import ExperimentalDesign, Factor
 from .factorial import FactorialDesign
 from .fractional_factorial import FractionalFactorialDesign
@@ -16,4 +16,5 @@ __all__ = [
     "PlackettBurmanDesign",
     "DefinitiveScreeningDesign",
     "SplitPlotDesign",
+    "MixtureDesign",
 ]
