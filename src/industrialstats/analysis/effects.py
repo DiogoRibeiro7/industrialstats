@@ -672,9 +672,12 @@ class EffectsAnalysis:
         return summary_df
 
     def half_normal_plot(
-        self, effects: Dict[str, float], figsize: Tuple[int, int] = (10, 6)
-    ) -> plt.Figure:
-        """Create a half-normal plot for effect screening.
+        self,
+        effects: Dict[str, float],
+        figsize: Tuple[int, int] = (10, 6),
+        interactive: bool = True,
+    ) -> Tuple[plt.Figure, List[str]]:
+        """Create a half-normal probability plot for effect screening.
 
         Parameters
         ----------
@@ -682,11 +685,15 @@ class EffectsAnalysis:
             Dictionary of effect estimates.
         figsize : tuple of int, optional
             Size of the figure. Defaults to ``(10, 6)``.
+        interactive : bool, optional
+            If ``True``, enable interactive point identification using
+            ``mplcursors`` when available. Defaults to ``True``.
 
         Returns
         -------
-        matplotlib.figure.Figure
-            Matplotlib figure of the half-normal plot.
+        tuple of (matplotlib.figure.Figure, list[str])
+            The generated figure and a list of effect names deemed significant
+            by Lenth's method.
 
         Raises
         ------
@@ -696,34 +703,54 @@ class EffectsAnalysis:
         if not effects:
             raise ValueError("No effects provided for plotting")
 
-        abs_effects = np.array([abs(effect) for effect in effects.values()])
-        effect_names = list(effects.keys())
-        sorted_indices = np.argsort(abs_effects)
-        sorted_abs_effects = abs_effects[sorted_indices]
-        sorted_names = np.array(effect_names)[sorted_indices]
-        n = len(sorted_abs_effects)
-        quantiles = stats.norm.ppf(0.5 + 0.5 * (np.arange(1, n + 1) / (n + 1)))
+        effect_values = np.abs(np.array(list(effects.values())))
+        effect_names = np.array(list(effects.keys()))
+
+        # Lenth's method for effect significance
+        s0 = 1.5 * np.median(effect_values)
+        threshold = 2.5 * s0
+        filtered = effect_values[effect_values <= threshold]
+        s = 1.5 * np.median(filtered) if filtered.size else s0
+        me = 2.5 * s
+        sme = 3.5 * s
+        significant = list(effect_names[effect_values > sme])
+
+        # Half-normal quantiles
+        sorted_idx = np.argsort(effect_values)
+        sorted_effects = effect_values[sorted_idx]
+        sorted_names = effect_names[sorted_idx]
+        n = len(sorted_effects)
+        probs = (np.arange(1, n + 1) - 0.5) / n
+        quantiles = stats.norm.ppf(0.5 + probs / 2)
+
         fig, ax = plt.subplots(figsize=figsize)
-        ax.scatter(
+        points = ax.scatter(
             quantiles,
-            sorted_abs_effects,
+            sorted_effects,
             alpha=0.7,
             s=50,
             c="steelblue",
             edgecolors="black",
         )
-        for i, name in enumerate(sorted_names):
-            ax.annotate(
-                name,
-                (quantiles[i], sorted_abs_effects[i]),
-                xytext=(5, 5),
-                textcoords="offset points",
-                fontsize=9,
-                alpha=0.8,
-            )
+
+        if interactive:
+            try:  # pragma: no cover - interactive features not tested
+                import mplcursors
+
+                cursor = mplcursors.cursor(points, hover=True)
+                cursor.connect(
+                    "add", lambda sel: sel.annotation.set_text(sorted_names[sel.index])
+                )
+            except Exception:  # pragma: no cover
+                logger.debug("mplcursors not available; interactive mode disabled")
+
+        ax.axhline(me, color="red", linestyle="--", linewidth=1, label="ME")
+        ax.axhline(sme, color="green", linestyle="--", linewidth=1, label="SME")
+
         ax.set_xlabel("Half-Normal Quantiles")
-        ax.set_ylabel("|Effects|")
+        ax.set_ylabel("Absolute Effects")
         ax.set_title("Half-Normal Plot of Effects")
+        ax.legend()
         ax.grid(True, alpha=0.3)
         plt.tight_layout()
-        return fig
+        return fig, significant
