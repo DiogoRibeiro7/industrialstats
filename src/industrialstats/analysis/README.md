@@ -25,6 +25,19 @@ from industrialstats.analysis.power_analysis import PowerAnalysis
 pa = PowerAnalysis()
 result = pa.t_test_power(effect_size=0.5, power=0.8)
 
+# Factorial power including an interaction effect
+result_fact = pa.factorial_power(
+    effect_size=0.3,
+    replicates=3,
+    factor_levels=[2, 3],
+    effect=(0, 1),
+)
+curve = pa.factorial_power_curve(
+    effect_sizes=[0.1, 0.2, 0.3],
+    replicates=3,
+    factor_levels=[2, 3],
+)
+
 # Stepwise model fitting
 from industrialstats.analysis.model_fitting import ModelFitting
 from industrialstats.analysis.diagnostics import ModelDiagnostics

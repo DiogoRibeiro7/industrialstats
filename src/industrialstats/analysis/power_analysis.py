@@ -198,6 +198,7 @@ class PowerAnalysis:
         power: Optional[float] = None,
         replicates: Optional[int] = None,
         factor_levels: List[int] = [2, 2],
+        effect: Optional[Tuple[int, ...]] = None,
     ) -> PowerAnalysisResult:
         """Power analysis for factorial designs.
 
@@ -213,6 +214,10 @@ class PowerAnalysis:
             Number of replicates.
         factor_levels : list of int, optional
             Number of levels for each factor. Defaults to ``[2, 2]``.
+        effect : tuple of int, optional
+            Indices of factors forming the effect of interest. ``(0,)``
+            specifies the main effect for the first factor, ``(0, 1)`` the
+            two-way interaction between the first and second factors.
 
         Returns
         -------
@@ -230,24 +235,30 @@ class PowerAnalysis:
             raise ValueError("At least one factor required")
 
         # Calculate design parameters
-        n_treatment_combinations = np.prod(factor_levels)
+        n_treatment_combinations = int(np.prod(factor_levels))
+
+        if effect is None:
+            effect = (0,)
+
+        if any(i >= len(factor_levels) or i < 0 for i in effect):
+            raise ValueError("effect indices must correspond to factor_levels")
 
         # Calculate missing parameter
         if effect_size is None:
             effect_size = self._solve_for_effect_size_factorial(
-                alpha, power, replicates, factor_levels
+                alpha, power, replicates, factor_levels, effect
             )
         elif power is None:
             power = self._calculate_power_factorial(
-                effect_size, alpha, replicates, factor_levels
+                effect_size, alpha, replicates, factor_levels, effect
             )
         elif replicates is None:
             replicates = self._solve_for_replicates_factorial(
-                effect_size, alpha, power, factor_levels
+                effect_size, alpha, power, factor_levels, effect
             )
 
-        # Calculate degrees of freedom for main effects
-        main_effect_dfs = [levels - 1 for levels in factor_levels]
+        # Degrees of freedom for the specified effect
+        df_effect = int(np.prod([factor_levels[i] - 1 for i in effect]))
 
         # Calculate error degrees of freedom
         df_error = n_treatment_combinations * (replicates - 1)
@@ -258,10 +269,11 @@ class PowerAnalysis:
             "n_factors": len(factor_levels),
             "n_treatment_combinations": n_treatment_combinations,
             "total_sample_size": total_n,
-            "main_effect_dfs": main_effect_dfs,
+            "df_effect": df_effect,
             "df_error": df_error,
             "design_type": f"{len(factor_levels)}-factor factorial",
             "design_notation": "x".join(map(str, factor_levels)),
+            "effect": effect,
         }
 
         result = PowerAnalysisResult(
@@ -470,6 +482,65 @@ class PowerAnalysis:
             "test_type": test_type,
         }
 
+    def factorial_power_curve(
+        self,
+        effect_sizes: List[float],
+        alpha: float = 0.05,
+        replicates: int = 1,
+        factor_levels: List[int] = [2, 2],
+        effect: Optional[Tuple[int, ...]] = None,
+    ) -> Dict[str, Any]:
+        """Generate power curve for factorial designs over effect sizes.
+
+        Parameters
+        ----------
+        effect_sizes : list of float
+            Effect sizes to evaluate.
+        alpha : float, optional
+            Type I error rate. Defaults to 0.05.
+        replicates : int, optional
+            Number of replicates per treatment combination. Defaults to ``1``.
+        factor_levels : list of int, optional
+            Number of levels for each factor. Defaults to ``[2, 2]``.
+        effect : tuple of int, optional
+            Indices of factors forming the effect of interest. Defaults to
+            ``(0,)``.
+
+        Returns
+        -------
+        Dict[str, Any]
+            Power curve data and the generated figure.
+        """
+        powers = []
+        for es in effect_sizes:
+            result = self.factorial_power(
+                effect_size=es,
+                alpha=alpha,
+                replicates=replicates,
+                factor_levels=factor_levels,
+                effect=effect,
+            )
+            powers.append(result.power)
+
+        fig, ax = plt.subplots(figsize=(10, 6))
+        ax.plot(effect_sizes, powers, marker="o")
+        ax.set_xlabel("Effect Size")
+        ax.set_ylabel("Statistical Power")
+        ax.set_title("Factorial Design Power Curve")
+        ax.grid(True, alpha=0.3)
+
+        ax.axhline(0.8, color="red", linestyle="--", alpha=0.7, label="Power = 0.8")
+        ax.axhline(0.9, color="orange", linestyle="--", alpha=0.7, label="Power = 0.9")
+        ax.legend()
+
+        return {
+            "effect_sizes": effect_sizes,
+            "powers": powers,
+            "figure": fig,
+            "factor_levels": factor_levels,
+            "effect": effect if effect is not None else (0,),
+        }
+
     def sample_size_table(
         self,
         test_type: str,
@@ -632,24 +703,19 @@ class PowerAnalysis:
         alpha: float,
         replicates: int,
         factor_levels: List[int],
+        effect: Tuple[int, ...],
     ) -> float:
         """Calculate power for factorial design."""
-        n_treatment_combinations = np.prod(factor_levels)
+        n_treatment_combinations = int(np.prod(factor_levels))
         df_error = n_treatment_combinations * (replicates - 1)
+        df_effect = int(np.prod([factor_levels[i] - 1 for i in effect]))
 
-        # Use first factor for main effect calculation
-        df_factor = factor_levels[0] - 1
-
-        # Non-centrality parameter
         ncp = effect_size**2 * n_treatment_combinations * replicates
+        critical_f = stats.f.ppf(1 - alpha, df_effect, df_error)
 
-        # Critical F-value
-        critical_f = stats.f.ppf(1 - alpha, df_factor, df_error)
-
-        # Calculate power
         from scipy.stats import ncf
 
-        power = 1 - ncf.cdf(critical_f, df_factor, df_error, ncp)
+        power = 1 - ncf.cdf(critical_f, df_effect, df_error, ncp)
 
         return power
 
@@ -702,13 +768,17 @@ class PowerAnalysis:
         raise ValueError("Could not find adequate sample size")
 
     def _solve_for_replicates_factorial(
-        self, effect_size: float, alpha: float, power: float, factor_levels: List[int]
+        self,
+        effect_size: float,
+        alpha: float,
+        power: float,
+        factor_levels: List[int],
+        effect: Tuple[int, ...],
     ) -> int:
         """Solve for replicates in factorial design."""
-        # Use iterative search
         for r in range(1, 1000):
             calculated_power = self._calculate_power_factorial(
-                effect_size, alpha, r, factor_levels
+                effect_size, alpha, r, factor_levels, effect
             )
             if calculated_power >= power:
                 return r
@@ -772,17 +842,21 @@ class PowerAnalysis:
         return (low + high) / 2
 
     def _solve_for_effect_size_factorial(
-        self, alpha: float, power: float, replicates: int, factor_levels: List[int]
+        self,
+        alpha: float,
+        power: float,
+        replicates: int,
+        factor_levels: List[int],
+        effect: Tuple[int, ...],
     ) -> float:
         """Solve for effect size in factorial design."""
-        # Use binary search
         low, high = 0.01, 5.0
         tolerance = 1e-6
 
         while high - low > tolerance:
             mid = (low + high) / 2
             calculated_power = self._calculate_power_factorial(
-                mid, alpha, replicates, factor_levels
+                mid, alpha, replicates, factor_levels, effect
             )
 
             if calculated_power < power:
