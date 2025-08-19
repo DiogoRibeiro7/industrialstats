@@ -50,6 +50,7 @@ class OptimalDesign(ExperimentalDesign):
         self.criterion = criterion
         self.model_terms = model_terms or self._default_model_terms()
         self.candidate_set: Optional[pd.DataFrame] = None
+        self.candidate_model_matrix: Optional[np.ndarray] = None
         self.exchange_history: List[Dict[str, Any]] = []
 
     def _default_model_terms(self) -> List[str]:
@@ -111,6 +112,7 @@ class OptimalDesign(ExperimentalDesign):
         max_iterations: int = 1000,
         random_start: bool = True,
         n_random_starts: int = 5,
+        improvement_threshold: float = 1e-6,
     ) -> pd.DataFrame:
         """Generate optimal design using coordinate exchange algorithm.
 
@@ -122,6 +124,9 @@ class OptimalDesign(ExperimentalDesign):
             Whether to use random starting design. Defaults to ``True``.
         n_random_starts : int, optional
             Number of random starts to try. Defaults to ``5``.
+        improvement_threshold : float, optional
+            Minimum improvement in the criterion required to continue
+            iterations. Defaults to ``1e-6``.
 
         Returns
         -------
@@ -133,15 +138,17 @@ class OptimalDesign(ExperimentalDesign):
 
         if self.candidate_set is None:
             self.generate_candidate_set()
+        # Precompute candidate model matrix for faster evaluation
+        self.candidate_model_matrix = self._build_model_matrix(self.candidate_set)
 
         best_design = None
-        best_criterion_value = (
-            float("-inf") if self.criterion in ["D", "A"] else float("inf")
-        )
+        best_criterion_value = float("-inf")
 
         # Try multiple random starts
         for start in range(n_random_starts):
-            design = self._coordinate_exchange(max_iterations, random_start)
+            design = self._coordinate_exchange(
+                max_iterations, random_start, improvement_threshold
+            )
             criterion_value = self._calculate_criterion(design)
 
             if self._is_better_criterion(criterion_value, best_criterion_value):
@@ -152,61 +159,86 @@ class OptimalDesign(ExperimentalDesign):
         return self.design_matrix
 
     def _coordinate_exchange(
-        self, max_iterations: int, random_start: bool
+        self, max_iterations: int, random_start: bool, improvement_threshold: float
     ) -> pd.DataFrame:
-        """Perform coordinate exchange algorithm."""
-        # Initialize design
+        """Perform coordinate exchange algorithm.
+
+        Parameters
+        ----------
+        max_iterations : int
+            Maximum number of exchange iterations.
+        random_start : bool
+            Whether to use a random starting design.
+        improvement_threshold : float
+            Minimum improvement required to continue iterating.
+
+        Returns
+        -------
+        pd.DataFrame
+            Optimized design matrix.
+        """
         if random_start:
             current_design = self._random_initial_design()
         else:
             current_design = self._systematic_initial_design()
 
-        current_criterion = self._calculate_criterion(current_design)
+        current_X = self._build_model_matrix(current_design)
+        XtX = current_X.T @ current_X
+        self._validate_nonsingular(XtX)
+        current_criterion = self._criterion_from_xtx(XtX)
 
         for iteration in range(max_iterations):
+            prev_criterion = current_criterion
             improved = False
 
-            # Try to improve each point
             for run_idx in range(self.n_runs):
-                best_replacement = None
-                best_criterion_value = current_criterion
+                x_current = current_X[run_idx]
+                best_value = current_criterion
+                best_candidate_idx: Optional[int] = None
 
-                # Try each candidate point as replacement
-                for _, candidate in self.candidate_set.iterrows():
-                    # Create trial design
-                    trial_design = current_design.copy()
+                for cand_idx, candidate in self.candidate_set.iterrows():
+                    x_cand = self.candidate_model_matrix[cand_idx]
+                    new_XtX = (
+                        XtX - np.outer(x_current, x_current) + np.outer(x_cand, x_cand)
+                    )
+                    if self._is_singular(new_XtX):
+                        continue
+                    trial_criterion = self._criterion_from_xtx(new_XtX)
+                    if self._is_better_criterion(trial_criterion, best_value):
+                        best_value = trial_criterion
+                        best_candidate_idx = cand_idx
+
+                if best_candidate_idx is not None:
+                    candidate = self.candidate_set.iloc[best_candidate_idx]
                     for factor in self.factors:
-                        trial_design.loc[run_idx, factor.name] = candidate[factor.name]
-
-                    # Calculate criterion
-                    trial_criterion = self._calculate_criterion(trial_design)
-
-                    # Check if improvement
-                    if self._is_better_criterion(trial_criterion, best_criterion_value):
-                        best_replacement = candidate
-                        best_criterion_value = trial_criterion
-
-                # Apply best replacement if found
-                if best_replacement is not None:
-                    for factor in self.factors:
-                        current_design.loc[run_idx, factor.name] = best_replacement[
+                        current_design.loc[run_idx, factor.name] = candidate[
                             factor.name
                         ]
-                    current_criterion = best_criterion_value
+                    XtX = (
+                        XtX
+                        - np.outer(x_current, x_current)
+                        + np.outer(
+                            self.candidate_model_matrix[best_candidate_idx],
+                            self.candidate_model_matrix[best_candidate_idx],
+                        )
+                    )
+                    current_X[run_idx] = self.candidate_model_matrix[best_candidate_idx]
+                    current_criterion = best_value
                     improved = True
 
-            # Record progress
+            improvement = current_criterion - prev_criterion
             self.exchange_history.append(
                 {
                     "iteration": iteration,
                     "criterion_value": current_criterion,
-                    "improved": improved,
+                    "improvement": improvement,
                 }
             )
-
-            # Stop if no improvement
-            if not improved:
+            if not improved or improvement < improvement_threshold:
                 break
+
+        if self._is_singular(XtX):
+            raise ValueError("Singular design matrix encountered")
 
         return current_design
 
@@ -245,52 +277,44 @@ class OptimalDesign(ExperimentalDesign):
 
     def _calculate_criterion(self, design: pd.DataFrame) -> float:
         """Calculate optimality criterion value."""
-        # Build model matrix
         X = self._build_model_matrix(design)
+        XtX = X.T @ X
+        return self._criterion_from_xtx(XtX)
 
+    def _criterion_from_xtx(self, XtX: np.ndarray) -> float:
+        """Compute criterion value from information matrix."""
         try:
-            # Calculate information matrix
-            XtX = X.T @ X
-
             if self.criterion == "D":
-                # D-optimal: maximize determinant of X'X
-                return np.log(np.linalg.det(XtX))
+                sign, logdet = np.linalg.slogdet(XtX)
+                return logdet if sign > 0 else float("-inf")
 
-            elif self.criterion == "A":
-                # A-optimal: minimize trace of (X'X)^(-1)
-                XtX_inv = np.linalg.inv(XtX)
-                return -np.trace(XtX_inv)  # Negative for maximization
+            XtX_inv = np.linalg.inv(XtX)
 
-            elif self.criterion == "G":
-                # G-optimal: minimize maximum prediction variance
-                XtX_inv = np.linalg.inv(XtX)
-                max_variance = 0
+            if self.criterion == "A":
+                return -np.trace(XtX_inv)
 
-                # Check variance at all candidate points
-                for _, candidate in self.candidate_set.iterrows():
-                    x_point = self._build_point_vector(candidate)
-                    variance = x_point.T @ XtX_inv @ x_point
-                    max_variance = max(max_variance, variance)
-
-                return -max_variance  # Negative for maximization
-
-            elif self.criterion == "I":
-                # I-optimal: minimize average prediction variance
-                XtX_inv = np.linalg.inv(XtX)
-                total_variance = 0
-
-                # Average over all candidate points
-                for _, candidate in self.candidate_set.iterrows():
-                    x_point = self._build_point_vector(candidate)
-                    variance = x_point.T @ XtX_inv @ x_point
-                    total_variance += variance
-
-                avg_variance = total_variance / len(self.candidate_set)
-                return -avg_variance  # Negative for maximization
+            variances = np.einsum(
+                "ij,jk,ik->i",
+                self.candidate_model_matrix,
+                XtX_inv,
+                self.candidate_model_matrix,
+            )
+            if self.criterion == "G":
+                return -float(np.max(variances))
+            if self.criterion == "I":
+                return -float(np.mean(variances))
 
         except np.linalg.LinAlgError:
-            # Singular matrix - return very bad criterion value
             return float("-inf")
+
+    def _is_singular(self, XtX: np.ndarray) -> bool:
+        """Check if information matrix is singular."""
+        return np.linalg.matrix_rank(XtX) < XtX.shape[0]
+
+    def _validate_nonsingular(self, XtX: np.ndarray) -> None:
+        """Validate that the information matrix is non-singular."""
+        if self._is_singular(XtX):
+            raise ValueError("Singular design matrix encountered")
 
     def _build_model_matrix(self, design: pd.DataFrame) -> np.ndarray:
         """Build model matrix X from design."""
