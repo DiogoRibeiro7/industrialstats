@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import plotly.graph_objects as go
 import seaborn as sns
 from scipy import stats
 
@@ -249,6 +250,134 @@ class ExperimentPlotter:
         ax_table.set_title("Design Comparison Metrics", pad=10)
 
         fig.tight_layout()
+        return fig
+
+    def interactive_design_explorer(
+        self,
+        response_column: Optional[str] = None,
+        filename: Optional[str] = None,
+    ) -> go.Figure:
+        """Create an interactive design-space explorer using Plotly.
+
+        Parameters
+        ----------
+        response_column : str, optional
+            Column name of the response variable for color overlay.
+        filename : str, optional
+            Path to export the interactive plot as an HTML file.
+
+        Returns
+        -------
+        plotly.graph_objects.Figure
+            Generated interactive figure.
+
+        Raises
+        ------
+        ValueError
+            If neither data nor design matrix is available or fewer than two
+            factors are present.
+
+        Examples
+        --------
+        >>> from industrialstats.designs.factorial import Factor, FactorialDesign
+        >>> design = FactorialDesign([Factor("A", [0, 1]), Factor("B", [0, 1])])
+        >>> design.generate_design()
+        >>> plotter = ExperimentPlotter(design_matrix=design.design_matrix)
+        >>> fig = plotter.interactive_design_explorer()
+        >>> isinstance(fig, go.Figure)
+        True
+        """
+
+        dm = self.data if self.data is not None else self.design_matrix
+        if dm is None:
+            raise ValueError("Design matrix or data required for explorer")
+
+        factors = [
+            c
+            for c in dm.columns
+            if c not in ["RunID", "RunOrder", "Replicate", "DesignPoint"]
+            and c != response_column
+        ]
+        if len(factors) < 2:
+            raise ValueError("At least two factors are required")
+
+        x_factor, y_factor = factors[:2]
+        hover_cols = factors.copy()
+        if response_column and response_column in dm.columns:
+            hover_cols.append(response_column)
+
+        marker_base: Dict[str, Any] = dict(size=10, line=dict(width=1, color="black"))
+
+        combos = dm[factors].drop_duplicates().reset_index(drop=True)
+        traces = []
+        for _, row in combos.iterrows():
+            mask = (dm[factors] == row).all(axis=1)
+            subset = dm[mask]
+            marker_kwargs = marker_base.copy()
+            if response_column and response_column in subset.columns:
+                marker_kwargs.update(
+                    color=subset[response_column],
+                    colorscale="Viridis",
+                    showscale=True,
+                    colorbar=dict(title=response_column),
+                )
+            hovertemplate = (
+                "<br>".join(
+                    [f"{col}: %{{customdata[{i}]}}" for i, col in enumerate(hover_cols)]
+                )
+                + "<extra></extra>"
+            )
+            traces.append(
+                go.Scatter(
+                    x=subset[x_factor],
+                    y=subset[y_factor],
+                    mode="markers",
+                    customdata=subset[hover_cols].to_numpy(),
+                    marker=marker_kwargs,
+                    name=" | ".join(f"{f}={row[f]}" for f in factors),
+                    hovertemplate=hovertemplate,
+                )
+            )
+
+        fig = go.Figure(data=traces)
+
+        updatemenus = []
+        for idx, factor in enumerate(factors):
+            buttons = []
+            levels = ["All"] + sorted(dm[factor].unique().tolist())
+            for level in levels:
+                visibility = []
+                for _, row in combos.iterrows():
+                    if level == "All":
+                        visibility.append(True)
+                    else:
+                        visibility.append(row[factor] == level)
+                label = f"All {factor}" if level == "All" else f"{factor}={level}"
+                buttons.append(
+                    dict(label=label, method="update", args=[{"visible": visibility}])
+                )
+            updatemenus.append(
+                dict(
+                    buttons=buttons,
+                    direction="down",
+                    x=0.0,
+                    y=1.15 - idx * 0.1,
+                    xanchor="left",
+                    yanchor="top",
+                    showactive=True,
+                )
+            )
+
+        fig.update_layout(
+            title="Interactive Design Explorer",
+            xaxis_title=x_factor,
+            yaxis_title=y_factor,
+            updatemenus=updatemenus,
+        )
+
+        if filename:
+            fig.write_html(filename)
+
         return fig
 
     def interaction_plot(

@@ -28,6 +28,26 @@ fig = ExperimentPlotter.design_comparison_plot({
 fig.show()
 ```
 
+### Interactive Explorer
+
+The interactive design explorer provides a Plotly-based interface with
+hover details, factor-level filters, and optional response overlays.
+
+```python
+from industrialstats.designs.factorial import Factor, FactorialDesign
+from industrialstats.visualizations import ExperimentPlotter
+
+design = FactorialDesign([Factor("A", [0, 1]), Factor("B", [0, 1])])
+design.generate_design()
+
+plotter = ExperimentPlotter(design_matrix=design.design_matrix)
+fig = plotter.interactive_design_explorer()
+fig.show()
+
+# Export to HTML
+plotter.interactive_design_explorer(filename="design.html")
+```
+
 ## ResponseSurfacePlotter
 
 Generates Plotly-based interactive plots for response surface models:
