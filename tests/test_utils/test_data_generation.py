@@ -40,6 +40,19 @@ class TestDataSimulator(unittest.TestCase):
         )
         self.assertEqual(len(response), len(dm))
 
+    def test_random_effects_and_correlated_noise(self):
+        factors = [Factor("A", [0, 1])]
+        design = FactorialDesign(factors, replicates=2)
+        dm = design.generate_design()
+        dm["Batch"] = [1, 1, 2, 2]
+        simulator = DataSimulator(seed=7)
+        response = simulator.simulate_factorial_response(
+            dm,
+            random_effects={"Batch": 0.5},
+            corr=0.3,
+        )
+        self.assertEqual(len(response), len(dm))
+
 
 if __name__ == "__main__":
     unittest.main()

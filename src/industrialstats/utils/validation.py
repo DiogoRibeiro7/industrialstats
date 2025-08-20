@@ -85,10 +85,22 @@ class DesignValidator:
         Returns
         -------
         dict
-            Dictionary containing high-correlation pairs and variance inflation
-            factors (VIF) for numeric columns.
+            Dictionary containing high-correlation pairs, variance inflation
+            factors (VIF), alias structures derived from the design matrix null
+            space, and variance decomposition (:math:`R^2`) for each column.
+
+        References
+        ----------
+        .. [1] Box, G. E. P., Hunter, J. S., & Hunter, W. G. (2005). *Statistics
+               for Experimenters*.
+        .. [2] Montgomery, D. C. (2017). *Design and Analysis of Experiments*.
         """
-        result: Dict[str, Any] = {"high_correlation": {}, "vif": {}}
+        result: Dict[str, Any] = {
+            "high_correlation": {},
+            "vif": {},
+            "alias_structure": [],
+            "variance_decomposition": {},
+        }
         corr = design_matrix.corr(numeric_only=True).abs()
         for i, col in enumerate(corr.columns):
             for j in range(i + 1, len(corr.columns)):
@@ -98,9 +110,36 @@ class DesignValidator:
 
         numeric = design_matrix.select_dtypes(include=[np.number])
         if numeric.shape[1] >= 2:
-            X = np.column_stack([np.ones(len(numeric)), numeric.values])
-            for i in range(1, X.shape[1]):
-                result["vif"][numeric.columns[i - 1]] = variance_inflation_factor(X, i)
+            X = numeric.values
+            X_with_const = np.column_stack([np.ones(len(numeric)), X])
+            for i in range(1, X_with_const.shape[1]):
+                result["vif"][numeric.columns[i - 1]] = variance_inflation_factor(
+                    X_with_const, i
+                )
+
+            from scipy.linalg import null_space
+
+            ns = null_space(X)
+            for vec in ns.T:
+                involved = [
+                    col
+                    for col, coeff in zip(numeric.columns, vec)
+                    if abs(coeff) > 1e-10
+                ]
+                if involved:
+                    result["alias_structure"].append(involved)
+
+            for i, col in enumerate(numeric.columns):
+                y = X[:, i]
+                X_other = np.delete(X, i, axis=1)
+                if X_other.size == 0:
+                    continue
+                beta, _, _, _ = np.linalg.lstsq(X_other, y, rcond=None)
+                residuals = y - X_other @ beta
+                ss_res = np.sum(residuals**2)
+                ss_tot = np.sum((y - y.mean()) ** 2)
+                r2 = 1 - ss_res / ss_tot if ss_tot > 0 else 1.0
+                result["variance_decomposition"][col] = r2
 
         return result
 

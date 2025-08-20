@@ -20,9 +20,12 @@ class TestDesignValidator(unittest.TestCase):
         self.assertEqual(result["missing_counts"], {"A": 0, "B": 0})
 
     def test_check_confounding(self):
-        df = pd.DataFrame({"A": [0, 1, 0, 1], "B": [0, 1, 0, 1]})
+        df = pd.DataFrame({"A": [0, 1, 0, 1], "B": [0, 1, 0, 1], "C": [1, 0, 1, 0]})
         confounding = DesignValidator.check_confounding(df)
         self.assertIn("A", confounding["high_correlation"])
+        alias_sets = [set(g) for g in confounding["alias_structure"]]
+        self.assertIn({"A", "B"}, alias_sets)
+        self.assertAlmostEqual(confounding["variance_decomposition"]["A"], 1.0)
 
     def test_estimate_power(self):
         df = pd.DataFrame({"A": [0, 1, 0, 1], "B": [0, 0, 1, 1]})

@@ -37,6 +37,10 @@ sheet = crd_multi.create_data_collection_sheet()
   :math:`(\sigma_e^2 + \sigma_b^2)/\sigma_e^2`, where :math:`\sigma_b^2` is block variance.
 - **Screening designs** leverage Hadamard matrices to ensure column orthogonality while minimizing runs.
 - **Run count** for a CRD equals :math:`t \times r` where :math:`t` is the number of treatments and :math:`r` the replicates.
+- **Alias structure** emerges when columns of the model matrix lie in the null space of the design matrix. If :math:`Xc = 0`
+  for some coefficient vector :math:`c`, the effects indicated by the nonzero entries of :math:`c` are perfectly confounded.
+- **Variance decomposition** gauges how much of each factor column's variability is explained by the remaining columns using
+  :math:`R^2 = 1 - \frac{\text{SS}_{\text{res}}}{\text{SS}_{\text{tot}}}`.
 
 ## References
 1. Montgomery, D. C. (2017). *Design and Analysis of Experiments*.
