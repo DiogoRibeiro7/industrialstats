@@ -8,6 +8,8 @@ an injection molding process for plastic parts.
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import seaborn as sns
+from scipy import stats
 
 from industrialstats.analysis.anova import ANOVAAnalysis
 from industrialstats.analysis.effects import EffectsAnalysis
@@ -22,6 +24,7 @@ def main():
     print("=" * 80)
     print("MANUFACTURING PROCESS OPTIMIZATION USING DESIGN OF EXPERIMENTS")
     print("=" * 80)
+    sns.set_theme(style="whitegrid")
 
     # ========================================================================
     # PROBLEM DEFINITION
@@ -233,6 +236,52 @@ def main():
         print("Note: Predicted optimum is within current experimental range")
 
     # ========================================================================
+    # STATISTICAL VALIDATION
+    # ========================================================================
+
+    print("\n📊 STATISTICAL VALIDATION:")
+    print("-" * 40)
+    baseline_conditions = design_matrix.loc[
+        responses.argmax(), [f.name for f in factors]
+    ]
+    baseline_df = pd.DataFrame([baseline_conditions.to_dict()] * 5)
+    optimal_df = pd.DataFrame([optimal_conditions] * 5)
+    baseline_vals = simulate_tensile_strength_data(baseline_df)
+    optimal_vals = simulate_tensile_strength_data(optimal_df)
+    t_stat, p_val = stats.ttest_ind(optimal_vals, baseline_vals, equal_var=False)
+    print(f"Mean at baseline: {baseline_vals.mean():.2f} MPa")
+    print(f"Mean at optimal : {optimal_vals.mean():.2f} MPa")
+    print(f"t-statistic     : {t_stat:.2f}")
+    print(f"p-value         : {p_val:.4f}")
+
+    # ========================================================================
+    # ECONOMIC IMPACT ANALYSIS
+    # ========================================================================
+
+    print("\n💰 ECONOMIC IMPACT ANALYSIS:")
+    print("-" * 40)
+    annual_volume = 50_000
+    cost_per_part = 2.5
+    baseline_scrap_rate = 0.05
+    scrap_reduction_per_mpa = 0.003
+    new_scrap_rate = max(baseline_scrap_rate - improvement * scrap_reduction_per_mpa, 0)
+    baseline_cost = baseline_scrap_rate * annual_volume * cost_per_part
+    new_cost = new_scrap_rate * annual_volume * cost_per_part
+    savings = baseline_cost - new_cost
+    print(f"Estimated annual scrap cost savings: ${savings:,.0f}")
+
+    fig_cost = plt.figure(figsize=(6, 4))
+    sns.barplot(
+        x=["Current", "Optimized"],
+        y=[baseline_cost, new_cost],
+        palette=["#d62728", "#2ca02c"],
+    )
+    plt.ylabel("Annual Scrap Cost ($)")
+    plt.title("Economic Impact of Optimization")
+    fig_cost.savefig("manufacturing_economic_impact.png", dpi=300, bbox_inches="tight")
+    plt.close(fig_cost)
+
+    # ========================================================================
     # SENSITIVITY ANALYSIS
     # ========================================================================
 
@@ -290,6 +339,7 @@ def main():
             "manufacturing_pareto_chart.png",
             "manufacturing_normal_plot.png",
             "manufacturing_design_space.png",
+            "manufacturing_economic_impact.png",
         ]
 
         for plot_file in plot_files:
@@ -324,6 +374,8 @@ def main():
     print(
         f"3. Optimal settings identified for {predicted_response:.1f} MPa tensile strength"
     )
+
+    print(f"4. Estimated annual scrap cost savings: ${savings:,.0f}")
 
     # Process insights
     print("\n💡 PROCESS INSIGHTS:")
@@ -360,25 +412,28 @@ def main():
 
 
 def simulate_tensile_strength_data(design_matrix: pd.DataFrame) -> np.ndarray:
-    """
-    Simulate realistic tensile strength data with known factor effects.
+    """Simulate realistic tensile strength data with known factor effects.
 
-    This function creates realistic data that would be typical for an
-    injection molding optimization study.
+    Parameters
+    ----------
+    design_matrix : pd.DataFrame
+        Experimental design matrix containing factor settings.
+
+    Returns
+    -------
+    np.ndarray
+        Simulated tensile strength responses in MPa.
     """
-    responses = []
+    responses: list[float] = []
 
     for _, row in design_matrix.iterrows():
-        # Base tensile strength
         base_strength = 45.0  # MPa
 
-        # Main effects (based on realistic process knowledge)
-        temp_effect = (row["Temperature"] - 200) * 0.15  # +3 MPa for 220°C vs 180°C
-        pressure_effect = (row["Pressure"] - 100) * 0.10  # +2 MPa for 120 vs 80 bar
-        cooling_effect = (row["Cooling_Time"] - 15) * -0.08  # -0.4 MPa for 20 vs 10 sec
-        material_effect = 8.0 if row["Material"] == "ABS" else 0.0  # ABS is stronger
+        temp_effect = (row["Temperature"] - 200) * 0.15
+        pressure_effect = (row["Pressure"] - 100) * 0.10
+        cooling_effect = (row["Cooling_Time"] - 15) * -0.08
+        material_effect = 8.0 if row["Material"] == "ABS" else 0.0
 
-        # Interaction effects
         temp_pressure = ((row["Temperature"] - 200) * (row["Pressure"] - 100)) * 0.003
         temp_material = (
             4.0 if (row["Temperature"] > 200 and row["Material"] == "ABS") else 0.0
@@ -387,7 +442,6 @@ def simulate_tensile_strength_data(design_matrix: pd.DataFrame) -> np.ndarray:
             (row["Pressure"] - 100) * (row["Cooling_Time"] - 15)
         ) * -0.002
 
-        # Calculate total response
         total_response = (
             base_strength
             + temp_effect
@@ -399,13 +453,13 @@ def simulate_tensile_strength_data(design_matrix: pd.DataFrame) -> np.ndarray:
             + pressure_cooling
         )
 
-        # Add realistic experimental noise
-        noise = np.random.normal(0, 1.5)  # ±1.5 MPa standard deviation
-        final_response = total_response + noise
+        machine_effect = np.random.normal(0, 0.5)
+        noise_scale = 1.2 if row["Material"] == "PP" else 0.8
+        noise = np.random.normal(0, noise_scale)
+        final_response = total_response + machine_effect + noise
 
-        # Ensure realistic bounds
-        final_response = max(final_response, 25.0)  # Minimum realistic strength
-        final_response = min(final_response, 70.0)  # Maximum realistic strength
+        final_response = max(final_response, 25.0)
+        final_response = min(final_response, 70.0)
 
         responses.append(final_response)
 
@@ -413,7 +467,20 @@ def simulate_tensile_strength_data(design_matrix: pd.DataFrame) -> np.ndarray:
 
 
 def find_optimal_conditions(main_effects: dict, factors: list) -> dict:
-    """Find optimal factor settings based on main effects."""
+    """Determine optimal factor levels from main effects.
+
+    Parameters
+    ----------
+    main_effects : dict
+        Mapping of factor names to estimated main effects.
+    factors : list
+        List of :class:`~industrialstats.designs.base.Factor` objects defining the design.
+
+    Returns
+    -------
+    dict
+        Dictionary of factor names and recommended levels.
+    """
     optimal = {}
 
     for factor in factors:
@@ -443,7 +510,22 @@ def find_optimal_conditions(main_effects: dict, factors: list) -> dict:
 def predict_optimal_response(
     optimal_conditions: dict, main_effects: dict, interaction_effects: dict
 ) -> float:
-    """Predict response at optimal conditions."""
+    """Estimate tensile strength at the proposed optimal settings.
+
+    Parameters
+    ----------
+    optimal_conditions : dict
+        Selected factor levels representing the optimum.
+    main_effects : dict
+        Dictionary of main-effect estimates.
+    interaction_effects : dict
+        Dictionary of interaction-effect estimates.
+
+    Returns
+    -------
+    float
+        Predicted tensile strength in MPa.
+    """
     # Base prediction (typical process average)
     prediction = 45.0
 
@@ -472,7 +554,20 @@ def predict_optimal_response(
 
 
 def get_robust_recommendations(main_effects: dict, interaction_effects: dict) -> list:
-    """Generate recommendations for robust process operation."""
+    """Generate recommendations for robust process operation.
+
+    Parameters
+    ----------
+    main_effects : dict
+        Dictionary of main-effect estimates.
+    interaction_effects : dict
+        Dictionary of interaction-effect estimates.
+
+    Returns
+    -------
+    list
+        Human-readable recommendations for maintaining robustness.
+    """
     recommendations = []
 
     # Check for strong interactions that indicate sensitivity
@@ -509,7 +604,25 @@ def create_comprehensive_plots(
     interaction_effects: dict,
     model=None,
 ):
-    """Create all visualization plots for the analysis."""
+    """Create all visualization plots for the analysis.
+
+    Parameters
+    ----------
+    design_matrix : pd.DataFrame
+        Experimental design with responses.
+    effects_analyzer : EffectsAnalysis
+        Fitted effects analyzer instance.
+    main_effects : dict
+        Dictionary of main-effect estimates.
+    interaction_effects : dict
+        Dictionary of interaction-effect estimates.
+    model : statsmodels.regression.linear_model.RegressionResultsWrapper, optional
+        Fitted regression model for residual diagnostics, by default ``None``.
+
+    Returns
+    -------
+    None
+    """
 
     # Initialize plotter
     plotter = ExperimentPlotter(design_matrix)
@@ -593,7 +706,23 @@ def create_comprehensive_plots(
 def create_interaction_subplot(
     data: pd.DataFrame, factor1: str, factor2: str, response: str
 ):
-    """Create a single interaction plot subplot."""
+    """Create a single interaction plot subplot.
+
+    Parameters
+    ----------
+    data : pd.DataFrame
+        Data containing factor levels and response.
+    factor1 : str
+        Name of the first factor.
+    factor2 : str
+        Name of the second factor.
+    response : str
+        Response column name.
+
+    Returns
+    -------
+    None
+    """
     levels1 = sorted(data[factor1].unique())
     levels2 = sorted(data[factor2].unique())
 
