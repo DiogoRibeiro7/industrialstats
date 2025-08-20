@@ -19,6 +19,7 @@ seaborn = "^0.13"
 statsmodels = "^0.14"
 scikit-learn = "^1.5"
 openpyxl = "^3.1"
+plotly = "^5.22"
 
 [tool.poetry.dev-dependencies]
 pytest = "^8.0.0"
