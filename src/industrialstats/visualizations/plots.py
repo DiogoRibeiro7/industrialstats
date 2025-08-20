@@ -9,6 +9,8 @@ import pandas as pd
 import seaborn as sns
 from scipy import stats
 
+from ..designs.base import ExperimentalDesign
+
 # Set default style
 plt.style.use("default")
 sns.set_palette("husl")
@@ -149,6 +151,104 @@ class ExperimentPlotter:
             axes[i].set_visible(False)
 
         plt.tight_layout()
+        return fig
+
+    @staticmethod
+    def design_comparison_plot(
+        designs: Dict[str, ExperimentalDesign],
+        figsize: Tuple[int, int] = (12, 8),
+    ) -> plt.Figure:
+        """Compare multiple designs side by side.
+
+        Parameters
+        ----------
+        designs : dict of str to ExperimentalDesign
+            Mapping of design names to design instances with generated
+            design matrices.
+        figsize : tuple of int, optional
+            Figure size for the plot grid. Defaults to ``(12, 8)``.
+
+        Returns
+        -------
+        matplotlib.figure.Figure
+            Figure containing design space plots and a metrics table.
+
+        Raises
+        ------
+        ValueError
+            If a design lacks a design matrix or has fewer than two factors.
+
+        Examples
+        --------
+        >>> from industrialstats.designs.factorial import Factor, FactorialDesign
+        >>> from industrialstats.designs.rcbd import RandomizedCompleteBlockDesign
+        >>> fd = FactorialDesign([Factor("A", [0, 1]), Factor("B", [0, 1])])
+        >>> fd.generate_design()
+        >>> rcbd = RandomizedCompleteBlockDesign(["T1", "T2"], ["B1", "B2"])
+        >>> rcbd.generate_design()
+        >>> ExperimentPlotter.design_comparison_plot({"Factorial": fd, "RCBD": rcbd})
+        <Figure size ...>
+        """
+
+        n_designs = len(designs)
+        if n_designs == 0:
+            raise ValueError("At least one design must be provided")
+
+        fig = plt.figure(figsize=figsize)
+        gs = fig.add_gridspec(2, n_designs, height_ratios=[3, 1])
+
+        summary_rows: List[Dict[str, Any]] = []
+
+        for idx, (name, design) in enumerate(designs.items()):
+            if design.design_matrix is None:
+                raise ValueError(f"Design '{name}' has no design matrix")
+
+            factors = [f.name for f in design.factors]
+            if len(factors) < 2:
+                raise ValueError(
+                    f"Design '{name}' requires at least two factors for comparison"
+                )
+
+            ax = fig.add_subplot(gs[0, idx])
+            x = design.design_matrix[factors[0]]
+            y = design.design_matrix[factors[1]]
+            ax.scatter(x, y, s=80, alpha=0.7, edgecolors="black")
+            ax.set_xlabel(factors[0])
+            ax.set_ylabel(factors[1])
+
+            efficiency = design.design_efficiency.get("run_fraction", np.nan)
+            run_count = len(design.design_matrix)
+
+            ax.set_title(
+                f"{name}\nRuns: {run_count} | Run frac: {efficiency:.2f}", fontsize=10
+            )
+            ax.grid(True, alpha=0.3)
+
+            summary_rows.append(
+                {
+                    "Design": name,
+                    "Runs": run_count,
+                    "RunFraction": round(efficiency, 3),
+                    "Factors": ", ".join(factors),
+                    "Levels": ", ".join(
+                        f"{f.name}:{len(f.levels)}" for f in design.factors
+                    ),
+                }
+            )
+
+        summary_df = pd.DataFrame(summary_rows)
+        ax_table = fig.add_subplot(gs[1, :])
+        ax_table.axis("off")
+        table = ax_table.table(
+            cellText=summary_df.values,
+            colLabels=summary_df.columns,
+            loc="center",
+        )
+        table.auto_set_font_size(False)
+        table.set_fontsize(10)
+        ax_table.set_title("Design Comparison Metrics", pad=10)
+
+        fig.tight_layout()
         return fig
 
     def interaction_plot(

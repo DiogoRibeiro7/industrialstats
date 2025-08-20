@@ -2,6 +2,32 @@
 
 Interactive plotting utilities for experimental designs and analysis.
 
+## ExperimentPlotter
+
+Provides matplotlib-based plots for experimental designs, including
+main-effects, interactions, and design-space visualizations. It also
+offers a design comparison utility to aid selection between candidate
+designs.
+
+### Example
+```python
+from industrialstats.designs.factorial import Factor, FactorialDesign
+from industrialstats.designs.rcbd import RandomizedCompleteBlockDesign
+from industrialstats.visualizations import ExperimentPlotter
+
+factorial = FactorialDesign([Factor("A", [0, 1]), Factor("B", [0, 1])])
+factorial.generate_design()
+
+rcbd = RandomizedCompleteBlockDesign(["T1", "T2"], ["B1", "B2"])
+rcbd.generate_design()
+
+fig = ExperimentPlotter.design_comparison_plot({
+    "Factorial": factorial,
+    "RCBD": rcbd,
+})
+fig.show()
+```
+
 ## ResponseSurfacePlotter
 
 Generates Plotly-based interactive plots for response surface models:
