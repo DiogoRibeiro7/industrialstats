@@ -77,3 +77,16 @@ def test_regularized_fitting_agrees_with_sklearn():
     selected = res_lasso["selected_features"]
     expected = [f"x{i}" for i, c in enumerate(sk_lasso.coef_) if not np.isclose(c, 0)]
     assert selected == expected
+
+
+def test_stepwise_selection_identifies_significant_terms():
+    rng = np.random.default_rng(0)
+    A = rng.choice([-1, 1], size=40)
+    B = rng.choice([-1, 1], size=40)
+    Y = 5 * A + rng.normal(scale=0.1, size=40)
+    df = pd.DataFrame({"A": A, "B": B, "Y": Y})
+    fitter = ModelFitting(df, "Y")
+
+    result = fitter.stepwise_selection(entry_threshold=0.01, removal_threshold=0.01)
+    assert "A" in result["selected_terms"]
+    assert "B" not in result["selected_terms"]

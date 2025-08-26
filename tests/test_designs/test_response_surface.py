@@ -29,6 +29,30 @@ class TestResponseSurfaceDesign(unittest.TestCase):
         off_diag = xtx - np.diag(np.diag(xtx))
         self.assertTrue(np.allclose(off_diag, 0))
 
+    def test_ccd_design_properties(self):
+        factors = self.factors[:2]
+        design = ResponseSurfaceDesign(factors, design_type="CCD", center_points=2)
+        matrix = design.generate_design()
+        props = design.design_properties()
+
+        self.assertEqual(props["n_factors"], 2)
+        self.assertEqual(props["n_runs"], len(matrix))
+        self.assertTrue(props["rotatable"])
+        self.assertAlmostEqual(props["alpha"], np.sqrt(2), places=3)
+        self.assertAlmostEqual(props["factorial_fraction"], 4 / len(matrix), places=5)
+        self.assertAlmostEqual(props["axial_fraction"], 4 / len(matrix), places=5)
+        self.assertAlmostEqual(props["center_fraction"], 2 / len(matrix), places=5)
+
+    def test_bbd_design_properties(self):
+        design = ResponseSurfaceDesign(self.factors, design_type="BBD", center_points=1)
+        design.generate_design()
+        props = design.design_properties()
+
+        self.assertEqual(props["n_factors"], 3)
+        self.assertEqual(props["n_runs"], 13)
+        self.assertFalse(props["rotatable"])
+        self.assertTrue(props["orthogonal"])
+
 
 if __name__ == "__main__":
     unittest.main()

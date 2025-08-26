@@ -74,6 +74,20 @@ class ModelFitting:
         # Generate candidate terms
         candidate_terms = self._generate_candidate_terms()
 
+        def _extract_p_value(term: str, pvals: Dict[str, float]) -> Optional[float]:
+            """Map simplified term names to statsmodels parameter keys."""
+            if term in pvals:
+                return pvals[term]
+            pattern = (
+                ":".join([f"C({t})" for t in term.split("*")])
+                if "*" in term
+                else f"C({term})"
+            )
+            for key, val in pvals.items():
+                if key.startswith(pattern):
+                    return val
+            return None
+
         if max_terms is None:
             max_terms = min(len(candidate_terms), len(self.data) // 3)
 
@@ -94,12 +108,14 @@ class ModelFitting:
                     try:
                         model_result = self._fit_terms(trial_terms)
 
-                        # Get p-value for the new term
-                        if term in model_result["p_values"]:
-                            p_value = model_result["p_values"][term]
-                            if p_value < entry_threshold and p_value < best_p_value:
-                                best_addition = term
-                                best_p_value = p_value
+                        p_value = _extract_p_value(term, model_result["p_values"])
+                        if (
+                            p_value is not None
+                            and p_value < entry_threshold
+                            and p_value < best_p_value
+                        ):
+                            best_addition = term
+                            best_p_value = p_value
                     except Exception as e:
                         logger.debug("Failed to fit trial terms %s: %s", trial_terms, e)
                         continue
@@ -126,11 +142,14 @@ class ModelFitting:
                 try:
                     model_result = self._fit_terms(current_terms)
 
-                    if term in model_result["p_values"]:
-                        p_value = model_result["p_values"][term]
-                        if p_value > removal_threshold and p_value > worst_p_value:
-                            worst_removal = term
-                            worst_p_value = p_value
+                    p_value = _extract_p_value(term, model_result["p_values"])
+                    if (
+                        p_value is not None
+                        and p_value > removal_threshold
+                        and p_value > worst_p_value
+                    ):
+                        worst_removal = term
+                        worst_p_value = p_value
                 except Exception as e:
                     logger.debug("Failed to evaluate term %s: %s", term, e)
                     continue
