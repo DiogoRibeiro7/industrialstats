@@ -9,12 +9,15 @@ Provides helper classes and functions used across the industrialstats project.
 - `export`: helpers for exporting designs to common formats.
 - `transforms`: basic data transformations such as centering and standardization.
 - `performance`: profiling utilities for identifying bottlenecks in design generation.
+- `efficiency`: D-, A-, G-, and I-efficiency calculators, variance inflation
+  factors, and design power estimation with simple plotting helpers.
 
 ## Usage Example
 
 ```python
 import numpy as np
 from industrialstats.utils.data_generation import DataSimulator
+from industrialstats.utils.efficiency import d_efficiency, plot_efficiencies
 
 sim = DataSimulator(seed=42)
 response = sim.simulate_factorial_response(design_matrix, noise_level=0.5)
@@ -28,6 +31,10 @@ responses = sim.simulate_correlated_responses(
 
 from industrialstats.utils.performance import profile_function
 profile_stats = profile_function(design.generate_design)
+
+# compute and visualise design efficiencies
+effs = {"candidate": d_efficiency(design_matrix)}
+ax = plot_efficiencies(effs)
 ```
 
 ## References
