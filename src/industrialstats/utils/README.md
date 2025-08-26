@@ -37,6 +37,18 @@ effs = {"candidate": d_efficiency(design_matrix)}
 ax = plot_efficiencies(effs)
 ```
 
+## Mathematical Background
+- **D-efficiency** measures the generalized variance of parameter estimates and is proportional to
+  :math:`\left(\det(X^\top X)^{1/p}/n\right)` where :math:`p` is the number of parameters and :math:`n` the run count.
+- **A-efficiency** minimizes average variance with
+  :math:`p/\operatorname{tr}\big((X^\top X)^{-1}\big)`.
+- **G-efficiency** bounds prediction variance via the maximum diagonal element of
+  :math:`X(X^\top X)^{-1}X^\top`.
+- **I-efficiency** uses the mean of those diagonal elements to assess overall prediction precision.
+- **DataSimulator** supports noise structures such as heteroskedastic variance
+  :math:`\sigma_i^2 = \sigma^2(1 + \lambda x_i)` and AR(1) correlation
+  :math:`\operatorname{Cov}(\epsilon_i, \epsilon_j) = \sigma^2 \rho^{|i-j|}` to mirror process drift and temporal dependence.
+
 ## References
 
 - Montgomery, D.C. (2017). *Design and Analysis of Experiments*, 9th ed.

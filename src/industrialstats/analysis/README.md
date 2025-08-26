@@ -73,9 +73,19 @@ The package implements classical inferential statistics:
   represents subject-level variation and :math:`\epsilon_{ij}` is residual error.
 - **Correlated errors** can be modeled with an AR(1) structure having covariance
   :math:`\sigma^2 \rho^{|i-j|}` to capture temporal or spatial dependence.
+- **Lenth's method** for unreplicated factorials defines the pseudo standard error
+  :math:`\text{PSE} = 1.5\,\text{median}(|e_i|)` and flags effects exceeding
+  :math:`\text{ME} = 2.5\,\text{PSE}` or :math:`\text{SME} = 3.5\,\text{PSE}` as practically significant.
+- **Cook's distance** measures observation influence via
+  :math:`D_i = \frac{e_i^2}{p\,\text{MSE}}\frac{h_{ii}}{(1-h_{ii})^2}`, combining residuals :math:`e_i` and leverage
+  :math:`h_{ii}` to highlight outliers.
+- **ModelDiagnostics** cross-references these tests and suggests transformations or random effects when assumptions are violated.
 
 ## References
 1. Montgomery, D. C. (2017). *Design and Analysis of Experiments*.
 2. Box, G. E. P., Hunter, J. S., & Hunter, W. G. (2005). *Statistics for Experimenters*.
 3. Fisher, R. A. (1925). *Statistical Methods for Research Workers*.
 4. Laird, N. M., & Ware, J. H. (1982). "Random-effects models for longitudinal data." *Biometrics*.
+5. Lenth, R. V. (1989). "Quick and easy analysis of unreplicated factorials." *Technometrics*.
+6. Miller, A. (2002). *Subset Selection in Regression*.
+7. Cook, R. D. (1977). "Detection of influential observation in linear regression." *Technometrics*.
