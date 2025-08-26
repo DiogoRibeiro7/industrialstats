@@ -448,6 +448,21 @@ This roadmap outlines the development phases, priorities, and milestones needed 
 
 ---
 
+## Phase 9: Path to v1.0
+
+Following the initial release, the project will focus on hardening the
+package and building a sustainable community:
+
+- **Packaging**: finalize distribution metadata, publish to PyPI and
+  conda-forge, and maintain semantic versioning.
+- **CI/CD**: expand the test matrix across platforms and Python
+  versions, integrate documentation builds, and automate release notes.
+- **Community release**: establish contribution guidelines, a code of
+  conduct, and outreach channels (website, social media, workshops) to
+  encourage adoption and feedback.
+
+These steps will move the project toward a stable v1.0 release.
+
 ## 🎯 Success Metrics
 
 ### **Technical Metrics**

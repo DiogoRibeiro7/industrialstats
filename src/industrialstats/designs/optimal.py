@@ -696,9 +696,4 @@ class CustomOptimalDesign(OptimalDesign):
     def _calculate_criterion(self, design: pd.DataFrame) -> float:
         """Calculate custom criterion value."""
         X = self._build_model_matrix(design)
-        try:
-            return self.criterion_function(X)
-        except Exception as e:
-            logger = logging.getLogger(__name__)
-            logger.error("Custom criterion function failed", exc_info=e)
-            raise RuntimeError("Custom criterion function failed") from e
+        return self.criterion_function(X)

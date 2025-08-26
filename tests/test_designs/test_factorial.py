@@ -403,18 +403,14 @@ class TestFactorialDesign(unittest.TestCase):
         design.generate_design()
 
         # Test that methods exist and don't raise errors with valid design
-        try:
-            # These would normally write files, but we just test the method calls
-            import os
-            import tempfile
+        # These would normally write files, but we just test the method calls
+        import os
+        import tempfile
 
-            with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as f:
-                design.to_csv(f.name)
-                self.assertTrue(os.path.exists(f.name))
-                os.unlink(f.name)
-
-        except Exception as e:
-            self.fail(f"CSV export failed: {e}")
+        with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as f:
+            design.to_csv(f.name)
+            self.assertTrue(os.path.exists(f.name))
+            os.unlink(f.name)
 
         # Test error when no design matrix
         empty_design = FactorialDesign(self.factors_2level, replicates=1)

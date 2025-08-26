@@ -66,7 +66,7 @@ class ANOVAAnalysis:
         try:
             self.model = ols(formula, data=self.data).fit()
             return self.model
-        except Exception as e:
+        except (ValueError, np.linalg.LinAlgError) as e:
             raise ValueError(f"Error fitting model with formula '{formula}': {str(e)}")
 
     def anova_table_calculation(self, typ: int = 2) -> pd.DataFrame:
@@ -134,7 +134,7 @@ class ANOVAAnalysis:
 
             return self.anova_table
 
-        except Exception as e:
+        except (ValueError, np.linalg.LinAlgError) as e:
             raise ValueError(f"Error calculating ANOVA table: {str(e)}")
 
     def multiple_comparisons(
@@ -302,7 +302,7 @@ class ANOVAAnalysis:
                     else "Residuals may not be normally distributed"
                 ),
             }
-        except Exception as e:
+        except (ValueError, np.linalg.LinAlgError) as e:
             results["normality"] = {
                 "test": "Shapiro-Wilk",
                 "error": str(e),
@@ -344,7 +344,7 @@ class ANOVAAnalysis:
                     "error": "No factors found for testing",
                     "assumption_met": None,
                 }
-        except Exception as e:
+        except (ValueError, np.linalg.LinAlgError) as e:
             results["homogeneity"] = {
                 "test": "Levene",
                 "error": str(e),
@@ -372,7 +372,7 @@ class ANOVAAnalysis:
                 "interpretation": interpretation,
                 "note": "Values around 2 indicate no autocorrelation",
             }
-        except Exception as e:
+        except (ValueError, ImportError) as e:
             results["independence"] = {
                 "test": "Durbin-Watson",
                 "error": str(e),

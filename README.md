@@ -27,6 +27,10 @@ industrialstats currently implements tools for generating experimental designs, 
 - Interactive design explorer and design comparison plots
 - 3D response surface, contour, variance, and slice plots
 
+### Datasets
+- Built-in manufacturing dataset for quick experimentation
+- Easy loading via ``industrialstats.datasets.load_manufacturing``
+
 ## Installation
 ```bash
 # install from PyPI (coming soon)

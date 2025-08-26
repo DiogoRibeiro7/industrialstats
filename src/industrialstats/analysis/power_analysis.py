@@ -425,7 +425,7 @@ class PowerAnalysis:
                     }
                 )
 
-            except Exception as e:
+            except ValueError as e:
                 logger.debug(
                     "Skipping invalid parameter combination (%s=%s): %s",
                     varying_param,
@@ -598,7 +598,7 @@ class PowerAnalysis:
 
                     row[f"Power_{power}"] = result.sample_size
 
-                except Exception as e:
+                except ValueError as e:
                     logger.debug("Power calculation failed for power=%s: %s", power, e)
                     row[f"Power_{power}"] = np.nan
 

@@ -27,7 +27,9 @@ def _build_factors(n: int) -> List[Factor]:
     ]
 
 
-@pytest.mark.parametrize("n_factors,max_time", [(3, 0.05), (5, 0.2), (7, 0.5)])
+@pytest.mark.parametrize(
+    "n_factors,max_time", [(3, 0.05), (5, 0.2), (7, 0.5), (9, 1.0)]
+)
 def test_factorial_generation_benchmark(n_factors: int, max_time: float) -> None:
     """Factorial design generation stays within time limits."""
     factors = _build_factors(n_factors)

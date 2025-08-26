@@ -73,3 +73,21 @@ plotter = ResponseSurfacePlotter(design, model)
 fig = plotter.surface_plot("x1", "x2")
 fig.show()
 ```
+
+## Mathematical Background
+
+Main-effects plots display the marginal mean response at each factor
+level, highlighting additive contributions of individual factors. An
+interaction plot compares mean responses across combinations of factor
+levels, revealing departures from additivity when lines are non-parallel
+[1]_. For response-surface models, the plotted surface corresponds to the
+estimated polynomial model
+
+.. math::\ y = \beta_0 + \sum_i \beta_i x_i + \sum_{i<j} \beta_{ij} x_i x_j + \sum_i \beta_{ii} x_i^2,
+
+which enables visualization of curvature and ridge behavior.
+
+## References
+
+.. [1] Montgomery, D.C. (2017). *Design and Analysis of Experiments*, 9th ed.
+.. [2] Box, G.E.P., Hunter, J.S., & Hunter, W.G. (2005). *Statistics for Experimenters*, 2nd ed.

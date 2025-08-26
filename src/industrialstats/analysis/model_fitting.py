@@ -116,7 +116,7 @@ class ModelFitting:
                         ):
                             best_addition = term
                             best_p_value = p_value
-                    except Exception as e:
+                    except (ValueError, np.linalg.LinAlgError) as e:
                         logger.debug("Failed to fit trial terms %s: %s", trial_terms, e)
                         continue
 
@@ -150,7 +150,7 @@ class ModelFitting:
                     ):
                         worst_removal = term
                         worst_p_value = p_value
-                except Exception as e:
+                except (ValueError, np.linalg.LinAlgError) as e:
                     logger.debug("Failed to evaluate term %s: %s", term, e)
                     continue
 
@@ -260,7 +260,7 @@ class ModelFitting:
                                         ],
                                     }
                                 )
-                    except Exception as e:
+                    except (ValueError, np.linalg.LinAlgError) as e:
                         logger.debug("Error fitting term %s: %s", term, e)
                         continue
 
@@ -345,7 +345,7 @@ class ModelFitting:
                         best_model = model_result
                         best_terms = terms
 
-                except Exception as e:
+                except (ValueError, np.linalg.LinAlgError) as e:
                     logger.debug("Failed to fit subset %s: %s", terms, e)
                     continue
 
@@ -446,7 +446,7 @@ class ModelFitting:
                 cv_results["predictions"].extend(test_predictions)
                 cv_results["actuals"].extend(test_actuals)
 
-            except Exception as e:
+            except (ValueError, np.linalg.LinAlgError) as e:
                 logger.debug("Cross-validation fold %s failed: %s", fold + 1, e)
                 cv_results["fold_results"].append({"fold": fold + 1, "error": str(e)})
 
@@ -540,7 +540,7 @@ class ModelFitting:
                 )
                 bootstrap_results["predictions"].append(predictions)
 
-            except Exception as e:
+            except (ValueError, np.linalg.LinAlgError) as e:
                 logger.debug("Bootstrap iteration failed: %s", e)
                 for term in model_terms:
                     bootstrap_results["coefficients"][term].append(np.nan)
@@ -734,7 +734,7 @@ class ModelFitting:
                 # Store fitted model
                 self.fitted_models[f"Model_{i+1}"] = model_result
 
-            except Exception as e:
+            except (ValueError, np.linalg.LinAlgError) as e:
                 logger.debug("Model comparison failed for model %s: %s", i + 1, e)
                 comparison_results.append(
                     {
@@ -929,7 +929,7 @@ class ModelFitting:
                 "shapiro_wilk_p_value": shapiro_p,
                 "normal_assumption": shapiro_p > 0.05,
             }
-        except Exception as e:
+        except (ValueError, np.linalg.LinAlgError) as e:
             logger.debug("Normality test failed: %s", e)
             diagnostics["normality_test"] = {
                 "error": f"Unable to perform normality test: {e}"
@@ -949,7 +949,7 @@ class ModelFitting:
                 "breusch_pagan_p_value": bp_p,
                 "homoscedastic_assumption": bp_p > 0.05,
             }
-        except Exception as e:
+        except (ValueError, np.linalg.LinAlgError, ImportError) as e:
             logger.debug("Homoscedasticity test failed: %s", e)
             diagnostics["homoscedasticity_test"] = {
                 "error": f"Unable to perform homoscedasticity test: {e}"
@@ -965,7 +965,7 @@ class ModelFitting:
                 "durbin_watson_statistic": dw_stat,
                 "independent_assumption": 1.5 <= dw_stat <= 2.5,
             }
-        except Exception as e:
+        except (ValueError, ImportError) as e:
             logger.debug("Independence test failed: %s", e)
             diagnostics["independence_test"] = {
                 "error": f"Unable to perform independence test: {e}"
@@ -998,7 +998,7 @@ class ModelFitting:
                 "n_high_influence": np.sum(high_influence),
                 "high_influence_indices": np.where(high_influence)[0].tolist(),
             }
-        except Exception as e:
+        except (ValueError, np.linalg.LinAlgError) as e:
             logger.debug("Leverage and influence calculation failed: %s", e)
             diagnostics["leverage_influence"] = {
                 "error": f"Unable to calculate leverage and influence: {e}"

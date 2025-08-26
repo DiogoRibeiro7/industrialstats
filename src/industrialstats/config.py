@@ -20,7 +20,7 @@ import seaborn as sns
 
 try:  # pragma: no cover - optional dependency
     import yaml
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     yaml = None
 
 

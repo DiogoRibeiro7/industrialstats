@@ -265,7 +265,7 @@ class EffectsAnalysis:
 
             return 0.0
 
-        except Exception as e:
+        except (ValueError, np.linalg.LinAlgError, ImportError) as e:
             logger.debug(
                 "Failed to compute interaction effect for factors %s: %s", factors, e
             )
@@ -741,7 +741,7 @@ class EffectsAnalysis:
                 cursor.connect(
                     "add", lambda sel: sel.annotation.set_text(sorted_names[sel.index])
                 )
-            except Exception:  # pragma: no cover
+            except ImportError:  # pragma: no cover
                 logger.debug("mplcursors not available; interactive mode disabled")
 
         ax.axhline(me, color="red", linestyle="--", linewidth=1, label="ME")
