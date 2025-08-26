@@ -37,6 +37,31 @@ effs = {"candidate": d_efficiency(design_matrix)}
 ax = plot_efficiencies(effs)
 ```
 
+### Advanced Example: AR(1) Noise and Missing Data
+
+```python
+from industrialstats.utils.data_generation import DataSimulator
+from industrialstats.utils.validation import DesignValidator
+
+sim = DataSimulator(seed=7)
+Y = sim.simulate_factorial_response(
+    design_matrix,
+    main_effects={"A": 2.0},
+    interactions={"A:B": -1.0},
+    noise_level=1.0,
+    ar1_rho=0.6,
+    missing_rate=0.1,
+)
+
+issues = DesignValidator.validate_design_matrix(design_matrix)
+print(issues)
+```
+
+The AR(1) process assumes :math:`\epsilon_i = \rho \epsilon_{i-1} + u_i` with
+\(u_i \sim N(0, \sigma^2(1-\rho^2))\). Missing responses are inserted at random
+positions to mimic data collection failures, and the validation report lists any
+rows containing missing values or out-of-range factor levels.
+
 ## Mathematical Background
 - **D-efficiency** measures the generalized variance of parameter estimates and is proportional to
   :math:`\left(\det(X^\top X)^{1/p}/n\right)` where :math:`p` is the number of parameters and :math:`n` the run count.

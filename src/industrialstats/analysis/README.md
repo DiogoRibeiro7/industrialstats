@@ -50,6 +50,28 @@ md = ModelDiagnostics(fit["model"])
 summary = md.assumption_tests()
 ```
 
+### Advanced Example: Mixed-Effects LRT
+
+```python
+from industrialstats.analysis.anova import ANOVAAnalysis
+
+# nested random effects: batch within day
+anova = ANOVAAnalysis(data=df, response_column="y")
+mixed = anova.mixed_effects_model(
+    formula="y ~ A",
+    groups="day",
+    re_formula="1",
+    vc_formula={"batch": "0 + C(batch)"},
+)
+lrt = anova.likelihood_ratio_test(mixed, reduced_model="y ~ A")
+print(lrt.pvalue)
+```
+
+The likelihood-ratio statistic compares the log-likelihoods of nested models and
+asymptotically follows a :math:`\chi^2` distribution with degrees of freedom
+equal to the difference in parameter counts. Small :math:`p`-values suggest that
+random effects explain significant variation beyond the fixed-effects model.
+
 ## CLI examples
 Power and model-fitting routines can be executed from the command line.
 

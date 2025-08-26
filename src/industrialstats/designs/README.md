@@ -31,6 +31,29 @@ crd_multi = CompletelyRandomizedDesign(
 sheet = crd_multi.create_data_collection_sheet()
 ```
 
+### Advanced Example: Alias Matrix and Blocking
+
+```python
+from industrialstats.designs.factorial import FactorialDesign
+from industrialstats.utils.validation import DesignValidator
+
+factors = [Factor("A", [-1, 1]), Factor("B", [-1, 1]), Factor("C", [-1, 1])]
+design = FactorialDesign(factors, blocks=2, seed=0)
+X = design.generate_design()
+
+# Enumerate alias structure via null-space analysis
+aliases = DesignValidator.check_confounding(X)
+
+for effect, aliased in aliases.items():
+    print(effect, "<->", aliased)
+```
+
+Blocking divides the full design into two replicate groups while preserving
+orthogonality. Aliasing is detected by computing a basis for the null space of
+the model matrix :math:`X` and mapping the nonzero coefficients to aliased
+effects. Confounded terms share identical columns in :math:`X` and thus cannot
+be estimated independently.
+
 ## Mathematical Background
 - **Factorial designs** exploit the full combination of factor levels, yielding an orthogonal design matrix with information on all main effects and interactions.
 - **CRD vs. RCBD efficiency**: relative efficiency is computed as

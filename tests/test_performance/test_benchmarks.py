@@ -17,6 +17,7 @@ from industrialstats.analysis.power_analysis import PowerAnalysis
 from industrialstats.designs.base import Factor
 from industrialstats.designs.factorial import FactorialDesign
 from industrialstats.designs.optimal import OptimalDesign
+from industrialstats.utils.data_generation import DataSimulator
 from industrialstats.utils.performance import profile_function
 
 
@@ -28,7 +29,7 @@ def _build_factors(n: int) -> List[Factor]:
 
 
 @pytest.mark.parametrize(
-    "n_factors,max_time", [(3, 0.05), (5, 0.2), (7, 0.5), (9, 1.0)]
+    "n_factors,max_time", [(3, 0.05), (5, 0.2), (7, 0.5), (9, 1.0), (11, 2.0)]
 )
 def test_factorial_generation_benchmark(n_factors: int, max_time: float) -> None:
     """Factorial design generation stays within time limits."""
@@ -56,6 +57,21 @@ def test_power_analysis_performance() -> None:
     pa.factorial_power(effect_size=0.25, power=0.8, factor_levels=[2, 2, 2])
     elapsed = time.perf_counter() - start
     assert elapsed < 0.5
+
+
+def test_high_dimensional_simulation_performance() -> None:
+    """Simulation scales to many factors without excessive runtime."""
+    factors = _build_factors(10)
+    design = FactorialDesign(factors, randomize=False)
+    X = design.generate_design()
+    effects = {f.name: 0.5 for f in factors}
+    start = time.perf_counter()
+    sim = DataSimulator(seed=0)
+    sim.simulate_factorial_response(
+        X, main_effects=effects, interactions={}, noise_level=1.0
+    )
+    elapsed = time.perf_counter() - start
+    assert elapsed < 2.0
 
 
 def test_optimal_design_scalability() -> None:
