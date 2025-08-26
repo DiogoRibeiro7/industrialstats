@@ -14,9 +14,11 @@ from typing import List
 import pytest
 
 from industrialstats.analysis.power_analysis import PowerAnalysis
+from industrialstats.designs.advanced import MixtureDesign
 from industrialstats.designs.base import Factor
 from industrialstats.designs.factorial import FactorialDesign
 from industrialstats.designs.optimal import OptimalDesign
+from industrialstats.designs.response_surface import ResponseSurfaceDesign
 from industrialstats.utils.data_generation import DataSimulator
 from industrialstats.utils.performance import profile_function
 
@@ -84,6 +86,37 @@ def test_optimal_design_scalability() -> None:
     opt.generate_design(max_iterations=20, random_start=False, n_random_starts=1)
     elapsed = time.perf_counter() - start
     assert elapsed < 2.0
+
+
+def test_high_dimensional_optimal_design() -> None:
+    """Optimal design generation scales with factor count."""
+    factors = _build_factors(4)
+    opt = OptimalDesign(factors, n_runs=12)
+    opt.generate_candidate_set()
+    start = time.perf_counter()
+    opt.generate_design(max_iterations=20, random_start=True, n_random_starts=3)
+    elapsed = time.perf_counter() - start
+    assert elapsed < 6.0
+
+
+def test_response_surface_generation_benchmark() -> None:
+    """Response surface design generation stays within limits."""
+    factors = _build_factors(6)
+    rsd = ResponseSurfaceDesign(factors, design_type="CCD", center_points=2)
+    start = time.perf_counter()
+    rsd.generate_design()
+    elapsed = time.perf_counter() - start
+    assert elapsed < 2.5
+
+
+def test_mixture_design_benchmark() -> None:
+    """Mixture design generation remains efficient for many components."""
+    comps = [Factor(f"C{i}", [], "continuous") for i in range(5)]
+    mix = MixtureDesign(comps, order=2)
+    start = time.perf_counter()
+    mix.generate_design()
+    elapsed = time.perf_counter() - start
+    assert elapsed < 1.0
 
 
 def test_performance_regression_detection() -> None:

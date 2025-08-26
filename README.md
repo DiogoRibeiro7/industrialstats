@@ -42,6 +42,15 @@ cd industrialstats
 pip install -e .
 ```
 
+### Building distribution artifacts
+
+Create source and wheel distributions for upload to package indexes:
+
+```bash
+python scripts/build_dist.py
+# twine upload dist/*  # publish to PyPI
+```
+
 Core dependencies include `numpy`, `pandas`, `scipy`, `matplotlib`, `seaborn`, `statsmodels`, `scikit-learn`, `plotly`, and `openpyxl`.
 
 ### Development setup
@@ -109,7 +118,7 @@ selected_terms
 ```
 
 ## Examples
-Example scripts demonstrating manufacturing and pharmaceutical case studies are available in `examples/scripts/`.
+Example scripts demonstrating manufacturing, pharmaceutical, and advanced end-to-end workflows are available in `examples/scripts/`.
 
 ## Citation
 ```bibtex
