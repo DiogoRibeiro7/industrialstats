@@ -34,6 +34,15 @@ class DataSimulator:
     ) -> pd.Series:
         """Simulate response for a factorial design.
 
+        The deterministic part of the response follows the linear model
+
+        .. math:: y = X\beta + \varepsilon,
+
+        where ``X`` is the encoded design matrix and ``\varepsilon`` denotes the
+        stochastic noise component. Interaction terms are formed by pairwise
+        products of encoded factors. Optional random effects and AR(1) correlated
+        noise may be superimposed on the deterministic structure.
+
         Parameters
         ----------
         design_matrix : pandas.DataFrame
@@ -61,10 +70,32 @@ class DataSimulator:
         pandas.Series
             Simulated response values.
 
+        See Also
+        --------
+        industrialstats.utils.validation.DesignValidator.check_confounding
+            Assess correlation-based confounding in design matrices.
+        industrialstats.analysis.power_analysis.factorial_power
+            Power calculations for factorial designs.
+
+        Examples
+        --------
+        >>> import pandas as pd
+        >>> from industrialstats.utils.data_generation import DataSimulator
+        >>> dm = pd.DataFrame({'A':[1,-1,1,-1],'B':[1,1,-1,-1]})
+        >>> sim = DataSimulator(seed=1)
+        >>> sim.simulate_factorial_response(dm, main_effects={'A':2,'B':1}).round(2)
+        0    3.62
+        1    1.33
+        2    0.88
+        3   -3.53
+        Name: Response, dtype: float64
+
         References
         ----------
-        .. [1] Montgomery, D.C. (2017). Design and Analysis of Experiments, 9th ed.
-        .. [2] Box, G.E.P., Hunter, J.S., Hunter, W.G. (2005). Statistics for Experimenters, 2nd ed.
+        .. [1] Montgomery, D.C. (2017). *Design and Analysis of Experiments*.
+               9th ed. Wiley.
+        .. [2] Box, G.E.P., Hunter, J.S., Hunter, W.G. (2005). *Statistics for
+               Experimenters*, 2nd ed. Wiley.
         .. [3] Laird, N. M., & Ware, J. H. (1982). "Random-effects models for
                longitudinal data." *Biometrics*, 38(4), 963-974.
         """

@@ -166,19 +166,48 @@ class ModelFitting:
     def hierarchical_fitting(
         self, max_order: int = 3, significance_level: float = 0.05
     ) -> Dict[str, Any]:
-        """Fit hierarchical models respecting effect hierarchy.
+        """Fit hierarchical models while respecting effect hierarchy.
+
+        Terms are added in increasing order of interaction degree. A term is only
+        considered if all of its lower-order components are already present in the
+        model, enforcing the principle described by Montgomery [1]_. Each
+        candidate term is fit and retained when its p-value is below
+        ``significance_level``.
 
         Parameters
         ----------
         max_order : int, optional
-            Maximum interaction order, by default 3.
+            Maximum interaction order. For example, ``2`` fits up to two-factor
+            interactions. Default is ``3``.
         significance_level : float, optional
-            Significance level for term inclusion, by default 0.05.
+            Significance level for term inclusion. Default is ``0.05``.
 
         Returns
         -------
         dict
-            Hierarchical fitting results.
+            Dictionary containing selected terms and fitted model statistics.
+
+        See Also
+        --------
+        stepwise_selection
+            Forward/backward stepwise regression based on information criteria.
+        all_subsets_selection
+            Exhaustive model search for small factor sets.
+
+        Examples
+        --------
+        >>> from industrialstats.analysis.model_fitting import ModelFitting
+        >>> import pandas as pd
+        >>> df = pd.DataFrame({'A':[1, -1, 1, -1], 'B':[1, 1, -1, -1], 'y':[4,2,3,1]})
+        >>> fitter = ModelFitting(df, response='y')
+        >>> res = fitter.hierarchical_fitting(max_order=1)
+        >>> res['selected_terms']
+        ['Intercept', 'A', 'B']
+
+        References
+        ----------
+        .. [1] Montgomery, D.C. (2017). *Design and Analysis of Experiments*.
+               9th ed. Wiley.
         """
         # Generate terms by hierarchy level
         terms_by_order = self._generate_hierarchical_terms(max_order)

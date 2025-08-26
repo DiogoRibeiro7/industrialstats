@@ -76,15 +76,44 @@ class ExperimentalDesign(ABC):
     def randomize(self, seed: Optional[int] = None) -> None:
         """Randomize the run order of the experiment.
 
+        The design matrix is shuffled using :func:`pandas.DataFrame.sample` with a
+        fixed ``random_state`` so that repeated calls with the same ``seed`` yield
+        identical run orders. The resulting run order is stored in a new
+        ``RunOrder`` column as ``1, 2, ... , n``.
+
         Parameters
         ----------
         seed : int, optional
-            Random seed for reproducibility.
+            Random seed for reproducibility. If ``None`` (default), the shuffle
+            is non-deterministic.
 
         Raises
         ------
         ValueError
             If the design matrix has not been generated.
+
+        See Also
+        --------
+        industrialstats.designs.rcbd.RandomizedCompleteBlockDesign.generate_design
+            RCBD implementation using block-wise randomization.
+        to_excel, to_json
+            Utilities for exporting randomized designs.
+
+        Examples
+        --------
+        >>> from industrialstats.designs.factorial import FactorialDesign
+        >>> design = FactorialDesign({'A': [1, -1], 'B': [1, -1]})
+        >>> design.generate_design()
+        >>> design.randomize(seed=42)
+        >>> design.design_matrix[['RunOrder', 'A', 'B']].head()
+           RunOrder  A  B
+        0         1  1 -1
+        1         2 -1  1
+
+        References
+        ----------
+        .. [1] Montgomery, D.C. (2017). *Design and Analysis of Experiments*.
+               9th ed. Wiley.
         """
         if self.design_matrix is None:
             raise ValueError(

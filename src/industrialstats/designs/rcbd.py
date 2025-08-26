@@ -57,16 +57,46 @@ class RandomizedCompleteBlockDesign(ExperimentalDesign):
     def generate_design(self, seed: Optional[int] = None) -> pd.DataFrame:
         """Generate RCBD matrix with proper randomization.
 
+        Each block contains all treatments exactly once. Blocks are internally
+        randomized using :func:`pandas.DataFrame.sample` with an offset seed so
+        that ``seed + i`` controls the shuffling of the ``i``-th block. The
+        combined design matrix is returned with a leading ``RunOrder`` column.
+
         Parameters
         ----------
         seed : int, optional
-            Random seed for reproducible shuffling. If not provided, uses the
-            seed supplied at initialization.
+            Random seed for reproducible shuffling. If ``None`` (default), the
+            method uses the seed provided during initialization.
 
         Returns
         -------
         pandas.DataFrame
-            The randomized design matrix.
+            Randomized design matrix with columns ``RunOrder``,
+            ``blocking_factor`` and ``Treatment``.
+
+        See Also
+        --------
+        industrialstats.designs.base.ExperimentalDesign.randomize
+            Generic randomization utility for arbitrary designs.
+        efficiency_vs_crd
+            Compute relative efficiency against a completely randomized design.
+
+        Examples
+        --------
+        >>> rcbd = RandomizedCompleteBlockDesign(
+        ...     treatments=['A', 'B', 'C'], blocks=['B1', 'B2'], seed=123
+        ... )
+        >>> dm = rcbd.generate_design()
+        >>> dm.head()
+           RunOrder Block Treatment
+        0         1    B1         B
+        1         2    B1         C
+        2         3    B1         A
+
+        References
+        ----------
+        .. [1] Montgomery, D.C. (2017). *Design and Analysis of Experiments*.
+               9th ed. Wiley.
         """
         if seed is not None:
             self.seed = seed
