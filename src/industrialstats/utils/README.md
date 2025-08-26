@@ -5,7 +5,7 @@ Provides helper classes and functions used across the industrialstats project.
 ## Key Components
 
 - `DesignValidator`: routines for validating factors and design matrices, checking confounding, and estimating statistical power.
-- `DataSimulator`: realistic response simulation supporting interactions and multiple noise/response models.
+- `DataSimulator`: realistic response simulation supporting interactions, heteroskedastic and autocorrelated noise, process drift, missing data patterns, and multi-response generation.
 - `export`: helpers for exporting designs to common formats.
 - `transforms`: basic data transformations such as centering and standardization.
 - `performance`: profiling utilities for identifying bottlenecks in design generation.
@@ -13,9 +13,18 @@ Provides helper classes and functions used across the industrialstats project.
 ## Usage Example
 
 ```python
+import numpy as np
 from industrialstats.utils.data_generation import DataSimulator
+
 sim = DataSimulator(seed=42)
 response = sim.simulate_factorial_response(design_matrix, noise_level=0.5)
+
+# simulate two correlated responses with 0.8 correlation
+responses = sim.simulate_correlated_responses(
+    design_matrix,
+    main_effects_list=[{"A": 1}, {"A": -1}],
+    cov=np.array([[1, 0.8], [0.8, 1]]),
+)
 
 from industrialstats.utils.performance import profile_function
 profile_stats = profile_function(design.generate_design)

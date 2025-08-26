@@ -2,7 +2,7 @@ from __future__ import annotations
 
 """Utilities to simulate experimental data."""
 
-from typing import Dict, Optional
+from typing import Dict, List, Optional, Sequence
 
 import numpy as np
 import pandas as pd
@@ -31,6 +31,10 @@ class DataSimulator:
         response_type: str = "continuous",
         random_effects: Optional[Dict[str, float]] = None,
         corr: float = 0.0,
+        heteroskedastic: Optional[Sequence[float]] = None,
+        drift: float = 0.0,
+        missing_rate: float = 0.0,
+        missing_pattern: str = "MCAR",
     ) -> pd.Series:
         """Simulate response for a factorial design.
 
@@ -64,6 +68,16 @@ class DataSimulator:
         corr : float, optional
             Correlation coefficient for AR(1) noise. A value of ``0`` implies
             independent errors.
+        heteroskedastic : Sequence of float, optional
+            Observation-wise noise scales. Length must equal the number of
+            design rows. Overrides ``noise_level`` when provided.
+        drift : float, optional
+            Linear drift coefficient applied in run order, by default ``0``.
+        missing_rate : float, optional
+            Fraction of responses to set as missing. Must be in ``[0, 1]``.
+        missing_pattern : {'MCAR', 'block'}, optional
+            Missing-data mechanism. ``'block'`` drops the last fraction of
+            observations.
 
         Returns
         -------
@@ -145,9 +159,15 @@ class DataSimulator:
                 response += groups.map(mapping).to_numpy()
 
         n = len(response)
+        scales = (
+            np.asarray(heteroskedastic, dtype=float)
+            if heteroskedastic is not None
+            else np.full(n, noise_level, dtype=float)
+        )
         if corr != 0.0:
             idx = np.arange(n)
-            cov = noise_level**2 * corr ** np.abs(np.subtract.outer(idx, idx))
+            base = corr ** np.abs(np.subtract.outer(idx, idx))
+            cov = np.outer(scales, scales) * base
             if noise_dist != "normal":
                 raise ValueError(
                     "Correlated noise currently supported only for normal distribution"
@@ -155,13 +175,17 @@ class DataSimulator:
             noise = self.random_state.multivariate_normal(np.zeros(n), cov)
         else:
             if noise_dist == "normal":
-                noise = self.random_state.normal(scale=noise_level, size=n)
+                noise = self.random_state.normal(scale=scales, size=n)
             elif noise_dist == "laplace":
-                noise = self.random_state.laplace(scale=noise_level, size=n)
+                noise = self.random_state.laplace(scale=scales, size=n)
             else:
                 raise ValueError("Unsupported noise distribution")
 
         response = response + noise
+
+        if drift != 0.0:
+            order = design_matrix.get("RunOrder", pd.Series(range(n))).to_numpy()
+            response = response + drift * order
 
         if response_type == "continuous":
             final = response
@@ -174,4 +198,93 @@ class DataSimulator:
         else:
             raise ValueError("Unsupported response_type")
 
-        return pd.Series(final, name="Response")
+        final = pd.Series(final, name="Response", dtype=float)
+
+        if missing_rate > 0:
+            if not 0 <= missing_rate <= 1:
+                raise ValueError("missing_rate must be within [0, 1]")
+            mask = np.zeros(n, dtype=bool)
+            if missing_pattern == "MCAR":
+                mask = self.random_state.random(n) < missing_rate
+            elif missing_pattern == "block":
+                mask[-int(n * missing_rate) :] = True
+            else:
+                raise ValueError("Unsupported missing_pattern")
+            final[mask] = np.nan
+
+        return final
+
+    def simulate_correlated_responses(
+        self,
+        design_matrix: pd.DataFrame,
+        main_effects_list: List[Dict[str, float]],
+        cov: np.ndarray,
+        **kwargs,
+    ) -> pd.DataFrame:
+        """Simulate multiple correlated responses.
+
+        Each response uses ``simulate_factorial_response`` for its deterministic
+        component. Correlated noise is then added using a multivariate normal
+        distribution with covariance ``cov``.
+
+        Parameters
+        ----------
+        design_matrix : pandas.DataFrame
+            Design matrix.
+        main_effects_list : list of dict
+            Main-effect specifications for each response.
+        cov : numpy.ndarray
+            Covariance matrix defining correlations between responses.
+        **kwargs
+            Additional arguments forwarded to
+            :meth:`simulate_factorial_response`.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Simulated responses with one column per response.
+        """
+        means = [
+            self.simulate_factorial_response(
+                design_matrix, main_effects=effects, noise_level=0.0, **kwargs
+            ).to_numpy()
+            for effects in main_effects_list
+        ]
+        mean_mat = np.column_stack(means)
+        noise = self.random_state.multivariate_normal(
+            np.zeros(len(main_effects_list)), cov, size=len(design_matrix)
+        )
+        result = mean_mat + noise
+        cols = [f"Y{i+1}" for i in range(len(main_effects_list))]
+        return pd.DataFrame(result, columns=cols)
+
+    def validate_against_real_data(
+        self, simulated: pd.DataFrame | pd.Series, real_data: pd.DataFrame | pd.Series
+    ) -> Dict[str, Dict[str, float]]:
+        """Compare simulated data to real experimental measurements.
+
+        The function computes absolute differences in means and standard
+        deviations for each variable, allowing users to gauge similarity between
+        simulated and actual data sets.
+
+        Parameters
+        ----------
+        simulated : pandas.Series or pandas.DataFrame
+            Simulated responses.
+        real_data : pandas.Series or pandas.DataFrame
+            Empirical measurements to compare against.
+
+        Returns
+        -------
+        dict of dict
+            Mapping each column name to ``{"mean_diff": float, "std_diff": float}``.
+        """
+        sim_df = pd.DataFrame(simulated)
+        real_df = pd.DataFrame(real_data)[sim_df.columns]
+        stats: Dict[str, Dict[str, float]] = {}
+        for col in sim_df.columns:
+            stats[col] = {
+                "mean_diff": float(abs(sim_df[col].mean() - real_df[col].mean())),
+                "std_diff": float(abs(sim_df[col].std() - real_df[col].std())),
+            }
+        return stats
