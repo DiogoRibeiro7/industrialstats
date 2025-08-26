@@ -1,5 +1,6 @@
 """industrialstats package."""
 
+from .config import config, load_config
 from .datasets.sample_data import load_manufacturing
 from .designs.factorial import FactorialDesign
 from .designs.fractional_factorial import FractionalFactorialDesign
@@ -19,6 +20,8 @@ __all__ = [
     "DefinitiveScreeningDesign",
     "DataSimulator",
     "DesignValidator",
+    "config",
+    "load_config",
     "export_to_csv",
     "export_to_excel",
     "export_to_json",
