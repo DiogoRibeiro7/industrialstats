@@ -8,12 +8,13 @@ industrialstats currently implements tools for generating experimental designs, 
 ## Features
 
 ### Design generators
-- Full and fractional factorial designs
-- Response surface designs (central composite, Box–Behnken)
-- Completely randomized and randomized block designs
-- Screening designs (Plackett–Burman, definitive screening)
-- Mixture and split–plot designs
-- D-, A-, G-, and I-optimal designs via coordinate exchange
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Factorial Designs | ✅ Complete | 2^k, 3^k, mixed levels |
+| Fractional Factorial | 🔄 Partial | Basic 2^(k-p), needs enhancement |
+| Response Surface | 🔄 Partial | CCD and BBD implemented |
+| Optimal Designs | 🔄 Partial | Coordinate exchange with D/A/G/I criteria |
+| Split-Plot | ❌ Missing | Planned for v0.2 |
 
 ### Analysis tools
 - ANOVA and mixed-effects ANOVA
@@ -39,6 +40,17 @@ pip install -e .
 
 Core dependencies include `numpy`, `pandas`, `scipy`, `matplotlib`, `seaborn`, `statsmodels`, `scikit-learn`, `plotly`, and `openpyxl`.
 
+### Development setup
+
+```bash
+git clone https://github.com/DiogoRibeiro7/industrialstats.git
+cd industrialstats
+pip install -e .[dev]
+pre-commit install
+```
+
+If installation fails, ensure build tools (`gcc`, `make`) are available and that Python headers are installed for your platform.
+
 ## Quick start
 ```python
 from industrialstats.designs.base import Factor
@@ -49,6 +61,16 @@ design = FactorialDesign(factors, randomize=False)
 design.generate_design()
 design.randomize(seed=42)
 print(design.design_matrix[["RunOrder", "A", "B"]])
+```
+
+Expected output:
+
+```
+   RunOrder  A  B
+0         1  1 -1
+1         2 -1  1
+2         3  1  1
+3         4 -1 -1
 ```
 
 ## Examples

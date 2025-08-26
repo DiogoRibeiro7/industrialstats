@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
+import pytest
 
 from industrialstats.designs.factorial import Factor, FactorialDesign
 from industrialstats.designs.rcbd import RandomizedCompleteBlockDesign
@@ -35,3 +36,21 @@ def test_interactive_design_explorer(tmp_path) -> None:
 
     assert isinstance(fig, go.Figure)
     assert out_file.exists()
+
+
+def test_main_effects_plot_and_errors() -> None:
+    design = FactorialDesign([Factor("A", [0, 1]), Factor("B", [0, 1])])
+    design.generate_design()
+    design.design_matrix["y"] = [1, 2, 3, 4]
+
+    plotter = ExperimentPlotter(data=design.design_matrix)
+    fig = plotter.main_effects_plot("y")
+    assert isinstance(fig, plt.Figure)
+    plt.close(fig)
+
+    empty_plotter = ExperimentPlotter()
+    with pytest.raises(ValueError):
+        empty_plotter.main_effects_plot("y")
+
+    with pytest.raises(ValueError):
+        plotter.main_effects_plot("missing")

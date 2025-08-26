@@ -136,11 +136,11 @@ class ExperimentPlotter:
             ax.grid(True, alpha=0.3)
 
             # Add value labels on bars
-            for bar, mean_val in zip(bars, means):
+            for idx, (bar, mean_val) in enumerate(zip(bars, means)):
                 height = bar.get_height()
                 ax.text(
                     bar.get_x() + bar.get_width() / 2.0,
-                    height + std_errors[bar.get_x()],
+                    height + std_errors.iloc[idx],
                     f"{mean_val:.2f}",
                     ha="center",
                     va="bottom",

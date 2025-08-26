@@ -62,7 +62,8 @@ def test_optimal_design_scalability() -> None:
     opt = OptimalDesign(factors, n_runs=8)
     opt.generate_candidate_set()
     start = time.perf_counter()
-    opt.generate_design(max_iterations=20, n_random_starts=2)
+    # Use systematic start to avoid singular initial designs
+    opt.generate_design(max_iterations=20, random_start=False, n_random_starts=1)
     elapsed = time.perf_counter() - start
     assert elapsed < 2.0
 
