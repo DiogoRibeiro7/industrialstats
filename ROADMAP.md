@@ -1,10 +1,10 @@
-# DOE Python Development Roadmap
+# industrialstats Development Roadmap
 
 A comprehensive plan to fully implement the Design of Experiments package as defined in the README.
 
 ## 📋 Overview
 
-This roadmap outlines the development phases, priorities, and milestones needed to transform the DOE Python concept into a production-ready package. The plan is organized into phases with clear deliverables and timelines.
+This roadmap outlines the development phases, priorities, and milestones needed to transform the industrialstats concept into a production-ready package. The plan is organized into phases with clear deliverables and timelines.
 
 ## 🎯 Project Phases
 
@@ -59,9 +59,9 @@ This roadmap outlines the development phases, priorities, and milestones needed 
 
 ### **Week 2: Base Classes**
 - [ ] **Core Infrastructure**
-  - `src/doe_python/__init__.py` with version management
-  - `src/doe_python/designs/base.py` - Factor and ExperimentalDesign classes ✅ (Already created)
-  - Input validation utilities in `src/doe_python/utils/validation.py`
+  - `src/industrialstats/__init__.py` with version management
+  - `src/industrialstats/designs/base.py` - Factor and ExperimentalDesign classes ✅ (Already created)
+  - Input validation utilities in `src/industrialstats/utils/validation.py`
   - Basic error handling and logging setup
 
 - [ ] **Testing Framework**
@@ -72,10 +72,10 @@ This roadmap outlines the development phases, priorities, and milestones needed 
 
 ### **Week 3: Data Utilities**
 - [ ] **Data Management**
-  - `src/doe_python/utils/data_generation.py` - Synthetic data creation
-  - `src/doe_python/utils/export.py` - Export to CSV/Excel/JSON
-  - `src/doe_python/utils/transforms.py` - Data transformations
-  - `src/doe_python/datasets/sample_data.py` - Built-in datasets
+  - `src/industrialstats/utils/data_generation.py` - Synthetic data creation
+  - `src/industrialstats/utils/export.py` - Export to CSV/Excel/JSON
+  - `src/industrialstats/utils/transforms.py` - Data transformations
+  - `src/industrialstats/datasets/sample_data.py` - Built-in datasets
 
 - [ ] **Validation System**
   - Input validation for all design parameters
@@ -85,7 +85,7 @@ This roadmap outlines the development phases, priorities, and milestones needed 
 
 ### **Week 4: Basic CLI**
 - [ ] **Command Line Interface**
-  - `src/doe_python/cli.py` basic structure
+  - `src/industrialstats/cli.py` basic structure
   - Simple design generation commands
   - Help system and argument parsing
   - Basic output formatting
@@ -96,33 +96,33 @@ This roadmap outlines the development phases, priorities, and milestones needed 
 
 ### **Week 5: Factorial Designs**
 - [ ] **Complete Factorial Implementation**
-  - Enhance `src/doe_python/designs/factorial.py` ✅ (Base created)
+  - Enhance `src/industrialstats/designs/factorial.py` ✅ (Base created)
   - Add mixed-level factorial support
   - Implement blocking capabilities
   - Add confounding pattern analysis for fractional factorials
 
 - [ ] **Fractional Factorial Designs**
-  - `src/doe_python/designs/fractional_factorial.py`
+  - `src/industrialstats/designs/fractional_factorial.py`
   - Generator string parsing and validation
   - Alias structure calculation
   - Resolution determination
 
 ### **Week 6: Randomized Designs**
 - [ ] **CRD Implementation**
-  - Complete `src/doe_python/designs/crd.py` ✅ (Base created)
+  - Complete `src/industrialstats/designs/crd.py` ✅ (Base created)
   - Add multiple response handling
   - Sample size calculations
   - Efficiency comparisons
 
 - [ ] **RCBD Implementation**
-  - `src/doe_python/designs/rcbd.py`
+  - `src/industrialstats/designs/rcbd.py`
   - Blocking algorithms
   - Missing plot handling
   - Efficiency analysis vs CRD
 
 ### **Week 7: Screening Designs**
 - [ ] **Plackett-Burman Designs**
-  - `src/doe_python/designs/screening.py`
+  - `src/industrialstats/designs/screening.py`
   - Hadamard matrix generation
   - Foldover designs
   - Definitive screening designs (DSD)
@@ -146,7 +146,7 @@ This roadmap outlines the development phases, priorities, and milestones needed 
 
 ### **Week 9: ANOVA System**
 - [ ] **Enhanced ANOVA**
-  - Complete `src/doe_python/analysis/anova.py` ✅ (Base created)
+  - Complete `src/industrialstats/analysis/anova.py` ✅ (Base created)
   - Mixed effects models
   - Unbalanced designs support
   - Multiple comparison methods (Tukey, Bonferroni, etc.)
@@ -159,20 +159,20 @@ This roadmap outlines the development phases, priorities, and milestones needed 
 
 ### **Week 10: Effects Analysis**
 - [ ] **Effects Calculation**
-  - Complete `src/doe_python/analysis/effects.py` ✅ (Base created)
+  - Complete `src/industrialstats/analysis/effects.py` ✅ (Base created)
   - Higher-order interaction effects
   - Effect inheritance and hierarchy
   - Pooling strategies for small effects
 
 - [ ] **Model Diagnostics**
-  - `src/doe_python/analysis/diagnostics.py`
+  - `src/industrialstats/analysis/diagnostics.py`
   - Residual analysis
   - Outlier detection
   - Influence measures (Cook's D, leverage)
 
 ### **Week 11: Model Fitting**
 - [ ] **Advanced Model Selection**
-  - Complete `src/doe_python/analysis/model_fitting.py` ✅ (Base created)
+  - Complete `src/industrialstats/analysis/model_fitting.py` ✅ (Base created)
   - Regularization methods (LASSO, Ridge)
   - Bayesian model selection
   - Model averaging techniques
@@ -185,7 +185,7 @@ This roadmap outlines the development phases, priorities, and milestones needed 
 
 ### **Week 12: Power Analysis**
 - [ ] **Comprehensive Power Analysis**
-  - Complete `src/doe_python/analysis/power_analysis.py` ✅ (Base created)
+  - Complete `src/industrialstats/analysis/power_analysis.py` ✅ (Base created)
   - Bayesian power analysis
   - Sequential testing power
   - Multiple endpoint power
@@ -196,7 +196,7 @@ This roadmap outlines the development phases, priorities, and milestones needed 
 
 ### **Week 13: Response Surface Methodology**
 - [ ] **RSM Implementation**
-  - Complete `src/doe_python/designs/response_surface.py` ✅ (Base created)
+  - Complete `src/industrialstats/designs/response_surface.py` ✅ (Base created)
   - Box-Behnken design variants
   - Custom response surface designs
   - Prediction variance optimization
@@ -209,7 +209,7 @@ This roadmap outlines the development phases, priorities, and milestones needed 
 
 ### **Week 14: Optimal Designs**
 - [ ] **Optimal Design Algorithms**
-  - Complete `src/doe_python/designs/optimal.py` ✅ (Base created)
+  - Complete `src/industrialstats/designs/optimal.py` ✅ (Base created)
   - Federov exchange algorithm
   - Genetic algorithms for design
   - Custom optimality criteria
@@ -246,7 +246,7 @@ This roadmap outlines the development phases, priorities, and milestones needed 
 
 ### **Week 17: Core Plotting**
 - [ ] **Basic Visualization**
-  - Complete `src/doe_python/visualization/plots.py` ✅ (Base created)
+  - Complete `src/industrialstats/visualization/plots.py` ✅ (Base created)
   - Design space visualization
   - Factor level plots
   - Response distribution plots
@@ -259,9 +259,9 @@ This roadmap outlines the development phases, priorities, and milestones needed 
 
 ### **Week 18: Advanced Plots**
 - [ ] **Specialized Visualizations**
-  - `src/doe_python/visualization/interaction_plots.py`
-  - `src/doe_python/visualization/response_surface_plots.py`
-  - `src/doe_python/visualization/diagnostic_plots.py`
+  - `src/industrialstats/visualization/interaction_plots.py`
+  - `src/industrialstats/visualization/response_surface_plots.py`
+  - `src/industrialstats/visualization/diagnostic_plots.py`
   - Half-normal plots and Lenth's method
 
 - [ ] **3D Visualizations**
@@ -447,6 +447,21 @@ This roadmap outlines the development phases, priorities, and milestones needed 
   - Conference/workshop submissions
 
 ---
+
+## Phase 9: Path to v1.0
+
+Following the initial release, the project will focus on hardening the
+package and building a sustainable community:
+
+- **Packaging**: finalize distribution metadata, publish to PyPI and
+  conda-forge, and maintain semantic versioning.
+- **CI/CD**: expand the test matrix across platforms and Python
+  versions, integrate documentation builds, and automate release notes.
+- **Community release**: establish contribution guidelines, a code of
+  conduct, and outreach channels (website, social media, workshops) to
+  encourage adoption and feedback.
+
+These steps will move the project toward a stable v1.0 release.
 
 ## 🎯 Success Metrics
 

@@ -1,16 +1,15 @@
 """Unit tests for factorial designs."""
 
 import unittest
+
 import numpy as np
 import pandas as pd
-import sys
-import os
+import pytest
+from hypothesis import example, given, settings
+from hypothesis import strategies as st
 
-# Add src to path for testing
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
-
-from doe_python.designs.factorial import FactorialDesign
-from doe_python.designs.base import Factor
+from industrialstats.designs.base import Factor
+from industrialstats.designs.factorial import FactorialDesign
 
 
 class TestFactorialDesign(unittest.TestCase):
@@ -404,18 +403,14 @@ class TestFactorialDesign(unittest.TestCase):
         design.generate_design()
 
         # Test that methods exist and don't raise errors with valid design
-        try:
-            # These would normally write files, but we just test the method calls
-            import tempfile
-            import os
+        # These would normally write files, but we just test the method calls
+        import os
+        import tempfile
 
-            with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as f:
-                design.to_csv(f.name)
-                self.assertTrue(os.path.exists(f.name))
-                os.unlink(f.name)
-
-        except Exception as e:
-            self.fail(f"CSV export failed: {e}")
+        with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as f:
+            design.to_csv(f.name)
+            self.assertTrue(os.path.exists(f.name))
+            os.unlink(f.name)
 
         # Test error when no design matrix
         empty_design = FactorialDesign(self.factors_2level, replicates=1)
@@ -441,14 +436,13 @@ class TestFactorialDesign(unittest.TestCase):
         self.assertEqual(len(design.design_matrix), initial_runs * 2)
 
     def test_blocking_scheme(self):
-        """Test creation of blocking column."""
-        design = FactorialDesign(self.factors_2level, replicates=1, randomize=False)
-        design.generate_design()
-        design.blocking_scheme(block_size=2)
-        self.assertIn("Block", design.design_matrix.columns)
-        self.assertEqual(
-            design.design_matrix["Block"].max(), len(design.design_matrix) // 2
+        """Test creation of blocking column during generation."""
+        design = FactorialDesign(
+            self.factors_2level, replicates=1, blocks=2, randomize=False
         )
+        dm = design.generate_design()
+        self.assertIn("Block", dm.columns)
+        self.assertEqual(dm["Block"].nunique(), 2)
 
     def test_confounding_pattern(self):
         """Test confounding pattern detection."""
@@ -457,10 +451,143 @@ class TestFactorialDesign(unittest.TestCase):
         pattern = design.confounding_pattern()
         self.assertIsInstance(pattern, dict)
 
+    def test_alias_matrix(self):
+        """Alias matrix should return correlation matrix of coded factors."""
+        design = FactorialDesign(self.factors_2level, replicates=1, randomize=False)
+        design.generate_design()
+        alias = design.alias_matrix()
+        self.assertTrue(isinstance(alias, pd.DataFrame))
+
     def test_design_generators(self):
         """Test generator string retrieval."""
         design = FactorialDesign(self.factors_2level, replicates=1)
         self.assertEqual(design.design_generators(), [])
+
+
+# Hypothesis strategies for property-based testing
+
+
+@st.composite
+def factors_strategy(draw):
+    """Generate a random list of factors with 2–3 levels."""
+    n = draw(st.integers(min_value=1, max_value=4))
+    factors = []
+    for i in range(n):
+        levels = draw(
+            st.lists(
+                st.integers(min_value=0, max_value=3),
+                min_size=2,
+                max_size=3,
+                unique=True,
+            )
+        )
+        levels.sort()
+        factor_type = draw(st.sampled_from(["categorical", "continuous"]))
+        factors.append(Factor(chr(65 + i), levels, factor_type))
+    return factors
+
+
+@st.composite
+def two_level_factors_strategy(draw, min_factors: int = 2):
+    """Generate a list of two-level factors for orthogonality tests."""
+    n = draw(st.integers(min_value=min_factors, max_value=5))
+    factors = []
+    for i in range(n):
+        factor_type = draw(st.sampled_from(["categorical", "continuous"]))
+        factors.append(Factor(chr(65 + i), [0, 1], factor_type))
+    return factors
+
+
+@st.composite
+def design_effects_strategy(draw):
+    """Generate two-level design parameters with associated effects."""
+    factors = draw(two_level_factors_strategy(min_factors=1))
+    effects = [
+        draw(
+            st.floats(
+                min_value=-10,
+                max_value=10,
+                allow_nan=False,
+                allow_infinity=False,
+            )
+        )
+        for _ in factors
+    ]
+    replicates = draw(st.integers(min_value=1, max_value=2))
+    return factors, effects, replicates
+
+
+@given(
+    factors=factors_strategy(),
+    replicates=st.integers(min_value=1, max_value=2),
+    center_points=st.integers(min_value=0, max_value=2),
+)
+@settings(max_examples=25)
+@example(
+    factors=[
+        Factor("A", [0, 1], "categorical"),
+        Factor("B", [0, 1], "categorical"),
+        Factor("C", [0, 1], "categorical"),
+        Factor("D", [0, 1], "categorical"),
+    ],
+    replicates=2,
+    center_points=2,
+)
+def test_factorial_run_count_property(factors, replicates, center_points):
+    """Run counts should match product of levels across configurations."""
+    design = FactorialDesign(
+        factors, replicates=replicates, center_points=center_points, randomize=False
+    )
+    dm = design.generate_design()
+    expected = np.prod([len(f.levels) for f in factors]) * replicates + center_points
+    assert len(dm) == expected
+    for f in factors:
+        expected_levels = set(f.levels)
+        if center_points > 0 and f.factor_type == "continuous":
+            expected_levels.add(float(np.mean(f.levels)))
+        assert set(dm[f.name]) == expected_levels
+
+
+@given(factors=two_level_factors_strategy())
+@settings(max_examples=25)
+@example(
+    factors=[
+        Factor("A", [0, 1], "categorical"),
+        Factor("B", [0, 1], "categorical"),
+        Factor("C", [0, 1], "categorical"),
+        Factor("D", [0, 1], "categorical"),
+        Factor("E", [0, 1], "categorical"),
+    ]
+)
+def test_two_level_design_orthogonality(factors):
+    """Two-level factorial designs should be orthogonal."""
+    design = FactorialDesign(factors, replicates=1, randomize=False)
+    design.generate_design()
+    coded = design._get_coded_matrix()
+    corr = coded.corr().values
+    assert np.allclose(corr - np.eye(len(factors)), 0, atol=1e-8)
+
+
+@given(params=design_effects_strategy())
+@settings(max_examples=25)
+@example(
+    params=(
+        [Factor("A", [0, 1], "categorical"), Factor("B", [0, 1], "categorical")],
+        [3.0, -2.0],
+        2,
+    )
+)
+def test_effect_estimation_matches_true(params):
+    """Effect estimates should recover true coefficients for noiseless data."""
+    factors, effects, replicates = params
+    design = FactorialDesign(factors, replicates=replicates, randomize=False)
+    dm = design.generate_design()
+    response = np.zeros(len(dm))
+    for idx, factor in enumerate(factors):
+        response += effects[idx] * (dm[factor.name] == 1).astype(float)
+    estimated = design.calculate_effects(response.tolist())
+    for idx, factor in enumerate(factors):
+        assert estimated[factor.name] == pytest.approx(effects[idx], abs=1e-8)
 
 
 if __name__ == "__main__":

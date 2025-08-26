@@ -1,15 +1,12 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it."
-title: "DOE Python"
+title: "industrialstats"
 version: "0.1.0"
-DOI: "10.5281/zenodo.1234567"
+doi: "10.5281/zenodo.1234567"
 authors:
   - family-names: "Ribeiro"
     given-names: "Diogo"
-    orcid: "https://orcid.org/0009-0001-2022-7072"
-    affiliation: "ESMAD - Instituto Politécnico do Porto"
     email: "diogo.debastos.ribeiro@gmail.com"
-  - name: "Diogo Ribeiro"
-    email: "dfr@esmad.ipp.pt"
     affiliation: "ESMAD - Instituto Politécnico do Porto"
+    orcid: "https://orcid.org/0009-0001-2022-7072"
 

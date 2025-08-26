@@ -1,10 +1,10 @@
 # AGENTS.md - AI Coding Agent Instructions
 
-Instructions for AI coding agents to systematically implement the DOE Python package according to the roadmap and specifications.
+Instructions for AI coding agents to systematically implement the industrialstats package according to the roadmap and specifications.
 
 ## 🎯 Overview
 
-This document provides detailed instructions for AI coding agents (like Claude, GPT-4, or other AI assistants) to implement the DOE Python package. The instructions are designed to ensure consistency, quality, and adherence to the project specifications.
+This document provides detailed instructions for AI coding agents (like Claude, GPT-4, or other AI assistants) to implement the industrialstats package. The instructions are designed to ensure consistency, quality, and adherence to the project specifications.
 
 ## 📋 General Guidelines
 
@@ -39,7 +39,7 @@ from typing import List, Dict, Optional, Any, Tuple, Union
 ## Phase 1: Foundation Components
 
 ### **Task 1.1: Enhanced Base Classes** 
-*File: `src/doe_python/designs/base.py`*
+*File: `src/industrialstats/designs/base.py`*
 
 **Current Status**: ✅ Basic implementation exists
 **Required Enhancements**:
@@ -75,7 +75,7 @@ def design_efficiency(self) -> Dict[str, float]:
 - Design matrix validation
 
 ### **Task 1.2: Validation Utilities**
-*File: `src/doe_python/utils/validation.py`*
+*File: `src/industrialstats/utils/validation.py`*
 
 **Create comprehensive validation system**:
 
@@ -101,7 +101,7 @@ class DesignValidator:
 ```
 
 ### **Task 1.3: Data Generation Utilities**
-*File: `src/doe_python/utils/data_generation.py`*
+*File: `src/industrialstats/utils/data_generation.py`*
 
 **Implement realistic data simulation**:
 
@@ -136,7 +136,7 @@ class DataSimulator:
 ## Phase 2: Core Design Implementations
 
 ### **Task 2.1: Enhanced Factorial Design**
-*File: `src/doe_python/designs/factorial.py`*
+*File: `src/industrialstats/designs/factorial.py`*
 
 **Current Status**: ✅ Basic implementation exists
 **Required Enhancements**:
@@ -161,7 +161,7 @@ def design_generators(self) -> List[str]:
 ```
 
 ### **Task 2.2: Fractional Factorial Design**
-*File: `src/doe_python/designs/fractional_factorial.py`*
+*File: `src/industrialstats/designs/fractional_factorial.py`*
 
 **Create from scratch**:
 
@@ -199,7 +199,7 @@ class FractionalFactorialDesign(ExperimentalDesign):
 - Minimum aberration criteria
 
 ### **Task 2.3: RCBD Implementation**
-*File: `src/doe_python/designs/rcbd.py`*
+*File: `src/industrialstats/designs/rcbd.py`*
 
 **Create complete RCBD implementation**:
 
@@ -229,7 +229,7 @@ class RandomizedCompleteBlockDesign(ExperimentalDesign):
 ```
 
 ### **Task 2.4: Screening Designs**
-*File: `src/doe_python/designs/screening.py`*
+*File: `src/industrialstats/designs/screening.py`*
 
 **Implement screening design methods**:
 
@@ -252,7 +252,7 @@ class DefinitiveScreeningDesign(ExperimentalDesign):
 ## Phase 3: Analysis Engine Implementation
 
 ### **Task 3.1: Enhanced ANOVA**
-*File: `src/doe_python/analysis/anova.py`*
+*File: `src/industrialstats/analysis/anova.py`*
 
 **Current Status**: ✅ Basic implementation exists
 **Required Enhancements**:
@@ -282,7 +282,7 @@ def repeated_measures_anova(
 ```
 
 ### **Task 3.2: Advanced Model Fitting**
-*File: `src/doe_python/analysis/model_fitting.py`*
+*File: `src/industrialstats/analysis/model_fitting.py`*
 
 **Current Status**: ✅ Basic implementation exists
 **Required Enhancements**:
@@ -317,7 +317,7 @@ def transformation_selection(self) -> Dict[str, Any]:
 ```
 
 ### **Task 3.3: Diagnostic System**
-*File: `src/doe_python/analysis/diagnostics.py`*
+*File: `src/industrialstats/analysis/diagnostics.py`*
 
 **Create comprehensive diagnostic system**:
 
@@ -349,7 +349,7 @@ class ModelDiagnostics:
 ## Phase 4: Advanced Methods Implementation
 
 ### **Task 4.1: Enhanced Response Surface**
-*File: `src/doe_python/designs/response_surface.py`*
+*File: `src/industrialstats/designs/response_surface.py`*
 
 **Current Status**: ✅ Basic implementation exists
 **Required Enhancements**:
@@ -381,7 +381,7 @@ def multiple_response_optimization(
 ```
 
 ### **Task 4.2: Enhanced Optimal Designs**
-*File: `src/doe_python/designs/optimal.py`*
+*File: `src/industrialstats/designs/optimal.py`*
 
 **Current Status**: ✅ Basic implementation exists
 **Required Enhancements**:
@@ -415,7 +415,7 @@ def sequential_design(
 ```
 
 ### **Task 4.3: Advanced Design Methods**
-*File: `src/doe_python/designs/advanced.py`*
+*File: `src/industrialstats/designs/advanced.py`*
 
 **Create new file for advanced methods**:
 
@@ -438,7 +438,7 @@ class ComputerExperimentDesign(ExperimentalDesign):
 ## Phase 5: Visualization Implementation
 
 ### **Task 5.1: Enhanced Core Plotting**
-*File: `src/doe_python/visualization/plots.py`*
+*File: `src/industrialstats/visualization/plots.py`*
 
 **Current Status**: ✅ Basic implementation exists
 **Required Enhancements**:
@@ -472,7 +472,7 @@ def animation_sequence(
 ```
 
 ### **Task 5.2: Specialized Visualization**
-*File: `src/doe_python/visualization/response_surface_plots.py`*
+*File: `src/industrialstats/visualization/response_surface_plots.py`*
 
 **Create comprehensive RSM visualization**:
 
@@ -511,7 +511,7 @@ class ResponseSurfacePlotter:
 ```
 
 ### **Task 5.3: Interactive Dashboards**
-*File: `src/doe_python/visualization/dashboard.py`*
+*File: `src/industrialstats/visualization/dashboard.py`*
 
 **Create interactive interface** (Optional but valuable):
 
@@ -687,7 +687,7 @@ def generate_design(self) -> pd.DataFrame:
 ### **Configuration Management**
 
 ```python
-# src/doe_python/config.py
+# src/industrialstats/config.py
 from dataclasses import dataclass
 from typing import Dict, Any
 
@@ -809,7 +809,7 @@ def factorial_design_generator(
         
     Examples
     --------
-    >>> from doe_python import Factor, factorial_design_generator
+    >>> from industrialstats import Factor, factorial_design_generator
     >>> factors = [
     ...     Factor("Temperature", [100, 200], "continuous"),
     ...     Factor("Catalyst", ["A", "B"], "categorical")
@@ -958,4 +958,4 @@ When implementing any component, ensure:
 
 ---
 
-This document provides comprehensive guidance for implementing the DOE Python package systematically and maintaining high quality standards throughout the development process.
+This document provides comprehensive guidance for implementing the industrialstats package systematically and maintaining high quality standards throughout the development process.

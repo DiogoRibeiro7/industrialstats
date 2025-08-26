@@ -1,11 +1,7 @@
-import os
-import sys
 import unittest
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
-
-from doe_python.designs.base import Factor
-from doe_python.designs.fractional_factorial import FractionalFactorialDesign
+from industrialstats.designs.base import Factor
+from industrialstats.designs.fractional_factorial import FractionalFactorialDesign
 
 
 class TestFractionalFactorialDesign(unittest.TestCase):

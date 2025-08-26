@@ -1,12 +1,8 @@
-import os
-import sys
 import unittest
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 
 import pandas as pd
 
-from doe_python.utils.transforms import center, log_transform, standardize
+from industrialstats.utils.transforms import center, log_transform, standardize
 
 
 class TestTransforms(unittest.TestCase):

@@ -1,11 +1,12 @@
-import os
-import sys
 import unittest
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
+import pandas as pd
 
-from doe_python.designs.base import Factor
-from doe_python.designs.screening import DefinitiveScreeningDesign, PlackettBurmanDesign
+from industrialstats.designs.base import Factor
+from industrialstats.designs.screening import (
+    DefinitiveScreeningDesign,
+    PlackettBurmanDesign,
+)
 
 
 class TestPlackettBurmanDesign(unittest.TestCase):
@@ -46,6 +47,12 @@ class TestPlackettBurmanDesign(unittest.TestCase):
         fold = design.foldover()
         self.assertEqual(len(design.design_matrix), 2 * len(dm))
         self.assertTrue((fold["A"] == -dm["A"]).all())
+
+    def test_seed_reproducibility(self):
+        factors = [Factor("A", [1, -1]), Factor("B", [1, -1])]
+        d1 = PlackettBurmanDesign(factors, seed=5)
+        d2 = PlackettBurmanDesign(factors, seed=5)
+        pd.testing.assert_frame_equal(d1.generate_design(), d2.generate_design())
 
 
 class TestDefinitiveScreeningDesign(unittest.TestCase):

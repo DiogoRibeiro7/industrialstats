@@ -1,31 +1,31 @@
 import unittest
+
 import pandas as pd
-import sys
-import os
 
-# Add src to path for testing
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
-
-from doe_python.utils.validation import DesignValidator
-from doe_python.designs.base import Factor
+from industrialstats.designs.base import Factor
+from industrialstats.utils.validation import DesignValidator
 
 
 class TestDesignValidator(unittest.TestCase):
     def test_validate_factors(self):
         factors = [Factor("A", [0, 1]), Factor("B", [1])]
         warnings = DesignValidator.validate_factors(factors)
-        self.assertIn("fewer than 2 levels", warnings[0])
+        self.assertTrue(any("fewer than 2 levels" in w for w in warnings))
 
     def test_validate_design_matrix(self):
         df = pd.DataFrame({"A": [0, 1, 0], "B": [1, 0, 2]})
         result = DesignValidator.validate_design_matrix(df)
         self.assertFalse(result["missing_values"])
         self.assertFalse(result["duplicate_rows"])
+        self.assertEqual(result["missing_counts"], {"A": 0, "B": 0})
 
     def test_check_confounding(self):
-        df = pd.DataFrame({"A": [0, 1, 0, 1], "B": [0, 1, 0, 1]})
+        df = pd.DataFrame({"A": [0, 1, 0, 1], "B": [0, 1, 0, 1], "C": [1, 0, 1, 0]})
         confounding = DesignValidator.check_confounding(df)
-        self.assertIn("A", confounding)
+        self.assertIn("A", confounding["high_correlation"])
+        alias_sets = [set(g) for g in confounding["alias_structure"]]
+        self.assertIn({"A", "B"}, alias_sets)
+        self.assertAlmostEqual(confounding["variance_decomposition"]["A"], 1.0)
 
     def test_estimate_power(self):
         df = pd.DataFrame({"A": [0, 1, 0, 1], "B": [0, 0, 1, 1]})

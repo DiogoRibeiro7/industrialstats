@@ -1,13 +1,11 @@
 import os
-import sys
 import tempfile
 import unittest
 
-# Add src to path for testing
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
+import pandas as pd
 
-from doe_python.designs.base import Factor
-from doe_python.designs.factorial import FactorialDesign
+from industrialstats.designs.base import Factor
+from industrialstats.designs.factorial import FactorialDesign
 
 
 class TestBaseMethods(unittest.TestCase):
@@ -49,8 +47,21 @@ class TestBaseMethods(unittest.TestCase):
         other = FactorialDesign(self.factors, replicates=2)
         other.generate_design()
         comparison = self.design.compare_to(other)
-        self.assertEqual(comparison["run_diff"], other.run_count - self.design.run_count)
+        self.assertEqual(
+            comparison["run_diff"], other.run_count - self.design.run_count
+        )
         self.assertEqual(comparison["factor_diff"], [])
+
+    def test_randomize_reproducible(self):
+        design1 = FactorialDesign(self.factors, replicates=1, randomize=False)
+        design1.generate_design()
+        design1.randomize(seed=42)
+
+        design2 = FactorialDesign(self.factors, replicates=1, randomize=False)
+        design2.generate_design()
+        design2.randomize(seed=42)
+
+        pd.testing.assert_frame_equal(design1.design_matrix, design2.design_matrix)
 
 
 if __name__ == "__main__":

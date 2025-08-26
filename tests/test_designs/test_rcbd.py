@@ -1,10 +1,8 @@
-import os
-import sys
 import unittest
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
+import pandas as pd
 
-from doe_python.designs.rcbd import RandomizedCompleteBlockDesign
+from industrialstats.designs.rcbd import RandomizedCompleteBlockDesign
 
 
 class TestRCBD(unittest.TestCase):
@@ -37,7 +35,15 @@ class TestRCBD(unittest.TestCase):
         self.assertIsNotNone(latin)
         self.assertEqual(len(latin), 9)
 
+    def test_seed_reproducibility(self):
+        design1 = RandomizedCompleteBlockDesign(self.treatments, self.blocks)
+        dm1 = design1.generate_design(seed=123)
+
+        design2 = RandomizedCompleteBlockDesign(self.treatments, self.blocks)
+        dm2 = design2.generate_design(seed=123)
+
+        pd.testing.assert_frame_equal(dm1, dm2)
+
 
 if __name__ == "__main__":
     unittest.main()
-

@@ -1,13 +1,13 @@
 [tool.poetry]
-name = "doe_python"
+name = "industrialstats"
 version = "0.1.0"
-description = "Design of Experiments package."
+description = "Industrial Statistics for Python - Professional-grade statistical tools for manufacturing excellence"
 authors = ["Diogo Ribeiro <diogo.debastos.ribeiro@gmail.com>"]
 maintainers = ["Diogo Ribeiro <dfr@esmad.ipp.pt>"]
 license = "MIT"
 readme = "README.md"
-packages = [{ include = "doe_python", from = "src" }]
-repository = "https://github.com/DiogoRibeiro7/doe_python"
+packages = [{ include = "industrialstats", from = "src" }]
+repository = "https://github.com/DiogoRibeiro7/industrialstats"
 
 [tool.poetry.dependencies]
 python = ">=3.10"
@@ -19,9 +19,11 @@ seaborn = "^0.13"
 statsmodels = "^0.14"
 scikit-learn = "^1.5"
 openpyxl = "^3.1"
+plotly = "^5.22"
 
 [tool.poetry.dev-dependencies]
 pytest = "^8.0.0"
+hypothesis = "^6.99"
 black = "^24.4"
 isort = "^5.13"
 flake8 = "^7.0"
@@ -29,7 +31,7 @@ mypy = "^1.9"
 pre-commit = "^3.7"
 
 [tool.poetry.scripts]
-doe-python = "doe_python.cli:main"
+industrialstats = "industrialstats.cli:main"
 
 [build-system]
 requires = ["poetry-core"]

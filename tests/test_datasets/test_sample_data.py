@@ -1,10 +1,6 @@
-import os
-import sys
 import unittest
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
-
-from doe_python.datasets.sample_data import load_manufacturing
+from industrialstats.datasets.sample_data import load_manufacturing
 
 
 class TestSampleData(unittest.TestCase):

@@ -1,13 +1,10 @@
-import os
-import sys
-
+import numpy as np
 import pandas as pd
+import pytest
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
-
-from doe_python.analysis.anova import ANOVAAnalysis
-from doe_python.designs.base import Factor
-from doe_python.designs.factorial import FactorialDesign
+from industrialstats.analysis.anova import ANOVAAnalysis
+from industrialstats.designs.base import Factor
+from industrialstats.designs.factorial import FactorialDesign
 
 
 def test_anova_analysis_basic():
@@ -24,19 +21,40 @@ def test_anova_analysis_basic():
     assert "normality" in tests
 
 
-def test_mixed_effects_and_unbalanced():
-    df = pd.DataFrame(
-        {
-            "Subject": [1, 1, 2, 2],
-            "A": [0, 1, 0, 1],
-            "Response": [1.0, 2.0, 1.1, 2.1],
-        }
-    )
-    analysis = ANOVAAnalysis(df, "Response")
-    mix_res = analysis.mixed_effects_model(["A"], ["Subject"])
-    assert "aic" in mix_res
+def _simulate_nested_data() -> pd.DataFrame:
+    rng = np.random.default_rng(0)
+    records = []
+    for subj in range(4):
+        subj_eff = rng.normal(0, 1.0)
+        for batch in range(2):
+            batch_eff = rng.normal(0, 0.5)
+            for trt in [0, 1]:
+                for _ in range(2):
+                    y = 2 * trt + subj_eff + batch_eff + rng.normal(0, 0.1)
+                    records.append(
+                        {
+                            "Subject": f"S{subj}",
+                            "Batch": f"S{subj}B{batch}",
+                            "Treatment": trt,
+                            "Response": y,
+                        }
+                    )
+    return pd.DataFrame(records)
 
-    # Unbalanced ANOVA
+
+def test_mixed_effects_model_with_nested_random_effects():
+    df = _simulate_nested_data()
+    analysis = ANOVAAnalysis(df, "Response")
+    res = analysis.mixed_effects_model(
+        ["Treatment"], ["Subject"], nested_effects=["Batch"]
+    )
+    assert pytest.approx(res["random_effects_var"]["Subject"], rel=0.3) == 0.5
+    assert pytest.approx(res["random_effects_var"]["Batch"], rel=0.4) == 0.3
+    assert res["lrt"]["Subject"]["p_value"] < 0.05
+    assert res["lrt"]["Batch"]["p_value"] < 0.05
+
+
+def test_unbalanced_anova():
     factors = [Factor("A", [0, 1]), Factor("B", [0, 1])]
     design = FactorialDesign(factors, replicates=2, randomize=False)
     dm = design.generate_design().iloc[:-1]

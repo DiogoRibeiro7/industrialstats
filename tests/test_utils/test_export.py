@@ -1,13 +1,10 @@
 import os
-import sys
 import tempfile
 import unittest
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
-
 import pandas as pd
 
-from doe_python.utils.export import export_to_csv, export_to_excel, export_to_json
+from industrialstats.utils.export import export_to_csv, export_to_excel, export_to_json
 
 
 class TestExportUtilities(unittest.TestCase):
