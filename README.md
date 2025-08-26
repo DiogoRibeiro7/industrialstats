@@ -73,6 +73,37 @@ Expected output:
 3         4 -1 -1
 ```
 
+## CLI examples
+industrialstats exposes a command-line interface for quick analyses.
+
+### Power analysis
+
+```bash
+industrialstats power --analysis t-test --effect-size 0.5 --power 0.8
+```
+
+Expected output:
+
+```
+effect_size  alpha  power  sample_size  test_type
+0.5          0.05   0.8    32.0         two_sample
+```
+
+### Stepwise model fitting
+
+```bash
+printf 'y,A,B\n1,0,0\n2,0,1\n3,1,0\n4,1,1\n' > model.csv
+industrialstats model --data model.csv --response y --entry-threshold 0.01 --removal-threshold 0.2
+```
+
+Expected output:
+
+```
+selected_terms
+0 A
+1 B
+```
+
 ## Examples
 Example scripts demonstrating manufacturing and pharmaceutical case studies are available in `examples/scripts/`.
 

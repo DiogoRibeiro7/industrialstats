@@ -50,6 +50,18 @@ md = ModelDiagnostics(fit["model"])
 summary = md.assumption_tests()
 ```
 
+## CLI examples
+Power and model-fitting routines can be executed from the command line.
+
+```bash
+# Required sample size for a two-sample t-test
+industrialstats power --analysis t-test --effect-size 0.5 --power 0.8
+
+# Stepwise model fitting on a CSV dataset
+printf 'y,A,B\n1,0,0\n2,0,1\n3,1,0\n4,1,1\n' > model.csv
+industrialstats model --data model.csv --response y --entry-threshold 0.01 --removal-threshold 0.2
+```
+
 ## Mathematical Background
 The package implements classical inferential statistics:
 
