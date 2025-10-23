@@ -46,7 +46,7 @@ mf = ModelFitting(df.assign(B=[1, 0, 1, 0]), response_column="y")
 fit = mf.stepwise_selection()
 
 # Model diagnostics
-md = ModelDiagnostics(fit["model"])
+md = ModelDiagnostics(fit["final_model"], data=mf.data)
 summary = md.assumption_tests()
 ```
 

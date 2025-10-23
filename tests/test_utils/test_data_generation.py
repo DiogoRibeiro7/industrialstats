@@ -1,6 +1,10 @@
+from __future__ import annotations
+
 import unittest
+from typing import Dict
 
 import numpy as np
+import pandas as pd
 
 from industrialstats.designs.base import Factor
 from industrialstats.designs.factorial import FactorialDesign
@@ -8,91 +12,129 @@ from industrialstats.utils.data_generation import DataSimulator
 
 
 class TestDataSimulator(unittest.TestCase):
-    def test_simulate_factorial_response(self):
-        factors = [Factor("A", [0, 1]), Factor("B", [0, 1])]
-        design = FactorialDesign(factors, replicates=1)
-        dm = design.generate_design()
-        simulator = DataSimulator(seed=123)
-        response = simulator.simulate_factorial_response(
-            dm, interactions={("A", "B"): 0.5}, noise_dist="laplace"
+    def setUp(self) -> None:
+        self.factors = [Factor("A", [0, 1]), Factor("B", [0, 1])]
+        self.design = FactorialDesign(self.factors, replicates=2, randomize=False)
+        self.dm = self.design.generate_design()
+        self.simulator = DataSimulator(seed=1234)
+
+    def test_simulate_factorial_response_supports_heavy_tails(self) -> None:
+        response = self.simulator.simulate_factorial_response(
+            self.dm,
+            main_effects={"A": 1.0, "B": -0.5},
+            noise_dist="t",
+            noise_params={"df": 7},
+            heteroskedastic=lambda df: np.linspace(0.5, 1.5, len(df)),
         )
-        self.assertEqual(len(response), len(dm))
+        self.assertEqual(len(response), len(self.dm))
+        self.assertAlmostEqual(response.iloc[0], -0.828109, places=6)
+        self.assertGreater(np.nanmax(np.abs(response)), 1.0)
 
-    def test_response_types(self):
-        factors = [Factor("A", [0, 1]), Factor("B", [0, 1])]
-        design = FactorialDesign(factors, replicates=1)
-        dm = design.generate_design()
-        simulator = DataSimulator(seed=123)
-        bin_resp = simulator.simulate_factorial_response(dm, response_type="binomial")
-        self.assertTrue(set(np.unique(bin_resp)).issubset({0, 1}))
-        pois_resp = simulator.simulate_factorial_response(dm, response_type="poisson")
-        self.assertTrue((pois_resp >= 0).all())
-
-    def test_multiple_interactions(self):
-        factors = [Factor("A", [0, 1]), Factor("B", [0, 1]), Factor("C", [0, 1])]
-        design = FactorialDesign(factors, replicates=1)
-        dm = design.generate_design()
-        simulator = DataSimulator(seed=42)
-        response = simulator.simulate_factorial_response(
-            dm,
-            interactions={("A", "B"): 1.0, ("B", "C"): -0.5},
+    def test_measurement_error_increases_variability(self) -> None:
+        base_sim = DataSimulator(seed=1234)
+        base = base_sim.simulate_factorial_response(
+            self.dm,
             noise_level=0.0,
+            measurement_error={"scale": 0.2, "distribution": "normal"},
         )
-        self.assertEqual(len(response), len(dm))
+        reference_sim = DataSimulator(seed=1234)
+        without_error = reference_sim.simulate_factorial_response(
+            self.dm,
+            noise_level=0.0,
+            measurement_error=None,
+        )
+        self.assertGreater(np.nanvar(base), np.nanvar(without_error))
 
-    def test_random_effects_and_correlated_noise(self):
-        factors = [Factor("A", [0, 1])]
-        design = FactorialDesign(factors, replicates=2)
-        dm = design.generate_design()
-        dm["Batch"] = [1, 1, 2, 2]
-        simulator = DataSimulator(seed=7)
-        response = simulator.simulate_factorial_response(
+    def test_missing_mechanisms_mar_and_mnar(self) -> None:
+        dm = self.dm.copy()
+        dm["Covariate"] = np.linspace(0.0, 1.0, len(dm))
+        ordered_cols = ["Covariate"] + [c for c in dm.columns if c != "Covariate"]
+        dm = dm[ordered_cols]
+        mar = self.simulator.simulate_factorial_response(
             dm,
-            random_effects={"Batch": 0.5},
-            corr=0.3,
+            missing_rate=0.5,
+            missing_pattern="MAR",
         )
-        self.assertEqual(len(response), len(dm))
-
-    def test_heteroskedastic_and_drift(self):
-        factors = [Factor("A", [0, 1])]
-        design = FactorialDesign(factors, replicates=10)
-        dm = design.generate_design()
-        hetero = np.linspace(0.1, 1.0, len(dm))
-        simulator = DataSimulator(seed=5)
-        response = simulator.simulate_factorial_response(
-            dm, heteroskedastic=hetero, drift=0.5
+        mnar = self.simulator.simulate_factorial_response(
+            dm,
+            missing_rate=0.5,
+            missing_pattern="MNAR",
         )
-        self.assertGreater(response.iloc[-1], response.iloc[0])
-        first_var = np.nanvar(response[:10])
-        last_var = np.nanvar(response[-10:])
-        self.assertNotAlmostEqual(first_var, last_var)
+        self.assertGreater(mar.isna().mean(), 0.0)
+        self.assertGreater(mnar.isna().mean(), 0.0)
 
-    def test_missing_data(self):
-        factors = [Factor("A", [0, 1])]
-        design = FactorialDesign(factors, replicates=5)
-        dm = design.generate_design()
-        simulator = DataSimulator(seed=1)
-        response = simulator.simulate_factorial_response(dm, missing_rate=0.2)
-        self.assertAlmostEqual(response.isna().mean(), 0.2, delta=0.1)
+    def test_simulate_process_data_with_trend_and_seasonality(self) -> None:
+        def model(df: pd.DataFrame) -> np.ndarray:
+            return np.sin(df["t"]) * 0.1
 
-    def test_correlated_responses(self):
-        factors = [Factor("A", [0, 1])]
-        design = FactorialDesign(factors, replicates=20)
-        dm = design.generate_design()
-        sim = DataSimulator(seed=0)
-        cov = np.array([[1.0, 0.8], [0.8, 1.0]])
-        df = sim.simulate_correlated_responses(dm, [{"A": 1}, {"A": 1}], cov)
-        corr = df.corr().iloc[0, 1]
-        self.assertAlmostEqual(corr, 0.8, delta=0.15)
+        result = self.simulator.simulate_process_data(
+            n_periods=50,
+            model=model,
+            trend={"type": "linear", "slope": 0.05, "intercept": 1.0},
+            seasonality={"period": 12, "amplitude": 0.5},
+            heteroskedastic=np.linspace(0.2, 0.5, 50),
+            return_components=True,
+        )
+        self.assertIn("deterministic", result.columns)
+        self.assertIn("stochastic", result.columns)
+        self.assertEqual(len(result), 50)
+        self.assertFalse(result["deterministic"].is_monotonic_increasing)
 
-    def test_validation_against_real_data(self):
-        factors = [Factor("A", [0, 1])]
-        design = FactorialDesign(factors, replicates=1)
-        dm = design.generate_design()
-        sim = DataSimulator(seed=2)
-        simulated = sim.simulate_factorial_response(dm, noise_level=0.0)
-        stats = sim.validate_against_real_data(simulated, simulated.copy())
-        self.assertLess(stats["Response"]["mean_diff"], 1e-9)
+    def test_simulate_process_data_autocorrelation(self) -> None:
+        series = self.simulator.simulate_process_data(
+            n_periods=200,
+            model=lambda df: np.zeros(len(df)),
+            ar_params=[0.6],
+            noise_dist="normal",
+        )
+        values = series["response"].dropna().to_numpy()
+        acorr = np.corrcoef(values[1:], values[:-1])[0, 1]
+        self.assertGreater(acorr, 0.4)
+
+    def test_simulate_process_data_outliers_and_missing(self) -> None:
+        series = self.simulator.simulate_process_data(
+            n_periods=80,
+            model=lambda df: np.zeros(len(df)),
+            outliers={"random": {"fraction": 0.1, "magnitude": 10}},
+            missing={"mechanism": "MCAR", "rate": 0.2},
+        )
+        missing_share = series["response"].isna().mean()
+        self.assertAlmostEqual(missing_share, 0.2, delta=0.1)
+        finite_values = series["response"].dropna()
+        self.assertGreater(finite_values.abs().max(), 5.0)
+
+    def test_simulate_multi_response_handles_varied_types(self) -> None:
+        models = [
+            lambda df: df["A"].to_numpy(),
+            lambda df: -0.5 * df["B"].to_numpy(),
+            lambda df: 0.2 * df["A"].to_numpy(),
+        ]
+        covariance = np.array(
+            [
+                [1.0, 0.2, 0.1],
+                [0.2, 1.5, 0.3],
+                [0.1, 0.3, 1.0],
+            ]
+        )
+        df = self.simulator.simulate_multi_response(
+            self.dm,
+            models,
+            covariance,
+            response_types=["continuous", "categorical", "count"],
+            measurement_error=[None, None, None],
+        )
+        self.assertEqual(len(df), len(self.dm))
+        self.assertTrue(set(np.unique(df["Y2"])) <= {0, 1})
+        self.assertTrue((df["Y3"] >= 0).all())
+        corr = df[["Y1", "Y2"]].corr().iloc[0, 1]
+        self.assertFalse(np.isnan(corr))
+
+    def test_validate_against_real_data_reports_statistics(self) -> None:
+        simulated = self.simulator.simulate_factorial_response(self.dm, noise_level=0.0)
+        stats = self.simulator.validate_against_real_data(simulated, simulated.copy())
+        expected: Dict[str, float] = stats["Response"]
+        self.assertLess(expected["mean_diff"], 1e-9)
+        self.assertIn("ks_like", expected)
 
 
 if __name__ == "__main__":

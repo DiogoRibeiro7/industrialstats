@@ -1,216 +1,468 @@
-"""Model diagnostics for regression analyses.
+"""Comprehensive regression diagnostics.
 
-This module provides tools to evaluate model assumptions, detect
-outliers, and visualize influential observations. It is designed to be
-used with ``statsmodels`` regression result objects and focuses on
-interpretable outputs for practitioners.
+This module implements residual diagnostics described by Cook & Weisberg
+(1982) and extends classical assumption checks with actionable guidance.
+The :class:`ModelDiagnostics` class operates on dictionaries returned by the
+high-level fitting utilities in :mod:`industrialstats.analysis.model_fitting`
+and requires the original design data to contextualize the diagnostics.
 
-References
-----------
-.. [1] Montgomery, D. C. (2017). *Design and Analysis of Experiments*.
-.. [2] Cook, R. D., & Weisberg, S. (1982). *Residuals and Influence in
-       Regression*.
+Examples
+--------
+>>> import pandas as pd
+>>> import numpy as np
+>>> import statsmodels.api as sm
+>>> from industrialstats.analysis.diagnostics import ModelDiagnostics
+>>> rng = np.random.default_rng(42)
+>>> x1 = rng.normal(size=120)
+>>> x2 = rng.normal(size=120)
+>>> y = 1.5 + 2.0 * x1 - 1.2 * x2 + rng.normal(size=120)
+>>> data = pd.DataFrame({"y": y, "x1": x1, "x2": x2})
+>>> model = sm.OLS(data["y"], sm.add_constant(data[["x1", "x2"]])).fit()
+>>> model_result = {
+...     "model_object": model,
+...     "residuals": model.resid,
+...     "fitted_values": model.fittedvalues,
+...     "model_metrics": {"R2": model.rsquared},
+... }
+>>> diagnostics = ModelDiagnostics(model_result, data)
+>>> summary = diagnostics.assumption_tests()
+>>> round(summary["normality"]["shapiro"]["p_value"], 3) >= 0.05
+True
 """
 
 from __future__ import annotations
 
-import logging
-from typing import List, Optional
+import math
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import seaborn as sns
 from scipy import stats
-from statsmodels.stats.diagnostic import het_breuschpagan
 from statsmodels.stats.stattools import durbin_watson
 
-logger = logging.getLogger(__name__)
+try:  # pragma: no cover - exercised indirectly via availability checks
+    import matplotlib.pyplot as plt
+except ImportError:  # pragma: no cover - allows graceful degradation in tests
+    plt = None  # type: ignore[assignment]
+
+if TYPE_CHECKING:  # pragma: no cover - typing-only import
+    from matplotlib.figure import Figure
+else:  # pragma: no cover - runtime fallback when matplotlib missing
+    Figure = Any
+
+__all__ = ["ModelDiagnostics"]
 
 
 class ModelDiagnostics:
-    """Run diagnostic checks on fitted regression models.
+    """Diagnostic analytics for linear models.
+
+    The diagnostics follow the influence framework of Cook & Weisberg [1]_ and
+    are compatible with dictionaries returned by
+    :class:`~industrialstats.analysis.model_fitting.ModelFitting`.
 
     Parameters
     ----------
-    model : statsmodels.regression.linear_model.RegressionResultsWrapper
-        Fitted regression results instance from ``statsmodels``.
+    model_result : Dict[str, Any]
+        Dictionary containing the fitted ``statsmodels`` object under the key
+        ``"model_object"`` alongside residual vectors and fitted values. The
+        minimal expected keys are ``{"model_object", "residuals",
+        "fitted_values"}``.
+    data : pandas.DataFrame
+        Original dataset used during model fitting. The frame is copied to avoid
+        inadvertent mutation during diagnostics.
+
+    Raises
+    ------
+    TypeError
+        If ``model_result`` is not a dictionary or lacks the required
+        ``statsmodels`` interfaces.
+    KeyError
+        When mandatory keys are absent from ``model_result``.
+    ValueError
+        If residual and fitted vector lengths are inconsistent with ``data``.
+
+    References
+    ----------
+    .. [1] Cook, R. D., & Weisberg, S. (1982). *Residuals and Influence in
+       Regression*. Chapman & Hall/CRC.
     """
 
-    def __init__(self, model) -> None:
-        self.model = model
-        self.residuals = pd.Series(model.resid, name="residuals")
-        self.fitted = pd.Series(model.fittedvalues, name="fitted")
-        self.exog = pd.DataFrame(model.model.exog, columns=model.model.exog_names)
-        self._test_results: Optional[pd.DataFrame] = None
-        self._outliers: Optional[pd.DataFrame] = None
+    def __init__(self, model_result: Dict[str, Any], data: pd.DataFrame) -> None:
+        if not isinstance(model_result, dict):
+            raise TypeError("model_result must be a dictionary of model outputs")
 
-    def assumption_tests(self, alpha: float = 0.05) -> pd.DataFrame:
-        """Test key regression assumptions.
+        required_keys = {"model_object", "residuals", "fitted_values"}
+        missing_keys = required_keys.difference(model_result.keys())
+        if missing_keys:
+            raise KeyError(
+                "model_result is missing required keys: "
+                + ", ".join(sorted(missing_keys))
+            )
 
-        Parameters
-        ----------
-        alpha : float, optional
-            Significance level for hypothesis tests, by default ``0.05``.
+        model_object = model_result["model_object"]
+        if not hasattr(model_object, "get_influence"):
+            raise TypeError(
+                "model_result['model_object'] must expose statsmodels influence diagnostics"
+            )
+
+        self.model_result = model_result
+        self.model = model_object
+        self.data = data.copy(deep=True)
+
+        self.residuals = np.asarray(model_result["residuals"], dtype=float)
+        self.fitted_values = np.asarray(model_result["fitted_values"], dtype=float)
+
+        if self.residuals.ndim != 1 or self.fitted_values.ndim != 1:
+            raise ValueError(
+                "residuals and fitted_values must be one-dimensional arrays"
+            )
+
+        n_obs = len(self.data)
+        if (
+            len(self.residuals) != len(self.fitted_values)
+            or len(self.residuals) != n_obs
+        ):
+            raise ValueError(
+                "Length of residuals, fitted values, and data rows must match"
+            )
+
+        self._assumption_cache: Optional[Dict[str, Dict[str, Any]]] = None
+        self._influence_cache: Optional[Dict[str, np.ndarray]] = None
+        self._outlier_cache: Optional[Dict[str, List[int]]] = None
+
+    # ------------------------------------------------------------------
+    def assumption_tests(self) -> Dict[str, Dict[str, Any]]:
+        """Evaluate classical regression assumptions.
+
+        The procedure combines the Shapiro-Wilk and Anderson-Darling tests for
+        normality, Levene and Bartlett tests for homoscedasticity across fitted
+        quantile groups, and the Durbin-Watson statistic for independence.
 
         Returns
         -------
-        pandas.DataFrame
-            Table with test statistics, p-values, and pass/fail indicators.
+        Dict[str, Dict[str, Any]]
+            Nested mapping summarising each assumption. For example,
+            ``result["normality"]["passes"]`` indicates whether both normality
+            tests are satisfied at the 5% level.
+
+        Examples
+        --------
+        >>> tests = diagnostics.assumption_tests()
+        >>> sorted(tests.keys())
+        ['homoscedasticity', 'independence', 'normality']
+        >>> tests['independence']['passes']
+        True
         """
 
+        if self._assumption_cache is not None:
+            return self._assumption_cache
+
+        if len(self.residuals) < 8:
+            raise ValueError(
+                "At least 8 observations are required for assumption tests"
+            )
+
+        # Normality diagnostics
         shapiro_stat, shapiro_p = stats.shapiro(self.residuals)
-        bp_stat, bp_p, _, _ = het_breuschpagan(self.residuals, self.exog)
-        dw_stat = durbin_watson(self.residuals)
+        anderson_res = stats.anderson(self.residuals, dist="norm")
+        anderson_crit = dict(
+            zip(anderson_res.significance_level, anderson_res.critical_values)
+        )
+        ad_threshold = anderson_crit.get(5.0)
+        if ad_threshold is None:
+            ad_threshold = anderson_res.critical_values[-1]
+        anderson_pass = anderson_res.statistic < ad_threshold
+        normality_pass = (shapiro_p > 0.05) and anderson_pass
 
-        results = pd.DataFrame(
-            {
-                "test": ["Shapiro-Wilk", "Breusch-Pagan", "Durbin-Watson"],
-                "statistic": [shapiro_stat, bp_stat, dw_stat],
-                "pvalue": [shapiro_p, bp_p, np.nan],
-                "passed": [
-                    shapiro_p > alpha,
-                    bp_p > alpha,
-                    (1.5 < dw_stat < 2.5),
-                ],
-                "assumption": [
-                    "normality",
-                    "homoscedasticity",
-                    "independence",
-                ],
-            }
+        # Homoscedasticity diagnostics via fitted quantile groups
+        df = pd.DataFrame({"fitted": self.fitted_values, "resid": self.residuals})
+        try:
+            df["group"] = pd.qcut(
+                df["fitted"],
+                q=min(4, max(2, df["fitted"].nunique())),
+                duplicates="drop",
+            )
+        except ValueError as exc:  # occurs when data are constant
+            raise ValueError("Cannot form groups for homoscedasticity checks") from exc
+
+        grouped = [
+            grp["resid"].to_numpy() for _, grp in df.groupby("group", observed=True)
+        ]
+        if len(grouped) < 2:
+            raise ValueError("Need at least two groups to run homoscedasticity tests")
+
+        levene_stat, levene_p = stats.levene(*grouped, center="median")
+        bartlett_stat, bartlett_p = stats.bartlett(*grouped)
+        homoscedastic_pass = (levene_p > 0.05) and (bartlett_p > 0.05)
+
+        # Independence diagnostics via Durbin-Watson
+        dw_stat = float(durbin_watson(self.residuals))
+        independence_pass = 1.5 <= dw_stat <= 2.5
+
+        self._assumption_cache = {
+            "normality": {
+                "passes": bool(normality_pass),
+                "shapiro": {
+                    "statistic": float(shapiro_stat),
+                    "p_value": float(shapiro_p),
+                },
+                "anderson": {
+                    "statistic": float(anderson_res.statistic),
+                    "critical_value_5pct": float(ad_threshold),
+                },
+            },
+            "homoscedasticity": {
+                "passes": bool(homoscedastic_pass),
+                "levene": {
+                    "statistic": float(levene_stat),
+                    "p_value": float(levene_p),
+                },
+                "bartlett": {
+                    "statistic": float(bartlett_stat),
+                    "p_value": float(bartlett_p),
+                },
+            },
+            "independence": {
+                "passes": bool(independence_pass),
+                "durbin_watson": float(dw_stat),
+            },
+        }
+        return self._assumption_cache
+
+    # ------------------------------------------------------------------
+    def influence_analysis(self) -> Dict[str, np.ndarray]:
+        """Compute influence diagnostics under the Cook & Weisberg framework.
+
+        Returns
+        -------
+        Dict[str, numpy.ndarray]
+            Arrays of studentized residuals, Cook's distances, DFFITS, leverage,
+            and DFBETAS for each observation.
+
+        Examples
+        --------
+        >>> influence = diagnostics.influence_analysis()
+        >>> {k: v.shape for k, v in influence.items()}['leverage']
+        (120,)
+        """
+
+        if self._influence_cache is not None:
+            return self._influence_cache
+
+        influence = self.model.get_influence()
+        studentized = influence.resid_studentized_external
+        cooks_d = influence.cooks_distance[0]
+        dffits = influence.dffits[0]
+        leverage = influence.hat_matrix_diag
+        dfbetas = influence.dfbetas
+
+        self._influence_cache = {
+            "studentized_residuals": np.asarray(studentized, dtype=float),
+            "cooks_distance": np.asarray(cooks_d, dtype=float),
+            "dffits": np.asarray(dffits, dtype=float),
+            "leverage": np.asarray(leverage, dtype=float),
+            "dfbetas": np.asarray(dfbetas, dtype=float),
+        }
+        return self._influence_cache
+
+    # ------------------------------------------------------------------
+    def outlier_detection(self) -> Dict[str, List[int]]:
+        """Identify influential observations with multiple criteria.
+
+        Returns
+        -------
+        Dict[str, List[int]]
+            Observation indices flagged by studentized residual, Cook's distance
+            and DFBETAS thresholds. Indices are returned in ascending order.
+
+        Examples
+        --------
+        >>> diagnostics.outlier_detection()['cooks_distance']
+        []
+        """
+
+        if self._outlier_cache is not None:
+            return self._outlier_cache
+
+        influence = self.influence_analysis()
+        n_obs = len(self.residuals)
+        p_params = int(getattr(self.model, "df_model", len(self.model.params) - 1)) + 1
+
+        studentized = influence["studentized_residuals"]
+        cooks_d = influence["cooks_distance"]
+        dfbetas = influence["dfbetas"]
+
+        student_threshold = 3.0
+        cook_threshold = 4.0 / max(n_obs, 1)
+        dfbetas_threshold = 2.0 / math.sqrt(max(n_obs, 1))
+
+        student_idx = np.where(np.abs(studentized) > student_threshold)[0]
+        cooks_idx = np.where(cooks_d > cook_threshold)[0]
+        dfbetas_idx = np.unique(np.where(np.abs(dfbetas) > dfbetas_threshold)[0])
+
+        leverage = influence["leverage"]
+        leverage_threshold = 2.0 * p_params / max(n_obs, 1)
+        leverage_idx = np.where(leverage > leverage_threshold)[0]
+
+        self._outlier_cache = {
+            "studentized_residuals": student_idx.astype(int).tolist(),
+            "cooks_distance": cooks_idx.astype(int).tolist(),
+            "dfbetas": dfbetas_idx.astype(int).tolist(),
+            "leverage": leverage_idx.astype(int).tolist(),
+        }
+        return self._outlier_cache
+
+    # ------------------------------------------------------------------
+    def model_adequacy(self) -> Dict[str, Any]:
+        """Summarise overall adequacy of the fitted model.
+
+        The summary merges assumption test outcomes, influence diagnostics, and
+        model fit statistics. Diagnostic plots for residual behaviour and Cook's
+        distance are included to support expert review.
+
+        Returns
+        -------
+        Dict[str, Any]
+            Dictionary with keys ``assumptions``, ``outliers``, ``influence``,
+            ``model_metrics``, ``overall_pass``, and ``plots``.
+
+        Examples
+        --------
+        >>> adequacy = diagnostics.model_adequacy()
+        >>> sorted(adequacy['plots'].keys())
+        ['cook_distance', 'qq_plot', 'residuals_vs_fitted']
+        """
+
+        assumptions = self.assumption_tests()
+        outliers = self.outlier_detection()
+        influence = self.influence_analysis()
+        metrics = self.model_result.get("model_metrics", {})
+
+        assumption_pass = all(result["passes"] for result in assumptions.values())
+        outlier_count = sum(len(indices) for indices in outliers.values())
+        influence_summary = {
+            key: float(np.nanmax(np.abs(values))) for key, values in influence.items()
+        }
+
+        try:
+            plots = self._generate_diagnostic_plots(influence)
+        except RuntimeError:
+            plots = {}
+
+        overall_pass = (
+            assumption_pass
+            and outlier_count == 0
+            and influence_summary["cooks_distance"] < (4.0 / len(self.residuals))
         )
 
-        self._test_results = results
-        return results
+        return {
+            "assumptions": assumptions,
+            "outliers": outliers,
+            "influence": influence_summary,
+            "model_metrics": metrics,
+            "overall_pass": bool(overall_pass),
+            "plots": plots,
+        }
 
-    def detect_outliers(
-        self,
-        std_resid_thresh: float = 2.0,
-        cook_thresh: Optional[float] = None,
-        leverage_thresh: Optional[float] = None,
-    ) -> pd.DataFrame:
-        """Identify influential observations.
+    # ------------------------------------------------------------------
+    def recommendation_system(self) -> List[str]:
+        """Produce actionable recommendations based on diagnostics.
+
+        Recommendations interpret assumption violations and influential point
+        detections to guide remedial strategies such as variance-stabilising
+        transformations, robust regression, or data review.
+
+        Returns
+        -------
+        List[str]
+            Human-readable recommendations ordered by severity.
+
+        Examples
+        --------
+        >>> diagnostics.recommendation_system()  # doctest: +SKIP
+        ['No major issues detected. Consider validating on a holdout set.']
+        """
+
+        suggestions: List[str] = []
+        assumptions = self.assumption_tests()
+        outliers = self.outlier_detection()
+        influence = self.influence_analysis()
+
+        if not assumptions["normality"]["passes"]:
+            suggestions.append(
+                "Residuals deviate from normality; consider Box-Cox transformations or non-parametric approaches."
+            )
+        if not assumptions["homoscedasticity"]["passes"]:
+            suggestions.append(
+                "Variance heterogeneity detected; weighted least squares or modelling variance as a function of predictors is recommended."
+            )
+        if not assumptions["independence"]["passes"]:
+            suggestions.append(
+                "Residual autocorrelation present; incorporate lag terms or mixed-effects structures to address dependence."
+            )
+
+        if any(outliers.values()):
+            suggestions.append(
+                "Investigate high-influence observations flagged by studentized residuals, Cook's distance, or DFBETAS before finalising conclusions."
+            )
+
+        cooks_peak = float(np.nanmax(np.abs(influence["cooks_distance"])))
+        if cooks_peak > (4.0 / len(self.residuals)):
+            suggestions.append(
+                "Cook's distance exceeds the 4/n heuristic; reassess the modelling assumptions for the flagged runs."
+            )
+
+        if not suggestions:
+            suggestions.append(
+                "No major issues detected. Consider validating on a holdout set to confirm predictive adequacy."
+            )
+
+        return suggestions
+
+    # ------------------------------------------------------------------
+    def _generate_diagnostic_plots(
+        self, influence: Dict[str, np.ndarray]
+    ) -> Dict[str, Figure]:
+        """Create diagnostic plots supporting :meth:`model_adequacy`.
 
         Parameters
         ----------
-        std_resid_thresh : float, optional
-            Absolute threshold for standardized residuals, by default ``2.0``.
-        cook_thresh : float, optional
-            Cutoff for Cook's distance. Defaults to ``4 / n`` if ``None``.
-        leverage_thresh : float, optional
-            Cutoff for leverage values. Defaults to ``2p / n`` if ``None`` where
-            ``p`` is the number of parameters.
+        influence : Dict[str, numpy.ndarray]
+            Influence diagnostics as returned by :meth:`influence_analysis`.
 
         Returns
         -------
-        pandas.DataFrame
-            Residual diagnostics with outlier flags.
+        Dict[str, matplotlib.figure.Figure]
+            Figures for residuals vs fitted, Q-Q analysis, and Cook's distance.
         """
 
-        infl = self.model.get_influence()
-        std_resid = infl.resid_studentized_internal
-        cooks_d = infl.cooks_distance[0]
-        leverage = infl.hat_matrix_diag
+        if plt is None:
+            raise RuntimeError("matplotlib is required to generate diagnostic plots")
 
-        n = len(self.residuals)
-        p = self.exog.shape[1]
-        if cook_thresh is None:
-            cook_thresh = 4 / n
-        if leverage_thresh is None:
-            leverage_thresh = 2 * p / n
+        figures: Dict[str, Figure] = {}
 
-        df = pd.DataFrame(
-            {
-                "standardized_residual": std_resid,
-                "cooks_distance": cooks_d,
-                "leverage": leverage,
-            }
+        fig_rvf, ax_rvf = plt.subplots(figsize=(6, 4))
+        ax_rvf.scatter(self.fitted_values, self.residuals, alpha=0.7)
+        ax_rvf.axhline(0.0, color="red", linestyle="--", linewidth=1.0)
+        ax_rvf.set_xlabel("Fitted values")
+        ax_rvf.set_ylabel("Residuals")
+        ax_rvf.set_title("Residuals vs Fitted")
+        figures["residuals_vs_fitted"] = fig_rvf
+
+        fig_qq, ax_qq = plt.subplots(figsize=(6, 4))
+        stats.probplot(self.residuals, dist="norm", plot=ax_qq)
+        ax_qq.set_title("Normal Q-Q Plot")
+        figures["qq_plot"] = fig_qq
+
+        fig_cook, ax_cook = plt.subplots(figsize=(6, 4))
+        ax_cook.stem(
+            np.arange(len(influence["cooks_distance"])),
+            influence["cooks_distance"],
+            basefmt=" ",
         )
-        df["is_outlier"] = (
-            (df["standardized_residual"].abs() > std_resid_thresh)
-            | (df["cooks_distance"] > cook_thresh)
-            | (df["leverage"] > leverage_thresh)
-        )
+        ax_cook.set_xlabel("Observation")
+        ax_cook.set_ylabel("Cook's distance")
+        ax_cook.set_title("Cook's Distance by Observation")
+        figures["cook_distance"] = fig_cook
 
-        self._outliers = df
-        return df
-
-    def influence_plots(self) -> plt.Figure:
-        """Generate diagnostic plots.
-
-        Returns
-        -------
-        matplotlib.figure.Figure
-            Figure with residual, QQ, and influence plots.
-        """
-
-        fig, axes = plt.subplots(1, 3, figsize=(15, 4))
-
-        # Residuals vs fitted
-        sns.scatterplot(x=self.fitted, y=self.residuals, ax=axes[0], alpha=0.7)
-        axes[0].axhline(0, color="red", linestyle="--", linewidth=1)
-        axes[0].set_xlabel("Fitted values")
-        axes[0].set_ylabel("Residuals")
-        axes[0].set_title("Residuals vs Fitted")
-
-        # QQ plot
-        stats.probplot(self.residuals, dist="norm", plot=axes[1])
-        axes[1].set_title("Normal Q-Q")
-
-        # Cook's distance plot
-        infl = self.model.get_influence()
-        cooks_d = infl.cooks_distance[0]
-        axes[2].stem(np.arange(len(cooks_d)), cooks_d, markerfmt=",", basefmt=" ")
-        axes[2].set_xlabel("Observation")
-        axes[2].set_ylabel("Cook's D")
-        axes[2].set_title("Influence (Cook's D)")
-
-        fig.tight_layout()
-        return fig
-
-    def recommendations(self) -> List[str]:
-        """Provide recommendations based on diagnostics.
-
-        Returns
-        -------
-        list of str
-            Suggested actions for improving model assumptions.
-        """
-
-        recs: List[str] = []
-        tests = (
-            self._test_results
-            if self._test_results is not None
-            else self.assumption_tests()
-        )
-        outliers = (
-            self._outliers if self._outliers is not None else self.detect_outliers()
-        )
-
-        for _, row in tests.iterrows():
-            if not row["passed"]:
-                if row["assumption"] == "normality":
-                    recs.append(
-                        "Residuals appear non-normal; consider a transformation or robust regression."
-                    )
-                elif row["assumption"] == "homoscedasticity":
-                    recs.append(
-                        "Heteroscedasticity detected; consider weighted least squares or variance-stabilizing transforms."
-                    )
-                elif row["assumption"] == "independence":
-                    recs.append(
-                        "Autocorrelation detected; consider adding lag terms or using time-series models."
-                    )
-
-        if outliers["is_outlier"].any():
-            recs.append(
-                "Potential outliers or influential points detected; investigate observations with high Cook's distance or leverage."
-            )
-
-        if not recs:
-            recs.append(
-                "No major issues detected. Model assumptions appear reasonable."
-            )
-
-        return recs
+        return figures

@@ -408,7 +408,7 @@ This roadmap outlines the development phases, priorities, and milestones needed 
   - Version numbering scheme
 
 - [ ] **Installation Testing**
-  - Multiple Python versions (3.8-3.11)
+  - Multiple Python versions (3.10-3.12)
   - Different operating systems
   - Conda package creation
   - Docker container setup
