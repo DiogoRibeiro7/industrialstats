@@ -24,7 +24,7 @@ plotly = "^5.22"
 [tool.poetry.dev-dependencies]
 pytest = "^8.0.0"
 hypothesis = "^6.99"
-black = "^24.4"
+black = "^25.9"
 isort = "^5.13"
 flake8 = "^7.0"
 mypy = "^1.9"
