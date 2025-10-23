@@ -9,7 +9,7 @@ This document provides detailed instructions for AI coding agents (like Claude, 
 ## 📋 General Guidelines
 
 ### **Code Quality Standards**
-- **Python Version**: Target Python 3.8+ compatibility
+- **Python Version**: Target Python 3.10+ compatibility
 - **Style Guide**: Follow PEP 8 with Black formatting (line length: 88)
 - **Type Hints**: Use comprehensive type annotations throughout
 - **Docstrings**: NumPy-style docstrings for all public functions/classes
@@ -752,7 +752,7 @@ jobs:
   test:
     strategy:
       matrix:
-        python-version: [3.8, 3.9, 3.10, 3.11]
+        python-version: [3.10, 3.11, 3.12]
         os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
       - uses: actions/checkout@v3
