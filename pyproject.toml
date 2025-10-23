@@ -28,7 +28,7 @@ black = "^25.9"
 isort = "^5.13"
 flake8 = "^7.0"
 mypy = "^1.9"
-pre-commit = "^3.7"
+pre-commit = "^4.3"
 
 [tool.poetry.scripts]
 industrialstats = "industrialstats.cli:main"
