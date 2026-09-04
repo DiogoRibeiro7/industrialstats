@@ -13,6 +13,10 @@
           "type": "yaml",
           "path": "CITATION.cff",
           "jsonpath": "$.version"
+        },
+        {
+          "type": "generic",
+          "path": "src/industrialstats/__init__.py"
         }
       ]
     }
