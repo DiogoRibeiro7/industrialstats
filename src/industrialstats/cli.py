@@ -144,7 +144,7 @@ def anova_command(args: argparse.Namespace) -> None:
     analysis.fit_model(args.formula)
     table = analysis.anova_table_calculation(typ=args.typ)
     if args.output:
-        export_to_csv(table.reset_index(), args.output)
+        export_to_csv(table, args.output, include_index=True)
     else:
         print(table.to_string())
 
@@ -225,10 +225,8 @@ def fractional_command(args: argparse.Namespace) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Build the top-level CLI argument parser."""
-    parser = argparse.ArgumentParser(
-        description="industrialstats command line interface"
-    )
+    """Build the top-level command-line parser."""
+    parser = argparse.ArgumentParser(description="industrialstats command line interface")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     factorial_parser = subparsers.add_parser(
