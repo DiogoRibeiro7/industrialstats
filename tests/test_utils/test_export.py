@@ -1,8 +1,10 @@
 import os
 import tempfile
 import unittest
+from pathlib import Path
 
 import pandas as pd
+from dataexcept import FileWriteError
 
 from industrialstats.utils.export import export_to_csv, export_to_excel, export_to_json
 
@@ -26,6 +28,29 @@ class TestExportUtilities(unittest.TestCase):
             export_to_json(self.df, f_json.name)
             self.assertTrue(os.path.exists(f_json.name))
             os.unlink(f_json.name)
+
+    def test_export_to_csv_wraps_filesystem_failure(self):
+        path = Path("missing-parent") / "output.csv"
+
+        with self.assertRaises(FileWriteError) as ctx:
+            export_to_csv(self.df, path)
+
+        error = ctx.exception
+        self.assertEqual(error.path, str(path))
+        self.assertIsInstance(error.original, OSError)
+        self.assertIs(error.__cause__, error.original)
+
+    def test_export_to_json_wraps_serialization_failure(self):
+        path = Path(tempfile.gettempdir()) / "industrialstats-invalid.json"
+        df = pd.DataFrame({"value": [object()]})
+
+        with self.assertRaises(FileWriteError) as ctx:
+            export_to_json(df, path)
+
+        error = ctx.exception
+        self.assertEqual(error.path, str(path))
+        self.assertIsInstance(error.original, TypeError)
+        self.assertIs(error.__cause__, error.original)
 
 
 if __name__ == "__main__":
