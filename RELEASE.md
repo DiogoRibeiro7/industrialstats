@@ -22,10 +22,11 @@ After the release-preparation changes are on `main`:
 1. create a GitHub Release with tag `vX.Y.Z` from `main`;
 2. publishing the GitHub Release triggers `.github/workflows/release.yml`;
 3. the workflow checks out that exact tag;
-4. it verifies that the tag matches the version in `pyproject.toml`;
+4. it verifies that the release commit is contained in `main` and that the tag version matches `pyproject.toml`, `src/industrialstats/__init__.py`, and `CITATION.cff`;
 5. it builds wheel and sdist and runs `twine check`;
 6. it attaches the distributions to the GitHub Release;
-7. it publishes to PyPI through OIDC Trusted Publishing.
+7. it publishes to PyPI through OIDC Trusted Publishing;
+8. the Zenodo GitHub integration archives the same GitHub Release independently.
 
 There is no PyPI API token and no personal GitHub token.
 
@@ -40,6 +41,16 @@ The Trusted Publisher configuration is:
 - environment: `pypi`
 
 The `pypi` GitHub environment must exist and match the Trusted Publisher configuration.
+
+## Zenodo
+
+Zenodo remains enabled as an independent archival destination for published GitHub Releases.
+
+`.zenodo.json` controls the metadata used by Zenodo, including the title, description, creator information, license, and keywords. It is intentionally version-independent so normal package releases do not require an extra Zenodo-specific version edit.
+
+`CITATION.cff` remains the repository citation file used by GitHub and other citation-aware tools.
+
+For an already-published Zenodo record, changing `.zenodo.json` does not retroactively alter that existing record; its metadata must be edited in Zenodo itself.
 
 ## Release invariants
 
