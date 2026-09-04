@@ -58,10 +58,16 @@ from industrialstats.designs.fractional_factorial import FractionalFactorialDesi
 
 factors = [Factor(name, [-1, 1], "continuous") for name in "ABCDE"]
 
-design = FractionalFactorialDesign(factors, fraction="1/4", randomize=False)
+design = FractionalFactorialDesign(factors, fraction="1/2", randomize=False)
 design.generate_design()
 print(design.resolution_analysis())
 ```
+
+That half fraction of five factors is 16 runs at resolution V, so every main
+effect and two-factor interaction is estimable. Taking a quarter fraction
+instead would halve the runs to eight but drop it to resolution III, aliasing
+main effects with two-factor interactions — acceptable for screening, but not
+if you intend to interpret interactions.
 
 If a screening run leaves ambiguity, `foldover` augments the design to break
 the aliases that matter.
