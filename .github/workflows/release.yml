@@ -1,8 +1,12 @@
 name: Release
 
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Git tag to publish, for example v0.1.0
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -18,7 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ inputs.tag }}
 
       - uses: actions/setup-python@v7
         with:
@@ -26,7 +30,7 @@ jobs:
 
       - name: Verify release version
         env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          RELEASE_TAG: ${{ inputs.tag }}
         run: |
           python - <<'PY'
           import os
@@ -50,7 +54,7 @@ jobs:
       - name: Attach distributions to GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "${{ github.event.release.tag_name }}" dist/* --clobber
+        run: gh release upload "${{ inputs.tag }}" dist/* --clobber
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
