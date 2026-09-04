@@ -7,7 +7,7 @@ abstract: >-
   response surface methodology, optimal designs, statistical analysis,
   diagnostics, power calculations, and visualization utilities.
 type: software
-version: 0.1.0
+version: 0.2.0
 license: MIT
 repository-code: https://github.com/DiogoRibeiro7/industrialstats
 url: https://github.com/DiogoRibeiro7/industrialstats

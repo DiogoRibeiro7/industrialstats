@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "industrialstats"
-version = "0.1.0"
+version = "0.2.0"
 description = "Industrial statistics and design of experiments for Python"
 authors = ["Diogo Ribeiro <diogo.debastos.ribeiro@gmail.com>"]
 maintainers = ["Diogo Ribeiro <dfr@esmad.ipp.pt>"]
