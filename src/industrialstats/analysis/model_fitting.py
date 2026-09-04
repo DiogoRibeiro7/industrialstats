@@ -2,8 +2,9 @@
 
 import logging
 import warnings
+from collections.abc import Sequence
 from itertools import combinations
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -46,15 +47,15 @@ class ModelFitting:
         if len(self.data) == 0:
             raise ValueError("No valid data after removing missing values")
 
-        self.fitted_models: Dict[str, Any] = {}
-        self.model_comparison: Optional[pd.DataFrame] = None
+        self.fitted_models: dict[str, Any] = {}
+        self.model_comparison: pd.DataFrame | None = None
 
     def stepwise_selection(
         self,
         entry_threshold: float = 0.05,
         removal_threshold: float = 0.10,
-        max_terms: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        max_terms: int | None = None,
+    ) -> dict[str, Any]:
         """Perform stepwise model selection.
 
         Parameters
@@ -74,7 +75,7 @@ class ModelFitting:
         # Generate candidate terms
         candidate_terms = self._generate_candidate_terms()
 
-        def _extract_p_value(term: str, pvals: Dict[str, float]) -> Optional[float]:
+        def _extract_p_value(term: str, pvals: dict[str, float]) -> float | None:
             """Map simplified term names to statsmodels parameter keys."""
             if term in pvals:
                 return pvals[term]
@@ -104,7 +105,7 @@ class ModelFitting:
 
             for term in candidate_terms:
                 if term not in current_terms and len(current_terms) < max_terms:
-                    trial_terms = current_terms + [term]
+                    trial_terms = [*current_terms, term]
                     try:
                         model_result = self._fit_terms(trial_terms)
 
@@ -184,7 +185,7 @@ class ModelFitting:
 
     def hierarchical_fitting(
         self, max_order: int = 3, significance_level: float = 0.05
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Fit hierarchical models while respecting effect hierarchy.
 
         Terms are added in increasing order of interaction degree. A term is only
@@ -217,10 +218,12 @@ class ModelFitting:
         --------
         >>> from industrialstats.analysis.model_fitting import ModelFitting
         >>> import pandas as pd
-        >>> df = pd.DataFrame({'A':[1, -1, 1, -1], 'B':[1, 1, -1, -1], 'y':[4,2,3,1]})
-        >>> fitter = ModelFitting(df, response='y')
+        >>> df = pd.DataFrame(
+        ...     {"A": [1, -1, 1, -1], "B": [1, 1, -1, -1], "y": [4, 2, 3, 1]}
+        ... )
+        >>> fitter = ModelFitting(df, response="y")
         >>> res = fitter.hierarchical_fitting(max_order=1)
-        >>> res['selected_terms']
+        >>> res["selected_terms"]
         ['Intercept', 'A', 'B']
 
         References
@@ -243,7 +246,7 @@ class ModelFitting:
             for term in terms_by_order[order]:
                 # Check if parent terms are included (hierarchy principle)
                 if self._hierarchy_satisfied(term, selected_terms):
-                    trial_terms = selected_terms + [term]
+                    trial_terms = [*selected_terms, term]
 
                     try:
                         model_result = self._fit_terms(trial_terms)
@@ -284,7 +287,7 @@ class ModelFitting:
             "significance_level": significance_level,
         }
 
-    def all_subsets_selection(self, criterion: str = "AIC") -> Dict[str, Any]:
+    def all_subsets_selection(self, criterion: str = "AIC") -> dict[str, Any]:
         """Perform all possible subsets selection.
 
         Parameters
@@ -302,7 +305,8 @@ class ModelFitting:
 
         if len(candidate_terms) > 20:
             warnings.warn(
-                "Large number of candidate terms. Consider using stepwise selection."
+                "Large number of candidate terms. Consider using stepwise selection.",
+                stacklevel=2,
             )
 
         best_models_by_size = {}
@@ -318,7 +322,7 @@ class ModelFitting:
 
             # Try all combinations of this size
             for term_combination in combinations(candidate_terms, subset_size):
-                terms = ["Intercept"] + list(term_combination)
+                terms = ["Intercept", *list(term_combination)]
 
                 try:
                     model_result = self._fit_terms(terms)
@@ -362,7 +366,7 @@ class ModelFitting:
             float("inf") if criterion in ["AIC", "BIC"] else float("-inf")
         )
 
-        for size, model_info in best_models_by_size.items():
+        for _size, model_info in best_models_by_size.items():
             criterion_value = model_info["criterion_value"]
 
             if criterion in ["AIC", "BIC"]:
@@ -383,10 +387,10 @@ class ModelFitting:
 
     def cross_validation(
         self,
-        model_terms: List[str],
+        model_terms: list[str],
         k_folds: int = 5,
-        random_state: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        random_state: int | None = None,
+    ) -> dict[str, Any]:
         """Perform k-fold cross-validation.
 
         Parameters
@@ -475,10 +479,10 @@ class ModelFitting:
 
     def bootstrap_validation(
         self,
-        model_terms: List[str],
+        model_terms: list[str],
         n_bootstrap: int = 100,
-        random_state: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        random_state: int | None = None,
+    ) -> dict[str, Any]:
         """Perform bootstrap validation.
 
         Parameters
@@ -507,7 +511,7 @@ class ModelFitting:
         # Original model for comparison
         original_model = self._fit_terms(model_terms)
 
-        for bootstrap_idx in range(n_bootstrap):
+        for _bootstrap_idx in range(n_bootstrap):
             # Create bootstrap sample
             bootstrap_indices = rng.integers(0, n_samples, size=n_samples)
             bootstrap_data = self.data.iloc[bootstrap_indices].reset_index(drop=True)
@@ -593,12 +597,12 @@ class ModelFitting:
     def regularized_fitting(
         self,
         method: str = "lasso",
-        alphas: Optional[Sequence[float]] = None,
+        alphas: Sequence[float] | None = None,
         cv: int = 5,
         l1_ratio: float = 0.5,
         plot_path: bool = False,
-        random_state: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        random_state: int | None = None,
+    ) -> dict[str, Any]:
         """Fit linear models with regularization and cross-validation.
 
         Parameters
@@ -644,9 +648,15 @@ class ModelFitting:
         X = pd.get_dummies(self.data[self.factor_columns], drop_first=True)
         y = self.data[self.response].values
 
+        # scikit-learn deprecated passing ``alphas=None`` explicitly: from 1.9
+        # the default becomes an alpha count rather than None. Omitting the
+        # argument entirely selects the library default on every supported
+        # version and keeps the automatic grid behaviour.
+        alpha_kwargs = {} if alphas is None else {"alphas": alphas}
+
         if method.lower() == "lasso":
-            model = LassoCV(alphas=alphas, cv=cv, random_state=random_state).fit(X, y)
-            path_alphas, coefs, _ = lasso_path(X, y, alphas=alphas)
+            model = LassoCV(cv=cv, random_state=random_state, **alpha_kwargs).fit(X, y)
+            path_alphas, coefs, _ = lasso_path(X, y, **alpha_kwargs)
         elif method.lower() == "ridge":
             if alphas is None:
                 alphas = np.logspace(-6, 6, 100)
@@ -659,15 +669,15 @@ class ModelFitting:
         elif method.lower() == "elasticnet":
             model = ElasticNetCV(
                 l1_ratio=l1_ratio,
-                alphas=alphas,
                 cv=cv,
                 random_state=random_state,
+                **alpha_kwargs,
             ).fit(X, y)
-            path_alphas, coefs, _ = enet_path(X, y, l1_ratio=l1_ratio, alphas=alphas)
+            path_alphas, coefs, _ = enet_path(X, y, l1_ratio=l1_ratio, **alpha_kwargs)
         else:
             raise ValueError("method must be 'lasso', 'ridge', or 'elasticnet'")
 
-        coefficients = dict(zip(X.columns, model.coef_))
+        coefficients = dict(zip(X.columns, model.coef_, strict=True))
         selected_features = [
             feat for feat, coef in coefficients.items() if not np.isclose(coef, 0.0)
         ]
@@ -693,7 +703,7 @@ class ModelFitting:
             "method": method.lower(),
         }
 
-    def model_comparison(self, model_list: List[List[str]]) -> pd.DataFrame:
+    def model_comparison(self, model_list: list[list[str]]) -> pd.DataFrame:
         """Compare multiple models using various criteria.
 
         Parameters
@@ -714,7 +724,7 @@ class ModelFitting:
 
                 comparison_results.append(
                     {
-                        "Model": f"Model_{i+1}",
+                        "Model": f"Model_{i + 1}",
                         "Terms": " + ".join(model_terms),
                         "N_Terms": len(model_terms),
                         "R2": model_result["model_metrics"]["R2"],
@@ -732,13 +742,13 @@ class ModelFitting:
                 )
 
                 # Store fitted model
-                self.fitted_models[f"Model_{i+1}"] = model_result
+                self.fitted_models[f"Model_{i + 1}"] = model_result
 
             except (ValueError, np.linalg.LinAlgError) as e:
                 logger.debug("Model comparison failed for model %s: %s", i + 1, e)
                 comparison_results.append(
                     {
-                        "Model": f"Model_{i+1}",
+                        "Model": f"Model_{i + 1}",
                         "Terms": " + ".join(model_terms),
                         "N_Terms": len(model_terms),
                         "Error": str(e),
@@ -748,7 +758,7 @@ class ModelFitting:
         self.model_comparison = pd.DataFrame(comparison_results)
         return self.model_comparison
 
-    def _generate_candidate_terms(self) -> List[str]:
+    def _generate_candidate_terms(self) -> list[str]:
         """Generate candidate model terms."""
         terms = []
 
@@ -770,7 +780,7 @@ class ModelFitting:
 
         return terms
 
-    def _generate_hierarchical_terms(self, max_order: int) -> Dict[int, List[str]]:
+    def _generate_hierarchical_terms(self, max_order: int) -> dict[int, list[str]]:
         """Generate terms organized by hierarchy order."""
         terms_by_order = {}
 
@@ -794,7 +804,7 @@ class ModelFitting:
 
         return terms_by_order
 
-    def _hierarchy_satisfied(self, term: str, included_terms: List[str]) -> bool:
+    def _hierarchy_satisfied(self, term: str, included_terms: list[str]) -> bool:
         """Check if hierarchy principle is satisfied for a term."""
         if "*" not in term:
             return True  # Main effects always satisfy hierarchy
@@ -815,9 +825,8 @@ class ModelFitting:
 
         return True
 
-    def _fit_terms(self, terms: List[str]) -> Dict[str, Any]:
+    def _fit_terms(self, terms: list[str]) -> dict[str, Any]:
         """Fit model with specified terms."""
-        import statsmodels.api as sm
         from statsmodels.formula.api import ols
 
         # Build model formula
@@ -846,10 +855,10 @@ class ModelFitting:
         model = ols(formula, data=self.data).fit()
 
         # Extract results
-        coefficients = dict(zip(model.params.index, model.params.values))
-        std_errors = dict(zip(model.params.index, model.bse.values))
-        t_stats = dict(zip(model.params.index, model.tvalues.values))
-        p_values = dict(zip(model.params.index, model.pvalues.values))
+        coefficients = dict(zip(model.params.index, model.params.values, strict=True))
+        std_errors = dict(zip(model.params.index, model.bse.values, strict=True))
+        t_stats = dict(zip(model.params.index, model.tvalues.values, strict=True))
+        p_values = dict(zip(model.params.index, model.pvalues.values, strict=True))
 
         # Calculate model metrics
         n = len(self.data)
@@ -882,9 +891,9 @@ class ModelFitting:
 
     def _predict_with_model(
         self,
-        model_result: Dict[str, Any],
+        model_result: dict[str, Any],
         new_data: pd.DataFrame,
-        model_terms: List[str],
+        model_terms: list[str],
     ) -> np.ndarray:
         """Make predictions with a fitted model."""
         # Use the statsmodels model object for prediction
@@ -892,7 +901,7 @@ class ModelFitting:
         predictions = model_obj.predict(new_data)
         return predictions.values
 
-    def residual_diagnostics(self, model_terms: List[str]) -> Dict[str, Any]:
+    def residual_diagnostics(self, model_terms: list[str]) -> dict[str, Any]:
         """Perform comprehensive residual diagnostics.
 
         Parameters
@@ -908,7 +917,6 @@ class ModelFitting:
         model_result = self._fit_terms(model_terms)
 
         residuals = model_result["residuals"]
-        fitted_values = model_result["fitted_values"]
 
         diagnostics = {}
 
@@ -940,7 +948,7 @@ class ModelFitting:
             # Breusch-Pagan test
             from statsmodels.stats.diagnostic import het_breuschpagan
 
-            bp_stat, bp_p, bp_f_stat, bp_f_p = het_breuschpagan(
+            bp_stat, bp_p, _bp_f_stat, _bp_f_p = het_breuschpagan(
                 residuals, model_result["model_object"].model.exog
             )
 
@@ -1006,7 +1014,7 @@ class ModelFitting:
 
         return diagnostics
 
-    def lack_of_fit_test(self, model_terms: List[str]) -> Dict[str, Any]:
+    def lack_of_fit_test(self, model_terms: list[str]) -> dict[str, Any]:
         """Perform lack-of-fit test for models with replicates.
 
         Parameters

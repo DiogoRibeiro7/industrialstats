@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import unittest
-from typing import Dict
 
 import numpy as np
 import pandas as pd
@@ -132,7 +131,7 @@ class TestDataSimulator(unittest.TestCase):
     def test_validate_against_real_data_reports_statistics(self) -> None:
         simulated = self.simulator.simulate_factorial_response(self.dm, noise_level=0.0)
         stats = self.simulator.validate_against_real_data(simulated, simulated.copy())
-        expected: Dict[str, float] = stats["Response"]
+        expected: dict[str, float] = stats["Response"]
         self.assertLess(expected["mean_diff"], 1e-9)
         self.assertIn("ks_like", expected)
 

@@ -1,7 +1,7 @@
 """Full factorial experimental designs."""
 
 from itertools import product
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -14,7 +14,7 @@ class FactorialDesign(ExperimentalDesign):
 
     def __init__(
         self,
-        factors: List[Factor],
+        factors: list[Factor],
         replicates: int = 1,
         center_points: int = 0,
         randomize: bool = True,
@@ -96,7 +96,7 @@ class FactorialDesign(ExperimentalDesign):
         # Add center points if specified
         if self.center_points > 0:
             center_values = self._calculate_center_points()
-            for cp in range(self.center_points):
+            for _cp in range(self.center_points):
                 row = {
                     "RunID": run_id,
                     "Replicate": 1,  # Center points typically in first replicate
@@ -137,7 +137,7 @@ class FactorialDesign(ExperimentalDesign):
 
         return self.design_matrix
 
-    def _calculate_center_points(self) -> List[float]:
+    def _calculate_center_points(self) -> list[float]:
         """Calculate center point values for continuous factors.
 
         Returns
@@ -172,10 +172,7 @@ class FactorialDesign(ExperimentalDesign):
             if len(factor.levels) < 2:
                 return False
 
-        if self.replicates < 1:
-            return False
-
-        return True
+        return not self.replicates < 1
 
     def n_runs(self) -> int:
         """Calculate total number of experimental runs.
@@ -204,7 +201,7 @@ class FactorialDesign(ExperimentalDesign):
             return 0
         return np.prod([len(f.levels) for f in self.factors]) * self.replicates
 
-    def degrees_of_freedom(self) -> Dict[str, int]:
+    def degrees_of_freedom(self) -> dict[str, int]:
         """Calculate degrees of freedom for ANOVA analysis.
 
         Returns
@@ -249,7 +246,7 @@ class FactorialDesign(ExperimentalDesign):
 
         return dof
 
-    def calculate_effects(self, response_data: List[float]) -> Dict[str, float]:
+    def calculate_effects(self, response_data: list[float]) -> dict[str, float]:
         """Calculate main effects and interactions for 2-level factors.
 
         Parameters
@@ -273,7 +270,7 @@ class FactorialDesign(ExperimentalDesign):
         if len(response_data) != len(self.design_matrix):
             raise ValueError("Response data length doesn't match design matrix")
 
-        effects: Dict[str, float] = {}
+        effects: dict[str, float] = {}
         n_factors = len(self.factors)
 
         # Build design matrix with 0/1 coding for regression
@@ -353,7 +350,7 @@ class FactorialDesign(ExperimentalDesign):
 
     def power_analysis(
         self, effect_size: float, alpha: float = 0.05, power: float = 0.8
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Calculate power analysis for the factorial design.
 
         Parameters
@@ -444,7 +441,7 @@ class FactorialDesign(ExperimentalDesign):
         for i, factor in enumerate(self.factors):
             span = max(factor.levels) - min(factor.levels)
             for sign in (-1, 1):
-                row: Dict[str, Any] = {
+                row: dict[str, Any] = {
                     "RunID": run_id,
                     "Replicate": 1,
                     "DesignPoint": "Star",
@@ -528,7 +525,7 @@ class FactorialDesign(ExperimentalDesign):
         self.design_matrix["Block"] = blocks
         return self.design_matrix
 
-    def confounding_pattern(self) -> Dict[str, List[str]]:
+    def confounding_pattern(self) -> dict[str, list[str]]:
         """Return confounding pattern based on alias correlations.
 
         Returns
@@ -537,7 +534,7 @@ class FactorialDesign(ExperimentalDesign):
             Mapping of factor names to aliased terms.
         """
         corr = self.alias_matrix().abs()
-        confound: Dict[str, List[str]] = {}
+        confound: dict[str, list[str]] = {}
         cols = list(corr.columns)
         for i, c1 in enumerate(cols):
             for j in range(i + 1, len(cols)):
@@ -546,7 +543,7 @@ class FactorialDesign(ExperimentalDesign):
                     confound.setdefault(c1, []).append(c2)
         return confound
 
-    def design_generators(self) -> List[str]:
+    def design_generators(self) -> list[str]:
         """Return generator strings for fractional factorial designs.
 
         Returns

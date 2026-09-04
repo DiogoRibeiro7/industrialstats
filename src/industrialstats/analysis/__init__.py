@@ -9,7 +9,7 @@ from .power_analysis import PowerAnalysis
 __all__ = [
     "ANOVAAnalysis",
     "EffectsAnalysis",
+    "ModelDiagnostics",
     "ModelFitting",
     "PowerAnalysis",
-    "ModelDiagnostics",
 ]

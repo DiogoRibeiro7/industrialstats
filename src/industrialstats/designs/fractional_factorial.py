@@ -1,10 +1,11 @@
-from __future__ import annotations
-
 """Fractional factorial design implementation."""
 
+from __future__ import annotations
+
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from itertools import combinations, product
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -18,7 +19,7 @@ def _bit_count(mask: int) -> int:
     return int(mask.bit_count())
 
 
-def _split_generator_terms(generator: str, base_names: Sequence[str]) -> List[str]:
+def _split_generator_terms(generator: str, base_names: Sequence[str]) -> list[str]:
     """Split a generator string into base factor names.
 
     The helper accepts generator expressions in one of the following formats:
@@ -53,7 +54,7 @@ def _split_generator_terms(generator: str, base_names: Sequence[str]) -> List[st
 
     # Fall back to greedy matching of known base names (longest first).
     remaining = generator
-    tokens: List[str] = []
+    tokens: list[str] = []
     sorted_names = sorted(base_names, key=len, reverse=True)
     while remaining:
         matched = False
@@ -70,7 +71,7 @@ def _split_generator_terms(generator: str, base_names: Sequence[str]) -> List[st
     return tokens
 
 
-def _mask_from_terms(terms: Sequence[str], name_to_index: Dict[str, int]) -> int:
+def _mask_from_terms(terms: Sequence[str], name_to_index: dict[str, int]) -> int:
     """Convert a sequence of factor names to a bit mask."""
 
     mask = 0
@@ -85,10 +86,10 @@ def _mask_from_terms(terms: Sequence[str], name_to_index: Dict[str, int]) -> int
     return mask
 
 
-def _word_length_pattern(words: Iterable[int]) -> Dict[int, int]:
+def _word_length_pattern(words: Iterable[int]) -> dict[int, int]:
     """Compute the word-length pattern for a collection of defining words."""
 
-    pattern: Dict[int, int] = {}
+    pattern: dict[int, int] = {}
     for word in words:
         if word == 0:
             continue
@@ -97,7 +98,7 @@ def _word_length_pattern(words: Iterable[int]) -> Dict[int, int]:
     return pattern
 
 
-def _extend_basis(basis: List[int], mask: int) -> Optional[List[int]]:
+def _extend_basis(basis: list[int], mask: int) -> list[int] | None:
     """Extend a row-reduced basis in :math:`\\mathrm{GF}(2)` with ``mask``."""
 
     new_basis = basis.copy()
@@ -113,7 +114,7 @@ def _extend_basis(basis: List[int], mask: int) -> Optional[List[int]]:
     return None
 
 
-def _combine_words(existing: Iterable[int], new_word: int) -> List[int]:
+def _combine_words(existing: Iterable[int], new_word: int) -> list[int]:
     """Combine an existing defining relation with ``new_word``."""
 
     updated = set(existing)
@@ -126,8 +127,8 @@ def _combine_words(existing: Iterable[int], new_word: int) -> List[int]:
 @dataclass
 class _SearchResult:
     resolution: int
-    pattern: Dict[int, int]
-    generators: Tuple[int, ...]
+    pattern: dict[int, int]
+    generators: tuple[int, ...]
 
 
 class _MinimumAberrationSearch:
@@ -139,9 +140,9 @@ class _MinimumAberrationSearch:
         self.base_count = base_count
         self.generator_count = generator_count
         self.candidates = list(candidates)
-        self.best: Optional[_SearchResult] = None
+        self.best: _SearchResult | None = None
 
-    def run(self) -> Tuple[int, ...]:
+    def run(self) -> tuple[int, ...]:
         """Execute the search and return generator masks."""
 
         basis = [0] * self.base_count
@@ -156,9 +157,9 @@ class _MinimumAberrationSearch:
     def _dfs(
         self,
         start: int,
-        chosen: List[int],
-        basis: List[int],
-        defining_words: List[int],
+        chosen: list[int],
+        basis: list[int],
+        defining_words: list[int],
     ) -> None:
         if len(chosen) == self.generator_count:
             pattern = _word_length_pattern(defining_words)
@@ -179,9 +180,9 @@ class _MinimumAberrationSearch:
             new_word = mask | (1 << alias_index)
             new_defining = _combine_words(defining_words, new_word)
             pattern = _word_length_pattern(new_defining)
-            if self.best:
+            if self.best and pattern:
                 best_res = self.best.resolution
-                candidate_res = min(pattern) if pattern else float("inf")
+                candidate_res = min(pattern)
                 if candidate_res < best_res:
                     continue
                 if candidate_res == best_res:
@@ -267,18 +268,18 @@ class FractionalFactorialDesign(ExperimentalDesign):
     >>> metrics["resolution"]
     4
     >>> alias = design.alias_structure()
-    >>> alias['A'][:3]
+    >>> alias["A"][:3]
     ['A', 'A:B:C:F:G', 'A:B:D:E:G']
-    >>> design.foldover_options()[0]['type']
+    >>> design.foldover_options()[0]["type"]
     'full'
     """
 
     def __init__(
         self,
-        factors: List[Factor],
+        factors: list[Factor],
         fraction: str = "1/2",
-        generators: Optional[List[str]] = None,
-        resolution: Optional[int] = None,
+        generators: list[str] | None = None,
+        resolution: int | None = None,
         replicates: int = 1,
         randomize: bool = True,
     ) -> None:
@@ -306,7 +307,7 @@ class FractionalFactorialDesign(ExperimentalDesign):
         self.requested_resolution = resolution
         self.replicates = replicates
         self.randomize_flag = randomize
-        self._coded_matrix: Optional[pd.DataFrame] = None
+        self._coded_matrix: pd.DataFrame | None = None
 
         factor_count = len(factors)
         if factor_count < 3 or factor_count > 15:
@@ -339,7 +340,7 @@ class FractionalFactorialDesign(ExperimentalDesign):
         if not self.generators:
             self.generators = self._auto_generators()
 
-    def _auto_generators(self) -> List[str]:
+    def _auto_generators(self) -> list[str]:
         """Automatically identify minimum aberration generators.
 
         Returns
@@ -353,12 +354,12 @@ class FractionalFactorialDesign(ExperimentalDesign):
         # Generate candidate masks grouped by size. Larger interactions are
         # preferred to achieve higher resolution while keeping the search space
         # tractable for up to fifteen factors.
-        candidates_by_length: Dict[int, List[int]] = {}
+        candidates_by_length: dict[int, list[int]] = {}
         for mask in range(1, 1 << self._base_count):
             length = _bit_count(mask)
             candidates_by_length.setdefault(length, []).append(mask)
 
-        candidates: List[int] = []
+        candidates: list[int] = []
         max_per_length = 12 if self._base_count > 6 else None
         for length in sorted(candidates_by_length, reverse=True):
             masks = sorted(candidates_by_length[length])
@@ -369,40 +370,40 @@ class FractionalFactorialDesign(ExperimentalDesign):
         search = _MinimumAberrationSearch(self._base_count, self.p, candidates)
         best_masks = search.run()
 
-        generator_strings: List[str] = []
+        generator_strings: list[str] = []
         for mask in best_masks:
             terms = [name for name, idx in name_to_index.items() if mask & (1 << idx)]
             terms.sort(key=lambda item: name_to_index[item])
             generator_strings.append("*".join(terms))
         return generator_strings
 
-    def _coded_levels(self) -> Dict[str, List[int]]:
+    def _coded_levels(self) -> dict[str, list[int]]:
         return {factor.name: [-1, 1] for factor in self.factors}
 
-    def _parsed_generators(self) -> List[List[str]]:
+    def _parsed_generators(self) -> list[list[str]]:
         base_names = [factor.name for factor in self.factors[: self._base_count]]
         return [_split_generator_terms(gen, base_names) for gen in self.generators]
 
     @staticmethod
-    def _evaluate_generator(terms: Sequence[str], row: Dict[str, int]) -> int:
+    def _evaluate_generator(terms: Sequence[str], row: dict[str, int]) -> int:
         value = 1
         for name in terms:
             value *= row[name]
         return value
 
-    def _generator_masks(self) -> List[int]:
+    def _generator_masks(self) -> list[int]:
         base_names = [factor.name for factor in self.factors[: self._base_count]]
         name_to_index = {name: idx for idx, name in enumerate(base_names)}
-        masks: List[int] = []
+        masks: list[int] = []
         for offset, terms in enumerate(self._parsed_generators()):
             base_mask = _mask_from_terms(terms, name_to_index)
             alias_index = self._base_count + offset
             masks.append(base_mask | (1 << alias_index))
         return masks
 
-    def _defining_words(self) -> List[int]:
+    def _defining_words(self) -> list[int]:
         generator_masks = self._generator_masks()
-        words: List[int] = []
+        words: list[int] = []
         for r in range(1, len(generator_masks) + 1):
             for combo in combinations(generator_masks, r):
                 word = 0
@@ -419,7 +420,7 @@ class FractionalFactorialDesign(ExperimentalDesign):
         ]
         return ":".join(names)
 
-    def calculate_resolution(self) -> Tuple[Optional[int], Dict[int, int]]:
+    def calculate_resolution(self) -> tuple[int | None, dict[int, int]]:
         """Return the design resolution and its word-length pattern."""
 
         pattern = _word_length_pattern(self._defining_words())
@@ -457,8 +458,8 @@ class FractionalFactorialDesign(ExperimentalDesign):
         run_id = 1
         for rep in range(1, self.replicates + 1):
             for run in runs:
-                row = dict(zip(base_names, run))
-                for factor, terms in zip(alias_factors, parsed_generators):
+                row = dict(zip(base_names, run, strict=True))
+                for factor, terms in zip(alias_factors, parsed_generators, strict=True):
                     row[factor.name] = self._evaluate_generator(terms, row)
                 data.append({"RunID": run_id, "Replicate": rep, **row})
                 run_id += 1
@@ -485,7 +486,7 @@ class FractionalFactorialDesign(ExperimentalDesign):
             and self.replicates > 0
         )
 
-    def alias_structure(self) -> Dict[str, List[str]]:
+    def alias_structure(self) -> dict[str, list[str]]:
         """Return alias chains for all factorial effects.
 
         The alias chains are computed by applying the defining relation of the
@@ -496,7 +497,7 @@ class FractionalFactorialDesign(ExperimentalDesign):
 
         words = self._defining_words()
         total_factors = len(self.factors)
-        alias_map: Dict[str, List[str]] = {}
+        alias_map: dict[str, list[str]] = {}
         processed: set[int] = set()
         for mask in range(1, 1 << total_factors):
             if mask in processed:
@@ -518,7 +519,7 @@ class FractionalFactorialDesign(ExperimentalDesign):
             processed.update(alias_class)
         return alias_map
 
-    def resolution_analysis(self) -> Dict[str, Any]:
+    def resolution_analysis(self) -> dict[str, Any]:
         """Analyze design resolution and clarity."""
         resolution, pattern = self.calculate_resolution()
         if resolution is None:
@@ -543,7 +544,7 @@ class FractionalFactorialDesign(ExperimentalDesign):
             "meets_requested_resolution": meets,
         }
 
-    def foldover_options(self) -> List[Dict[str, Any]]:
+    def foldover_options(self) -> list[dict[str, Any]]:
         """Suggest foldover strategies with supporting metadata.
 
         Foldover proposals follow Montgomery's guidance: a *full* foldover adds
@@ -555,11 +556,10 @@ class FractionalFactorialDesign(ExperimentalDesign):
         resolution_info = self.resolution_analysis()
         resolution = resolution_info["resolution"]
         alias_map = self.alias_structure()
-        base_names = [factor.name for factor in self.factors[: self._base_count]]
         alias_names = [factor.name for factor in self.factors[self._base_count :]]
         parsed = self._parsed_generators()
 
-        severity: List[Tuple[str, int, List[str]]] = []
+        severity: list[tuple[str, int, list[str]]] = []
         for factor in self.factors:
             chain = alias_map.get(factor.name, [factor.name])
             severity.append((factor.name, len(chain) - 1, chain))
@@ -569,7 +569,7 @@ class FractionalFactorialDesign(ExperimentalDesign):
         expected_resolution = (
             None if resolution is None else min(resolution + 1, len(self.factors))
         )
-        options: List[Dict[str, Any]] = [
+        options: list[dict[str, Any]] = [
             {
                 "type": "full",
                 "description": (
@@ -584,7 +584,9 @@ class FractionalFactorialDesign(ExperimentalDesign):
         # Partial foldovers for the most aliased main effects.
         for factor_name, _, chain in severity[: min(3, len(severity))]:
             impacted_generators = []
-            for gen, terms, alias_name in zip(self.generators, parsed, alias_names):
+            for gen, terms, alias_name in zip(
+                self.generators, parsed, alias_names, strict=True
+            ):
                 if factor_name == alias_name or factor_name in terms:
                     impacted_generators.append(gen)
             options.append(

@@ -1,8 +1,6 @@
-from __future__ import annotations
-
 """Screening designs such as Plackett-Burman."""
 
-from typing import List, Optional
+from __future__ import annotations
 
 import numpy as np
 import pandas as pd
@@ -25,7 +23,7 @@ class PlackettBurmanDesign(ExperimentalDesign):
     """
 
     def __init__(
-        self, factors: List[Factor], randomize: bool = True, seed: Optional[int] = None
+        self, factors: list[Factor], randomize: bool = True, seed: int | None = None
     ) -> None:
         super().__init__("Plackett-Burman Design")
         self.factors = factors
@@ -40,10 +38,12 @@ class PlackettBurmanDesign(ExperimentalDesign):
         keep = int(n_factors)
         n = 4 * (int(n_factors / 4) + 1)
         f, e = np.frexp([n, n / 12.0, n / 20.0])
-        k = [idx for idx, val in enumerate(np.logical_and(f == 0.5, e > 0)) if val]
-        if not k:
+        candidates = [
+            idx for idx, val in enumerate(np.logical_and(f == 0.5, e > 0)) if val
+        ]
+        if not candidates:
             raise ValueError("n must be a multiple of 4")
-        k = k[0]
+        k = candidates[0]
         e = e[k] - 1
 
         if k == 0:
@@ -149,17 +149,16 @@ class PlackettBurmanDesign(ExperimentalDesign):
         pandas.DataFrame
             Foldover design matrix appended to the existing design.
         """
-        if self.design_matrix is None:
-            self.generate_design()
+        design_matrix = self.design_matrix
+        if design_matrix is None:
+            design_matrix = self.generate_design()
 
-        fold_df = self.design_matrix.copy()
+        fold_df = design_matrix.copy()
         for col in self.factors:
             fold_df[col.name] = -fold_df[col.name]
 
-        fold_df["RunOrder"] = range(
-            len(self.design_matrix) + 1, 2 * len(self.design_matrix) + 1
-        )
-        self.design_matrix = pd.concat([self.design_matrix, fold_df], ignore_index=True)
+        fold_df["RunOrder"] = range(len(design_matrix) + 1, 2 * len(design_matrix) + 1)
+        self.design_matrix = pd.concat([design_matrix, fold_df], ignore_index=True)
         return fold_df
 
     def validate_design(self) -> bool:
@@ -186,7 +185,7 @@ class DefinitiveScreeningDesign(ExperimentalDesign):
     """
 
     def __init__(
-        self, factors: List[Factor], randomize: bool = True, seed: Optional[int] = None
+        self, factors: list[Factor], randomize: bool = True, seed: int | None = None
     ) -> None:
         super().__init__("Definitive Screening Design")
         self.factors = factors

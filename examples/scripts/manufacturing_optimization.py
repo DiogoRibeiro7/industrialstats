@@ -89,8 +89,8 @@ def main():
     print("-" * 40)
 
     # Simulate realistic response data with known effects
-    np.random.seed(42)  # For reproducible results
-    responses = simulate_tensile_strength_data(design_matrix)
+    rng = np.random.default_rng(42)  # For reproducible results
+    responses = simulate_tensile_strength_data(design_matrix, rng=rng)
     design_matrix["Tensile_Strength"] = responses
 
     print("Data Collection Complete!")
@@ -246,8 +246,8 @@ def main():
     ]
     baseline_df = pd.DataFrame([baseline_conditions.to_dict()] * 5)
     optimal_df = pd.DataFrame([optimal_conditions] * 5)
-    baseline_vals = simulate_tensile_strength_data(baseline_df)
-    optimal_vals = simulate_tensile_strength_data(optimal_df)
+    baseline_vals = simulate_tensile_strength_data(baseline_df, rng=rng)
+    optimal_vals = simulate_tensile_strength_data(optimal_df, rng=rng)
     t_stat, p_val = stats.ttest_ind(optimal_vals, baseline_vals, equal_var=False)
     print(f"Mean at baseline: {baseline_vals.mean():.2f} MPa")
     print(f"Mean at optimal : {optimal_vals.mean():.2f} MPa")
@@ -411,19 +411,27 @@ def main():
     print("=" * 80)
 
 
-def simulate_tensile_strength_data(design_matrix: pd.DataFrame) -> np.ndarray:
+def simulate_tensile_strength_data(
+    design_matrix: pd.DataFrame, rng: np.random.Generator | None = None
+) -> np.ndarray:
     """Simulate realistic tensile strength data with known factor effects.
 
     Parameters
     ----------
     design_matrix : pd.DataFrame
         Experimental design matrix containing factor settings.
+    rng : numpy.random.Generator, optional
+        Random generator used for the simulated noise. Pass a seeded generator
+        for reproducible output; a fresh unseeded one is used by default.
 
     Returns
     -------
     np.ndarray
         Simulated tensile strength responses in MPa.
     """
+    if rng is None:
+        rng = np.random.default_rng()
+
     responses: list[float] = []
 
     for _, row in design_matrix.iterrows():
@@ -453,9 +461,9 @@ def simulate_tensile_strength_data(design_matrix: pd.DataFrame) -> np.ndarray:
             + pressure_cooling
         )
 
-        machine_effect = np.random.normal(0, 0.5)
+        machine_effect = rng.normal(0, 0.5)
         noise_scale = 1.2 if row["Material"] == "PP" else 0.8
-        noise = np.random.normal(0, noise_scale)
+        noise = rng.normal(0, noise_scale)
         final_response = total_response + machine_effect + noise
 
         final_response = max(final_response, 25.0)
@@ -738,9 +746,9 @@ def create_interaction_subplot(
         # Remove None values for plotting
         valid_indices = [i for i, m in enumerate(means) if m is not None]
         if valid_indices:
-            x_vals = [i for i in valid_indices]
+            x_vals = list(valid_indices)
             y_vals = [means[i] for i in valid_indices]
-            x_labels = [levels2[i] for i in valid_indices]
+            [levels2[i] for i in valid_indices]
 
             plt.plot(
                 x_vals,

@@ -1,0 +1,48 @@
+name: Feature request
+description: Propose a new design family, analysis method, or API change.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please check [ROADMAP.md](../blob/main/ROADMAP.md) first — the pre-1.0
+        priority is correcting and validating existing methods before widening
+        the catalogue, so proposals that fit that sequence move fastest.
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What should be added or changed?
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: What problem does it solve?
+      description: The experimental situation you cannot currently handle, or handle only awkwardly.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reference
+    attributes:
+      label: Statistical reference
+      description: >-
+        For a new design family or analysis method, cite the construction: a
+        textbook, a paper, or an existing implementation whose behaviour the
+        addition should match. New statistical code needs a reference to be
+        validated against before it can be merged.
+      placeholder: "Jones & Nachtsheim (2011), 'A Class of Three-Level Designs for Definitive Screening', JQT 43(1)."
+
+  - type: textarea
+    id: api
+    attributes:
+      label: Proposed API
+      description: How you would like to call it.
+      render: python
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered

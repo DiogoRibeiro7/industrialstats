@@ -12,7 +12,7 @@ import json
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Union
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -21,7 +21,8 @@ import seaborn as sns
 try:  # pragma: no cover - optional dependency
     import yaml
 except ImportError:  # pragma: no cover
-    yaml = None
+    # Sentinel for the optional dependency; guarded at every use site.
+    yaml = None  # type: ignore[assignment]
 
 
 @dataclass
@@ -71,7 +72,7 @@ class Config:
 config = Config()
 
 
-def load_config(path: Union[str, Path]) -> None:
+def load_config(path: str | Path) -> None:
     """Load configuration from a JSON or YAML file.
 
     Parameters
@@ -87,7 +88,7 @@ def load_config(path: Union[str, Path]) -> None:
     """
     path = Path(path)
     if path.suffix.lower() == ".json":
-        data: Dict[str, Any] = json.loads(path.read_text())
+        data: dict[str, Any] = json.loads(path.read_text())
     elif path.suffix.lower() in {".yml", ".yaml"}:
         if yaml is None:  # pragma: no cover - handled above
             raise ValueError("PyYAML is required for YAML configuration files")

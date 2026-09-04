@@ -1,12 +1,10 @@
 """Effect calculation and analysis for experimental designs."""
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import seaborn as sns
 from scipy import stats
 
 logger = logging.getLogger(__name__)
@@ -15,7 +13,7 @@ logger = logging.getLogger(__name__)
 class EffectsAnalysis:
     """Calculate and analyze factorial effects."""
 
-    def __init__(self, design_matrix: pd.DataFrame, response_data: List[float]):
+    def __init__(self, design_matrix: pd.DataFrame, response_data: list[float]):
         """Initialize effects analysis.
 
         Parameters
@@ -36,7 +34,7 @@ class EffectsAnalysis:
 
         self.design_matrix = design_matrix.copy()
         self.response_data = np.array(response_data)
-        self.effects: Optional[Dict[str, float]] = None
+        self.effects: dict[str, float] | None = None
 
         # Identify factor columns (exclude metadata columns)
         metadata_cols = ["RunID", "Replicate", "DesignPoint", "RunOrder"]
@@ -47,7 +45,7 @@ class EffectsAnalysis:
         if not self.factor_names:
             raise ValueError("No factor columns found in design matrix")
 
-    def calculate_main_effects(self) -> Dict[str, float]:
+    def calculate_main_effects(self) -> dict[str, float]:
         """Calculate main effects for all factors.
 
         Returns
@@ -84,7 +82,7 @@ class EffectsAnalysis:
 
         return effects
 
-    def calculate_interaction_effects(self, max_order: int = 2) -> Dict[str, float]:
+    def calculate_interaction_effects(self, max_order: int = 2) -> dict[str, float]:
         """Calculate interaction effects.
 
         Parameters
@@ -165,9 +163,8 @@ class EffectsAnalysis:
 
             return interaction / 2
 
-        else:
-            # Multi-level factors - use ANOVA approach
-            return self._anova_interaction_effect(factor1, factor2)
+        # Multi-level factors - use ANOVA approach
+        return self._anova_interaction_effect(factor1, factor2)
 
     def _calculate_three_factor_interaction(
         self, factor1: str, factor2: str, factor3: str
@@ -219,9 +216,8 @@ class EffectsAnalysis:
 
             return interaction / 4
 
-        else:
-            # Multi-level factors - use ANOVA approach
-            return self._anova_interaction_effect(factor1, factor2, factor3)
+        # Multi-level factors - use ANOVA approach
+        return self._anova_interaction_effect(factor1, factor2, factor3)
 
     def _anova_interaction_effect(self, *factors) -> float:
         """Calculate interaction effect using an ANOVA approach.
@@ -254,14 +250,11 @@ class EffectsAnalysis:
             anova_table = anova_lm(model, typ=2)
 
             # Find interaction term in ANOVA table
-            interaction_key = ":".join([f"C({factor})" for factor in factors])
-
             for index in anova_table.index:
                 if all(f"C({factor})" in index for factor in factors) and ":" in index:
                     if "F" in anova_table.columns:
                         return anova_table.loc[index, "F"]
-                    else:
-                        return anova_table.loc[index, "sum_sq"]
+                    return anova_table.loc[index, "sum_sq"]
 
             return 0.0
 
@@ -272,7 +265,7 @@ class EffectsAnalysis:
             return 0.0
 
     def normal_probability_plot(
-        self, effects: Dict[str, float], figsize: Tuple[int, int] = (10, 6)
+        self, effects: dict[str, float], figsize: tuple[int, int] = (10, 6)
     ) -> plt.Figure:
         """Create a normal probability plot for effect screening.
 
@@ -329,7 +322,7 @@ class EffectsAnalysis:
         return fig
 
     def interaction_plots(
-        self, max_interactions: int = 3, figsize: Tuple[int, int] = (15, 10)
+        self, max_interactions: int = 3, figsize: tuple[int, int] = (15, 10)
     ) -> plt.Figure:
         """Plot selected two-factor interactions.
 
@@ -374,9 +367,7 @@ class EffectsAnalysis:
         n_rows = (n_plots + n_cols - 1) // n_cols
 
         fig, axes = plt.subplots(n_rows, n_cols, figsize=figsize)
-        if n_plots == 1:
-            axes = [axes]
-        elif n_rows == 1:
+        if n_plots == 1 or n_rows == 1:
             axes = [axes]
         else:
             axes = axes.flatten()
@@ -404,7 +395,7 @@ class EffectsAnalysis:
 
             # Plot interaction
             ax = axes[i]
-            for j, level1 in enumerate(levels1):
+            for _j, level1 in enumerate(levels1):
                 valid_indices = ~np.isnan(means_by_f1[level1])
                 if valid_indices.any():
                     x_vals = np.array(range(len(levels2)))[valid_indices]
@@ -433,7 +424,7 @@ class EffectsAnalysis:
         plt.tight_layout()
         return fig
 
-    def effect_hierarchy_plot(self, figsize: Tuple[int, int] = (12, 8)) -> plt.Figure:
+    def effect_hierarchy_plot(self, figsize: tuple[int, int] = (12, 8)) -> plt.Figure:
         """Plot a hierarchy diagram of effects.
 
         Parameters
@@ -468,7 +459,7 @@ class EffectsAnalysis:
         values = []
         colors_list = []
 
-        y_pos = 0
+        y_pos = 0.0
         for order in sorted(effects_by_order.keys()):
             effects = effects_by_order[order]
             order_name = (
@@ -507,7 +498,7 @@ class EffectsAnalysis:
         bars = ax.barh(y_positions, values, color=colors_list, alpha=0.7)
 
         # Add value labels
-        for bar, value in zip(bars, values):
+        for bar, value in zip(bars, values, strict=True):
             width = bar.get_width()
             ax.text(
                 width + np.sign(width) * max(abs(v) for v in values) * 0.02,
@@ -529,7 +520,7 @@ class EffectsAnalysis:
         return fig
 
     def pareto_chart(
-        self, effects: Dict[str, float], figsize: Tuple[int, int] = (12, 6)
+        self, effects: dict[str, float], figsize: tuple[int, int] = (12, 6)
     ) -> plt.Figure:
         """Plot a Pareto chart of effect magnitudes.
 
@@ -558,7 +549,7 @@ class EffectsAnalysis:
 
         # Sort by magnitude
         sorted_effects = sorted(abs_effects.items(), key=lambda x: x[1], reverse=True)
-        names, values = zip(*sorted_effects)
+        names, values = zip(*sorted_effects, strict=True)
 
         # Calculate cumulative percentage
         total = sum(values)
@@ -575,7 +566,7 @@ class EffectsAnalysis:
         ax1.set_xticklabels(names, rotation=45, ha="right")
 
         # Add effect values on bars
-        for i, (bar, value) in enumerate(zip(bars, values)):
+        for bar, value in zip(bars, values, strict=True):
             height = bar.get_height()
             ax1.text(
                 bar.get_x() + bar.get_width() / 2.0,
@@ -588,7 +579,7 @@ class EffectsAnalysis:
 
         # Cumulative percentage line
         ax2 = ax1.twinx()
-        line = ax2.plot(
+        ax2.plot(
             range(len(names)),
             cumulative_pct,
             "ro-",
@@ -673,10 +664,10 @@ class EffectsAnalysis:
 
     def half_normal_plot(
         self,
-        effects: Dict[str, float],
-        figsize: Tuple[int, int] = (10, 6),
+        effects: dict[str, float],
+        figsize: tuple[int, int] = (10, 6),
         interactive: bool = True,
-    ) -> Tuple[plt.Figure, List[str]]:
+    ) -> tuple[plt.Figure, list[str]]:
         """Create a half-normal probability plot for effect screening.
 
         Parameters

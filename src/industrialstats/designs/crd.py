@@ -1,7 +1,5 @@
 """Completely Randomized Design (CRD) implementation."""
 
-from typing import Any, Dict, List, Optional
-
 import numpy as np
 import pandas as pd
 
@@ -18,10 +16,10 @@ class CompletelyRandomizedDesign(ExperimentalDesign):
 
     def __init__(
         self,
-        treatments: List[str],
+        treatments: list[str],
         replicates: int,
-        seed: Optional[int] = None,
-        response_variables: Optional[List[str]] = None,
+        seed: int | None = None,
+        response_variables: list[str] | None = None,
     ) -> None:
         """Initialize CRD.
 
@@ -49,7 +47,8 @@ class CompletelyRandomizedDesign(ExperimentalDesign):
         self.response_variables = response_variables or []
 
         # Create a single factor with treatment levels
-        treatment_factor = Factor("Treatment", treatments, "categorical")
+        treatment_levels: list[str | float | int] = list(treatments)
+        treatment_factor = Factor("Treatment", treatment_levels, "categorical")
         self.factors = [treatment_factor]
 
     def generate_design(self) -> pd.DataFrame:
@@ -89,15 +88,13 @@ class CompletelyRandomizedDesign(ExperimentalDesign):
             return False
         if not all(isinstance(r, str) for r in self.response_variables):
             return False
-        if len(self.response_variables) != len(set(self.response_variables)):
-            return False
-        return True
+        return len(self.response_variables) == len(set(self.response_variables))
 
     def n_runs(self) -> int:
         """Calculate total number of runs."""
         return len(self.treatments) * self.replicates
 
-    def degrees_of_freedom(self) -> Dict[str, int]:
+    def degrees_of_freedom(self) -> dict[str, int]:
         """Calculate degrees of freedom for CRD analysis."""
         n_treatments = len(self.treatments)
         total_runs = self.n_runs()
@@ -108,7 +105,7 @@ class CompletelyRandomizedDesign(ExperimentalDesign):
             "Total": total_runs - 1,
         }
 
-    def expected_mean_squares(self) -> Dict[str, str]:
+    def expected_mean_squares(self) -> dict[str, str]:
         """Return expected mean squares for CRD."""
         return {"Treatment": "σ² + r·σ²ₜ", "Error": "σ²"}
 
@@ -152,7 +149,6 @@ class CompletelyRandomizedDesign(ExperimentalDesign):
         int
             Required number of replicates per treatment.
         """
-        import math
 
         from scipy.stats import f
 
@@ -160,9 +156,6 @@ class CompletelyRandomizedDesign(ExperimentalDesign):
 
         # Degrees of freedom
         df1 = k - 1
-
-        # Critical F-value (approximate for sample size calculation)
-        f_critical = f.ppf(1 - alpha, df1, 100)  # Using large df2 for approximation
 
         # Non-centrality parameter for desired power
         from scipy.stats import ncf
@@ -181,7 +174,7 @@ class CompletelyRandomizedDesign(ExperimentalDesign):
         return -1  # Could not find required sample size
 
     def create_data_collection_sheet(
-        self, response_variables: Optional[List[str]] = None
+        self, response_variables: list[str] | None = None
     ) -> pd.DataFrame:
         """Create a data collection sheet for the experiment.
 
@@ -197,10 +190,11 @@ class CompletelyRandomizedDesign(ExperimentalDesign):
         pandas.DataFrame
             Data collection sheet with empty response columns.
         """
-        if self.design_matrix is None:
-            self.generate_design()
+        design_matrix = self.design_matrix
+        if design_matrix is None:
+            design_matrix = self.generate_design()
 
-        data_sheet = self.design_matrix.copy()
+        data_sheet = design_matrix.copy()
 
         responses = response_variables or self.response_variables or ["Response"]
 
@@ -216,7 +210,7 @@ class CompletelyRandomizedDesign(ExperimentalDesign):
         return data_sheet
 
     def _validate_response_data(
-        self, data: pd.DataFrame, response_columns: List[str]
+        self, data: pd.DataFrame, response_columns: list[str]
     ) -> None:
         """Validate response data prior to analysis.
 
@@ -239,12 +233,12 @@ class CompletelyRandomizedDesign(ExperimentalDesign):
                 raise ValueError(f"Response column '{col}' not found in data")
             if data[col].isna().any():
                 raise ValueError(f"Missing values detected in column '{col}'")
-            if not np.issubdtype(data[col].dtype, np.number):
+            if not pd.api.types.is_numeric_dtype(data[col]):
                 raise TypeError(f"Response column '{col}' must be numeric")
 
     def summary_statistics(
-        self, data: pd.DataFrame, response_columns: List[str]
-    ) -> Dict[str, pd.DataFrame]:
+        self, data: pd.DataFrame, response_columns: list[str]
+    ) -> dict[str, pd.DataFrame]:
         """Calculate summary statistics for multiple responses.
 
         Parameters
@@ -261,7 +255,7 @@ class CompletelyRandomizedDesign(ExperimentalDesign):
         """
         self._validate_response_data(data, response_columns)
 
-        summaries: Dict[str, pd.DataFrame] = {}
+        summaries: dict[str, pd.DataFrame] = {}
         from scipy.stats import t
 
         for column in response_columns:
@@ -271,8 +265,8 @@ class CompletelyRandomizedDesign(ExperimentalDesign):
                 .round(3)
             )
 
-            ci_lower: List[float] = []
-            ci_upper: List[float] = []
+            ci_lower: list[float] = []
+            ci_upper: list[float] = []
 
             for treatment in summary.index:
                 treatment_data = data[data["Treatment"] == treatment][column]

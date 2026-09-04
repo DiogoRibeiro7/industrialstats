@@ -1,13 +1,12 @@
-from typing import Any, Tuple
+from typing import Any
 
-import numpy as np
 import statsmodels.formula.api as smf
 
 from industrialstats.designs.response_surface import Factor, ResponseSurfaceDesign
 from industrialstats.visualizations import ResponseSurfacePlotter
 
 
-def _design_and_model() -> Tuple[ResponseSurfaceDesign, Any]:
+def _design_and_model() -> tuple[ResponseSurfaceDesign, Any]:
     factors = [
         Factor("x1", [-1, 1], factor_type="continuous"),
         Factor("x2", [-1, 1], factor_type="continuous"),

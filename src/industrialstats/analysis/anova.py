@@ -1,7 +1,6 @@
 """ANOVA analysis for experimental designs."""
 
-import warnings
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -34,8 +33,8 @@ class ANOVAAnalysis:
 
         self.data = data.copy()
         self.response = response_column
-        self.model: Optional[sm.regression.linear_model.RegressionResultsWrapper] = None
-        self.anova_table: Optional[pd.DataFrame] = None
+        self.model: sm.regression.linear_model.RegressionResultsWrapper | None = None
+        self.anova_table: pd.DataFrame | None = None
 
         # Remove any rows with missing response values
         self.data = self.data.dropna(subset=[response_column])
@@ -67,7 +66,9 @@ class ANOVAAnalysis:
             self.model = ols(formula, data=self.data).fit()
             return self.model
         except (ValueError, np.linalg.LinAlgError) as e:
-            raise ValueError(f"Error fitting model with formula '{formula}': {str(e)}")
+            raise ValueError(
+                f"Error fitting model with formula '{formula}': {e!s}"
+            ) from e
 
     def anova_table_calculation(self, typ: int = 2) -> pd.DataFrame:
         """Compute the ANOVA table for the fitted model.
@@ -104,11 +105,14 @@ class ANOVAAnalysis:
 
             # Partial eta-squared (for Type II and III)
             if typ in [2, 3]:
-                error_ss = (
+                residual_ss = (
                     self.anova_table.loc["Residual", "sum_sq"]
                     if "Residual" in self.anova_table.index
-                    else 0
+                    else 0.0
                 )
+                # pandas-stubs types a .loc scalar as a broad union covering
+                # dates and bytes; an ANOVA sum of squares is always numeric.
+                error_ss = float(residual_ss)  # type: ignore[arg-type]
                 self.anova_table["Partial_Eta_Squared"] = self.anova_table["sum_sq"] / (
                     self.anova_table["sum_sq"] + error_ss
                 )
@@ -117,16 +121,15 @@ class ANOVAAnalysis:
             def add_significance_stars(p_value):
                 if pd.isna(p_value):
                     return ""
-                elif p_value < 0.001:
+                if p_value < 0.001:
                     return "***"
-                elif p_value < 0.01:
+                if p_value < 0.01:
                     return "**"
-                elif p_value < 0.05:
+                if p_value < 0.05:
                     return "*"
-                elif p_value < 0.1:
+                if p_value < 0.1:
                     return "."
-                else:
-                    return ""
+                return ""
 
             self.anova_table["Significance"] = self.anova_table["PR(>F)"].apply(
                 add_significance_stars
@@ -135,7 +138,7 @@ class ANOVAAnalysis:
             return self.anova_table
 
         except (ValueError, np.linalg.LinAlgError) as e:
-            raise ValueError(f"Error calculating ANOVA table: {str(e)}")
+            raise ValueError(f"Error calculating ANOVA table: {e!s}") from e
 
     def multiple_comparisons(
         self, factor: str, method: str = "tukey", alpha: float = 0.05
@@ -191,7 +194,7 @@ class ANOVAAnalysis:
 
             return mc_df
 
-        elif method.lower() == "bonferroni":
+        if method.lower() == "bonferroni":
             # Bonferroni correction
             groups = self.data[factor].unique()
             n_comparisons = len(groups) * (len(groups) - 1) // 2
@@ -204,7 +207,7 @@ class ANOVAAnalysis:
                     data2 = self.data[self.data[factor] == group2][self.response]
 
                     # Perform t-test
-                    t_stat, p_val = stats.ttest_ind(data1, data2)
+                    _t_stat, p_val = stats.ttest_ind(data1, data2)
 
                     # Bonferroni adjusted p-value
                     p_adj = min(p_val * n_comparisons, 1.0)
@@ -232,10 +235,9 @@ class ANOVAAnalysis:
 
             return pd.DataFrame(results)
 
-        else:
-            raise NotImplementedError(f"Method '{method}' not implemented")
+        raise NotImplementedError(f"Method '{method}' not implemented")
 
-    def residual_analysis(self) -> Dict[str, np.ndarray]:
+    def residual_analysis(self) -> dict[str, np.ndarray]:
         """Perform comprehensive residual analysis.
 
         Returns
@@ -274,7 +276,7 @@ class ANOVAAnalysis:
             "cooks_distance": cooks_d,
         }
 
-    def assumptions_tests(self) -> Dict[str, Dict[str, Any]]:
+    def assumptions_tests(self) -> dict[str, dict[str, Any]]:
         """Test ANOVA assumptions.
 
         Returns
@@ -381,7 +383,7 @@ class ANOVAAnalysis:
 
         return results
 
-    def model_summary(self) -> Dict[str, Any]:
+    def model_summary(self) -> dict[str, Any]:
         """Get comprehensive model summary.
 
         Returns
@@ -407,7 +409,7 @@ class ANOVAAnalysis:
         }
 
     def contrast_analysis(
-        self, contrasts: Dict[str, List[float]], factor: str
+        self, contrasts: dict[str, list[float]], factor: str
     ) -> pd.DataFrame:
         """Perform contrast analysis.
 
@@ -449,10 +451,14 @@ class ANOVAAnalysis:
                 )
 
             # Calculate contrast value
-            contrast_value = sum(c * m for c, m in zip(coefficients, group_means))
+            contrast_value = sum(
+                c * m for c, m in zip(coefficients, group_means, strict=True)
+            )
 
             # Calculate standard error
-            se_squared = mse * sum(c**2 / n for c, n in zip(coefficients, group_ns))
+            se_squared = mse * sum(
+                c**2 / n for c, n in zip(coefficients, group_ns, strict=True)
+            )
             se = np.sqrt(se_squared)
 
             # Calculate t-statistic and p-value
@@ -480,7 +486,7 @@ class ANOVAAnalysis:
 
         return pd.DataFrame(results)
 
-    def power_analysis_post_hoc(self, alpha: float = 0.05) -> Dict[str, float]:
+    def power_analysis_post_hoc(self, alpha: float = 0.05) -> dict[str, float]:
         """Calculate observed power for each effect in the model.
 
         Parameters
@@ -527,10 +533,10 @@ class ANOVAAnalysis:
 
     def mixed_effects_model(
         self,
-        fixed_effects: List[str],
-        random_effects: List[str],
-        nested_effects: Optional[List[str]] = None,
-    ) -> Dict[str, Any]:
+        fixed_effects: list[str],
+        random_effects: list[str],
+        nested_effects: list[str] | None = None,
+    ) -> dict[str, Any]:
         """Fit a mixed-effects model with optional nesting.
 
         Parameters
@@ -573,7 +579,7 @@ class ANOVAAnalysis:
         formula = f"{self.response} ~ " + " + ".join(fixed_effects)
         group_col = random_effects[0]
 
-        vc_formula: Dict[str, str] = {}
+        vc_formula: dict[str, str] = {}
         if nested_effects:
             for effect in nested_effects:
                 vc_formula[effect] = f"0 + C({effect})"
@@ -587,14 +593,14 @@ class ANOVAAnalysis:
         )
         result = model.fit()
 
-        random_vars: Dict[str, float] = {
+        random_vars: dict[str, float] = {
             random_effects[0]: float(result.cov_re.iloc[0, 0])
         }
         if nested_effects:
             for idx, effect in enumerate(nested_effects):
                 random_vars[effect] = float(result.vcomp[idx])
 
-        lrt_results: Dict[str, Dict[str, float]] = {}
+        lrt_results: dict[str, dict[str, float]] = {}
 
         ols_model = sm.OLS.from_formula(formula, self.data).fit()
         lr_stat = 2 * (result.llf - ols_model.llf)
@@ -633,7 +639,7 @@ class ANOVAAnalysis:
             "lrt": lrt_results,
         }
 
-    def unbalanced_anova(self) -> Dict[str, Any]:
+    def unbalanced_anova(self) -> dict[str, Any]:
         """Perform Type II ANOVA for unbalanced designs.
 
         Returns
@@ -653,7 +659,7 @@ class ANOVAAnalysis:
         table = anova_lm(self.model, typ=2)
         return {"anova_table": table}
 
-    def nested_anova(self, nesting_structure: Dict[str, str]) -> Dict[str, Any]:
+    def nested_anova(self, nesting_structure: dict[str, str]) -> dict[str, Any]:
         """Perform nested ANOVA for hierarchical designs.
 
         Parameters
@@ -679,8 +685,8 @@ class ANOVAAnalysis:
         return {"anova_table": table}
 
     def repeated_measures_anova(
-        self, subject_column: str, within_factors: List[str]
-    ) -> Dict[str, Any]:
+        self, subject_column: str, within_factors: list[str]
+    ) -> dict[str, Any]:
         """Analyze repeated measures designs.
 
         Parameters

@@ -9,7 +9,6 @@ regressions.
 from __future__ import annotations
 
 import time
-from typing import List
 
 import pytest
 
@@ -22,8 +21,12 @@ from industrialstats.designs.response_surface import ResponseSurfaceDesign
 from industrialstats.utils.data_generation import DataSimulator
 from industrialstats.utils.performance import profile_function
 
+# Timing-based regression checks: excluded from the default CI run and
+# executed by the dedicated Performance workflow instead.
+pytestmark = pytest.mark.benchmark
 
-def _build_factors(n: int) -> List[Factor]:
+
+def _build_factors(n: int) -> list[Factor]:
     """Create ``n`` two-level continuous factors."""
     return [
         Factor(name=f"F{i}", levels=[-1, 1], factor_type="continuous") for i in range(n)

@@ -1,0 +1,85 @@
+name: Statistical correctness
+description: Report a result that disagrees with a textbook, reference implementation, or derived property.
+labels: ["bug", "statistical-correctness"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Statistical correctness is this project's first priority, and these
+        reports are treated as high severity.
+
+        To act on one we need an **independent reference** for the correct
+        answer — the project's standard is that a fix ships with a test that
+        compares against a source outside this codebase.
+
+  - type: input
+    id: method
+    attributes:
+      label: Method or design family
+      placeholder: "FractionalFactorialDesign.alias_structure"
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: A runnable script producing the disputed value, with an explicit seed.
+      render: python
+    validations:
+      required: true
+
+  - type: textarea
+    id: observed
+    attributes:
+      label: Value produced
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Value you expected
+      render: text
+    validations:
+      required: true
+
+  - type: dropdown
+    id: reference_type
+    attributes:
+      label: Kind of reference
+      options:
+        - Textbook or published worked example
+        - Reference software (R, SAS, JMP, Minitab, Design-Expert, ...)
+        - Algebraic property of the design
+        - Simulation or analytical derivation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: reference
+    attributes:
+      label: The reference itself
+      description: >-
+        Cite it precisely enough to check: author, edition and page or example
+        number for a book; the exact code and version for reference software;
+        the derivation for a property.
+      placeholder: |
+        Montgomery, "Design and Analysis of Experiments", 10th ed., Example 8.4 (p. 340).
+
+        R:
+          library(FrF2)
+          design <- FrF2(16, 7)
+          aliasprint(design)
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: industrialstats version
+      placeholder: "0.1.0"
+    validations:
+      required: true

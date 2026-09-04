@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Utilities to simulate experimental data.
 
 The :class:`DataSimulator` class centralizes routines for generating
@@ -9,7 +7,10 @@ Jenkins [2]_ for factorial responses and stochastic process modelling,
 respectively.
 """
 
-from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence
+from __future__ import annotations
+
+from collections.abc import Callable, Iterable, Sequence
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -18,7 +19,7 @@ import pandas as pd
 class DataSimulator:
     """Generate realistic experimental data."""
 
-    def __init__(self, seed: Optional[int] = None) -> None:
+    def __init__(self, seed: int | None = None) -> None:
         """Initialize the simulator.
 
         Parameters
@@ -33,7 +34,7 @@ class DataSimulator:
         distribution: str,
         size: int,
         scale: np.ndarray,
-        params: Optional[Dict[str, float]] = None,
+        params: dict[str, float] | None = None,
     ) -> np.ndarray:
         """Sample noise from a supported distribution.
 
@@ -81,8 +82,8 @@ class DataSimulator:
     def _arma_filter(
         self,
         white_noise: np.ndarray,
-        ar_params: Optional[Sequence[float]] = None,
-        ma_params: Optional[Sequence[float]] = None,
+        ar_params: Sequence[float] | None = None,
+        ma_params: Sequence[float] | None = None,
     ) -> np.ndarray:
         r"""Apply ARMA(p, q) filtering to white-noise innovations.
 
@@ -129,9 +130,7 @@ class DataSimulator:
     def _resolve_scale(
         self,
         base_scale: float,
-        heteroskedastic: Optional[
-            Iterable[float] | Callable[[pd.DataFrame], np.ndarray]
-        ],
+        heteroskedastic: Iterable[float] | Callable[[pd.DataFrame], np.ndarray] | None,
         design_matrix: pd.DataFrame,
     ) -> np.ndarray:
         """Compute observation-specific scale factors.
@@ -169,7 +168,7 @@ class DataSimulator:
     def _inject_outliers(
         self,
         response: np.ndarray,
-        outlier_config: Optional[Dict[str, Dict[str, float | int]]],
+        outlier_config: dict[str, dict[str, float | int]] | None,
         scale: np.ndarray,
     ) -> np.ndarray:
         """Inject outliers into the response according to configuration."""
@@ -182,7 +181,7 @@ class DataSimulator:
         for key, cfg in outlier_config.items():
             fraction = float(cfg.get("fraction", 0.0))
             magnitude = float(cfg.get("magnitude", 3.0))
-            count = max(1, int(round(fraction * n))) if fraction > 0 else 0
+            count = max(1, round(fraction * n)) if fraction > 0 else 0
             if key.lower() == "random" and count > 0:
                 idx = self.random_state.choice(n, size=count, replace=False)
                 result[idx] += (
@@ -205,7 +204,7 @@ class DataSimulator:
         values: pd.Series,
         mechanism: str,
         rate: float,
-        design_matrix: Optional[pd.DataFrame] = None,
+        design_matrix: pd.DataFrame | None = None,
     ) -> pd.Series:
         """Apply MCAR/MAR/MNAR missingness to a series."""
 
@@ -240,21 +239,21 @@ class DataSimulator:
     def simulate_factorial_response(
         self,
         design_matrix: pd.DataFrame,
-        main_effects: Optional[Dict[str, float]] = None,
-        interactions: Optional[Dict[tuple[str, str], float]] = None,
+        main_effects: dict[str, float] | None = None,
+        interactions: dict[tuple[str, str], float] | None = None,
         noise_level: float = 1.0,
         noise_dist: str = "normal",
-        noise_params: Optional[Dict[str, float]] = None,
+        noise_params: dict[str, float] | None = None,
         response_type: str = "continuous",
-        random_effects: Optional[Dict[str, float]] = None,
+        random_effects: dict[str, float] | None = None,
         corr: float = 0.0,
-        heteroskedastic: Optional[
-            Sequence[float] | Callable[[pd.DataFrame], np.ndarray]
-        ] = None,
+        heteroskedastic: Sequence[float]
+        | Callable[[pd.DataFrame], np.ndarray]
+        | None = None,
         drift: float = 0.0,
         missing_rate: float = 0.0,
         missing_pattern: str = "MCAR",
-        measurement_error: Optional[Dict[str, Any]] = None,
+        measurement_error: dict[str, Any] | None = None,
     ) -> pd.Series:
         """Simulate response for a factorial design.
 
@@ -325,9 +324,9 @@ class DataSimulator:
         --------
         >>> import pandas as pd
         >>> from industrialstats.utils.data_generation import DataSimulator
-        >>> dm = pd.DataFrame({'A':[1,-1,1,-1],'B':[1,1,-1,-1]})
+        >>> dm = pd.DataFrame({"A": [1, -1, 1, -1], "B": [1, 1, -1, -1]})
         >>> sim = DataSimulator(seed=1)
-        >>> sim.simulate_factorial_response(dm, main_effects={'A':2,'B':1}).round(2)
+        >>> sim.simulate_factorial_response(dm, main_effects={"A": 2, "B": 1}).round(2)
         0    3.62
         1    1.33
         2    0.88
@@ -388,7 +387,7 @@ class DataSimulator:
                 groups = design_matrix[col]
                 levels = groups.unique()
                 re = self.random_state.normal(scale=np.sqrt(var), size=len(levels))
-                mapping = dict(zip(levels, re))
+                mapping = dict(zip(levels, re, strict=True))
                 response += groups.map(mapping).to_numpy()
 
         n = len(response)
@@ -445,7 +444,7 @@ class DataSimulator:
     def simulate_correlated_responses(
         self,
         design_matrix: pd.DataFrame,
-        main_effects_list: List[Dict[str, float]],
+        main_effects_list: list[dict[str, float]],
         cov: np.ndarray,
         **kwargs,
     ) -> pd.DataFrame:
@@ -483,27 +482,27 @@ class DataSimulator:
             np.zeros(len(main_effects_list)), cov, size=len(design_matrix)
         )
         result = mean_mat + noise
-        cols = [f"Y{i+1}" for i in range(len(main_effects_list))]
+        cols = [f"Y{i + 1}" for i in range(len(main_effects_list))]
         return pd.DataFrame(result, columns=cols)
 
     def simulate_process_data(
         self,
         n_periods: int,
         model: Callable[[pd.DataFrame], np.ndarray],
-        covariates: Optional[pd.DataFrame] = None,
+        covariates: pd.DataFrame | None = None,
         freq: str = "D",
         noise_dist: str = "normal",
-        noise_params: Optional[Dict[str, float]] = None,
-        trend: Optional[Dict[str, float]] = None,
-        seasonality: Optional[Dict[str, float]] = None,
-        ar_params: Optional[Sequence[float]] = None,
-        ma_params: Optional[Sequence[float]] = None,
-        heteroskedastic: Optional[
-            Iterable[float] | Callable[[pd.DataFrame], np.ndarray]
-        ] = None,
-        outliers: Optional[Dict[str, Dict[str, float | int]]] = None,
-        missing: Optional[Dict[str, float | str]] = None,
-        measurement_error: Optional[Dict[str, float | str]] = None,
+        noise_params: dict[str, float] | None = None,
+        trend: dict[str, Any] | None = None,
+        seasonality: dict[str, float] | None = None,
+        ar_params: Sequence[float] | None = None,
+        ma_params: Sequence[float] | None = None,
+        heteroskedastic: Iterable[float]
+        | Callable[[pd.DataFrame], np.ndarray]
+        | None = None,
+        outliers: dict[str, dict[str, float | int]] | None = None,
+        missing: dict[str, float | str] | None = None,
+        measurement_error: dict[str, Any] | None = None,
         return_components: bool = False,
     ) -> pd.DataFrame:
         r"""Simulate a univariate or multivariate process response.
@@ -655,10 +654,10 @@ class DataSimulator:
         design_matrix: pd.DataFrame,
         response_models: Sequence[Callable[[pd.DataFrame], np.ndarray]],
         covariance: np.ndarray,
-        response_types: Optional[Sequence[str]] = None,
-        noise_scales: Optional[Sequence[float]] = None,
+        response_types: Sequence[str] | None = None,
+        noise_scales: Sequence[float] | None = None,
         noise_dist: str = "normal",
-        measurement_error: Optional[Sequence[Dict[str, Any]]] = None,
+        measurement_error: Sequence[dict[str, Any]] | None = None,
     ) -> pd.DataFrame:
         """Simulate correlated multi-response experimental outcomes.
 
@@ -729,9 +728,11 @@ class DataSimulator:
 
         responses = np.empty_like(latent)
         columns = []
-        meas_configs = measurement_error or [None] * r
+        meas_configs: list[dict[str, Any] | None] = (
+            list(measurement_error) if measurement_error else [None] * r
+        )
         for idx, (det_col, noise_col, kind, meas_cfg) in enumerate(
-            zip(deterministic.T, latent.T, response_types, meas_configs)
+            zip(deterministic.T, latent.T, response_types, meas_configs, strict=True)
         ):
             column_name = f"Y{idx + 1}"
             columns.append(column_name)
@@ -755,13 +756,13 @@ class DataSimulator:
             responses[:, idx] = resp
 
         out_df = design_matrix.reset_index(drop=True).copy()
-        for column, values in zip(columns, responses.T):
+        for column, values in zip(columns, responses.T, strict=True):
             out_df[column] = values
         return out_df
 
     def validate_against_real_data(
         self, simulated: pd.DataFrame | pd.Series, real_data: pd.DataFrame | pd.Series
-    ) -> Dict[str, Dict[str, float]]:
+    ) -> dict[str, dict[str, float]]:
         """Compare simulated data to real experimental measurements.
 
         The function computes absolute differences in means and standard
@@ -782,7 +783,7 @@ class DataSimulator:
         """
         sim_df = pd.DataFrame(simulated)
         real_df = pd.DataFrame(real_data)[sim_df.columns]
-        stats: Dict[str, Dict[str, float]] = {}
+        stats: dict[str, dict[str, float]] = {}
         for col in sim_df.columns:
             sim_col = sim_df[col].dropna()
             real_col = real_df[col].dropna()

@@ -8,6 +8,7 @@ integration workflows.
 from __future__ import annotations
 
 import argparse
+import re
 from pathlib import Path
 
 import pandas as pd
@@ -16,13 +17,26 @@ from dataexcept import DataLoadingError
 
 from industrialstats.cli import main
 
+_ANSI = re.compile(r"\x1b\[[0-9;]*m")
+
+
+def strip_ansi(text: str) -> str:
+    """Remove ANSI colour codes from captured output.
+
+    Python 3.14 colourises argparse help, and honours ``FORCE_COLOR``, so help
+    text arrives with escape sequences interleaved through the usage line.
+    Assertions about wording should not depend on the terminal settings of
+    whoever runs the suite.
+    """
+    return _ANSI.sub("", text)
+
 
 def test_cli_help(capsys: pytest.CaptureFixture[str]) -> None:
     """Top-level help text should be displayed."""
     with pytest.raises(SystemExit):
         main(["--help"])
     captured = capsys.readouterr()
-    assert "industrialstats command line interface" in captured.out
+    assert "industrialstats command line interface" in strip_ansi(captured.out)
 
 
 def test_cli_factorial(tmp_path: Path) -> None:
@@ -66,8 +80,8 @@ def test_cli_rcbd_deterministic(tmp_path: Path) -> None:
     ]
     out1 = tmp_path / "rcbd1.csv"
     out2 = tmp_path / "rcbd2.csv"
-    main(args + ["-o", str(out1)])
-    main(args + ["-o", str(out2)])
+    main([*args, "-o", str(out1)])
+    main([*args, "-o", str(out2)])
     df1 = pd.read_csv(out1)
     df2 = pd.read_csv(out2)
     pd.testing.assert_frame_equal(df1, df2)
@@ -287,7 +301,7 @@ def test_cli_subcommand_help(capsys: pytest.CaptureFixture[str]) -> None:
     with pytest.raises(SystemExit):
         main(["factorial", "--help"])
     captured = capsys.readouterr()
-    assert "usage: pytest factorial" in captured.out
+    assert "usage: industrialstats factorial" in strip_ansi(captured.out)
 
 
 def test_cli_workflow_factorial_anova(tmp_path: Path) -> None:

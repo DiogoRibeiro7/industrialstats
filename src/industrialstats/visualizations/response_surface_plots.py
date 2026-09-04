@@ -14,7 +14,7 @@ Examples
 >>> factors = [Factor("x1", [-1, 1]), Factor("x2", [-1, 1])]
 >>> design = ResponseSurfaceDesign(factors)
 >>> dm = design.generate_design()
->>> dm["y"] = dm["x1"]**2 + dm["x2"]**2
+>>> dm["y"] = dm["x1"] ** 2 + dm["x2"] ** 2
 >>> model = smf.ols("y ~ x1 + x2 + I(x1**2) + I(x2**2) + x1:x2", data=dm).fit()
 >>> plotter = ResponseSurfacePlotter(design, model)
 >>> fig = plotter.surface_plot("x1", "x2")
@@ -24,8 +24,9 @@ True
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Any, Dict, Iterable, Optional, Tuple
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -53,15 +54,15 @@ class ResponseSurfacePlotter:
     def _factor_range(self, name: str, resolution: int) -> np.ndarray:
         factor = next(f for f in self.design.factors if f.name == name)
         low, high = factor.levels
-        return np.linspace(low, high, resolution)
+        return np.linspace(float(low), float(high), resolution)
 
     def _grid(
         self,
         x1: str,
         x2: str,
         resolution: int,
-        fixed: Optional[Dict[str, float]] = None,
-    ) -> Tuple[pd.DataFrame, np.ndarray, np.ndarray]:
+        fixed: dict[str, float] | None = None,
+    ) -> tuple[pd.DataFrame, np.ndarray, np.ndarray]:
         x1_vals = self._factor_range(x1, resolution)
         x2_vals = self._factor_range(x2, resolution)
         xx, yy = np.meshgrid(x1_vals, x2_vals)
@@ -91,7 +92,7 @@ class ResponseSurfacePlotter:
         z = self.model.predict(grid).to_numpy().reshape(resolution, resolution)
         fig = go.Figure(data=[go.Surface(x=x1_vals, y=x2_vals, z=z)])
         fig.update_layout(
-            scene=dict(xaxis_title=x1, yaxis_title=x2, zaxis_title="Response")
+            scene={"xaxis_title": x1, "yaxis_title": x2, "zaxis_title": "Response"}
         )
         return fig
 
@@ -100,7 +101,7 @@ class ResponseSurfacePlotter:
         x1: str,
         x2: str,
         resolution: int = 50,
-        path: Optional[Iterable[Tuple[float, float]]] = None,
+        path: Iterable[tuple[float, float]] | None = None,
     ) -> go.Figure:
         """Create a contour plot with optional optimization path overlay.
 
@@ -123,7 +124,7 @@ class ResponseSurfacePlotter:
         z = self.model.predict(grid).to_numpy().reshape(resolution, resolution)
         fig = go.Figure(data=[go.Contour(x=x1_vals, y=x2_vals, z=z)])
         if path is not None:
-            path_x, path_y = zip(*path)
+            path_x, path_y = zip(*path, strict=True)
             fig.add_trace(go.Scatter(x=path_x, y=path_y, mode="lines+markers"))
         fig.update_layout(xaxis_title=x1, yaxis_title=x2)
         return fig
@@ -160,7 +161,7 @@ class ResponseSurfacePlotter:
         var = pred.var_pred_mean.reshape(resolution, resolution)
         fig = go.Figure(data=[go.Surface(x=x1_vals, y=x2_vals, z=var)])
         fig.update_layout(
-            scene=dict(xaxis_title=x1, yaxis_title=x2, zaxis_title="Var"),
+            scene={"xaxis_title": x1, "yaxis_title": x2, "zaxis_title": "Var"},
             title="Prediction Variance",
         )
         return fig
@@ -168,7 +169,7 @@ class ResponseSurfacePlotter:
     def slice_plot(
         self,
         varying: str,
-        fixed: Dict[str, float],
+        fixed: dict[str, float],
         resolution: int = 50,
     ) -> go.Figure:
         """Plot model response by varying one factor with others fixed.

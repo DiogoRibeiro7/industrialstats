@@ -32,8 +32,9 @@ True
 
 from __future__ import annotations
 
+import inspect
 import math
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pandas as pd
@@ -87,7 +88,7 @@ class ModelDiagnostics:
        Regression*. Chapman & Hall/CRC.
     """
 
-    def __init__(self, model_result: Dict[str, Any], data: pd.DataFrame) -> None:
+    def __init__(self, model_result: dict[str, Any], data: pd.DataFrame) -> None:
         if not isinstance(model_result, dict):
             raise TypeError("model_result must be a dictionary of model outputs")
 
@@ -126,12 +127,56 @@ class ModelDiagnostics:
                 "Length of residuals, fitted values, and data rows must match"
             )
 
-        self._assumption_cache: Optional[Dict[str, Dict[str, Any]]] = None
-        self._influence_cache: Optional[Dict[str, np.ndarray]] = None
-        self._outlier_cache: Optional[Dict[str, List[int]]] = None
+        self._assumption_cache: dict[str, dict[str, Any]] | None = None
+        self._influence_cache: dict[str, np.ndarray] | None = None
+        self._outlier_cache: dict[str, list[int]] | None = None
 
     # ------------------------------------------------------------------
-    def assumption_tests(self) -> Dict[str, Dict[str, Any]]:
+    @staticmethod
+    def _anderson_normality(
+        residuals: np.ndarray,
+    ) -> tuple[float, float | None, float | None, bool]:
+        """Run the Anderson-Darling normality test across SciPy versions.
+
+        SciPy 1.17 introduced an explicit ``method`` argument and deprecated
+        the implicit behaviour; from 1.19 the ``critical_values`` and
+        ``significance_level`` attributes are removed altogether. This helper
+        asks for an interpolated p-value where that is supported and falls
+        back to the critical-value table on older SciPy.
+
+        Parameters
+        ----------
+        residuals : numpy.ndarray
+            Model residuals to test for normality.
+
+        Returns
+        -------
+        tuple of (float, float or None, float or None, bool)
+            The test statistic, the p-value when SciPy can supply one, the 5%
+            critical value when SciPy still exposes the tables, and whether the
+            residuals pass the test at the 5% level. Exactly one of the p-value
+            and the critical value is available for a given SciPy version, so
+            the verdict is decided here rather than by the caller.
+        """
+
+        if "method" in inspect.signature(stats.anderson).parameters:
+            result = stats.anderson(residuals, dist="norm", method="interpolate")
+            p_value = float(result.pvalue)
+            return float(result.statistic), p_value, None, p_value > 0.05
+
+        result = stats.anderson(residuals, dist="norm")
+        critical = dict(
+            zip(result.significance_level, result.critical_values, strict=True)
+        )
+        threshold = critical.get(5.0)
+        if threshold is None:
+            threshold = result.critical_values[-1]
+        statistic = float(result.statistic)
+        threshold = float(threshold)
+        return statistic, None, threshold, statistic < threshold
+
+    # ------------------------------------------------------------------
+    def assumption_tests(self) -> dict[str, dict[str, Any]]:
         """Evaluate classical regression assumptions.
 
         The procedure combines the Shapiro-Wilk and Anderson-Darling tests for
@@ -145,12 +190,17 @@ class ModelDiagnostics:
             ``result["normality"]["passes"]`` indicates whether both normality
             tests are satisfied at the 5% level.
 
+            The Anderson-Darling entry reports whichever evidence the installed
+            SciPy can supply: ``"p_value"`` on SciPy 1.17 and newer, or
+            ``"critical_value_5pct"`` on older releases. Both keys are always
+            present and the unavailable one is ``None``.
+
         Examples
         --------
         >>> tests = diagnostics.assumption_tests()
         >>> sorted(tests.keys())
         ['homoscedasticity', 'independence', 'normality']
-        >>> tests['independence']['passes']
+        >>> tests["independence"]["passes"]
         True
         """
 
@@ -164,14 +214,9 @@ class ModelDiagnostics:
 
         # Normality diagnostics
         shapiro_stat, shapiro_p = stats.shapiro(self.residuals)
-        anderson_res = stats.anderson(self.residuals, dist="norm")
-        anderson_crit = dict(
-            zip(anderson_res.significance_level, anderson_res.critical_values)
+        anderson_stat, anderson_p, anderson_crit, anderson_pass = (
+            self._anderson_normality(self.residuals)
         )
-        ad_threshold = anderson_crit.get(5.0)
-        if ad_threshold is None:
-            ad_threshold = anderson_res.critical_values[-1]
-        anderson_pass = anderson_res.statistic < ad_threshold
         normality_pass = (shapiro_p > 0.05) and anderson_pass
 
         # Homoscedasticity diagnostics via fitted quantile groups
@@ -207,8 +252,9 @@ class ModelDiagnostics:
                     "p_value": float(shapiro_p),
                 },
                 "anderson": {
-                    "statistic": float(anderson_res.statistic),
-                    "critical_value_5pct": float(ad_threshold),
+                    "statistic": anderson_stat,
+                    "p_value": anderson_p,
+                    "critical_value_5pct": anderson_crit,
                 },
             },
             "homoscedasticity": {
@@ -230,7 +276,7 @@ class ModelDiagnostics:
         return self._assumption_cache
 
     # ------------------------------------------------------------------
-    def influence_analysis(self) -> Dict[str, np.ndarray]:
+    def influence_analysis(self) -> dict[str, np.ndarray]:
         """Compute influence diagnostics under the Cook & Weisberg framework.
 
         Returns
@@ -242,7 +288,7 @@ class ModelDiagnostics:
         Examples
         --------
         >>> influence = diagnostics.influence_analysis()
-        >>> {k: v.shape for k, v in influence.items()}['leverage']
+        >>> {k: v.shape for k, v in influence.items()}["leverage"]
         (120,)
         """
 
@@ -266,7 +312,7 @@ class ModelDiagnostics:
         return self._influence_cache
 
     # ------------------------------------------------------------------
-    def outlier_detection(self) -> Dict[str, List[int]]:
+    def outlier_detection(self) -> dict[str, list[int]]:
         """Identify influential observations with multiple criteria.
 
         Returns
@@ -277,7 +323,7 @@ class ModelDiagnostics:
 
         Examples
         --------
-        >>> diagnostics.outlier_detection()['cooks_distance']
+        >>> diagnostics.outlier_detection()["cooks_distance"]
         []
         """
 
@@ -313,7 +359,7 @@ class ModelDiagnostics:
         return self._outlier_cache
 
     # ------------------------------------------------------------------
-    def model_adequacy(self) -> Dict[str, Any]:
+    def model_adequacy(self) -> dict[str, Any]:
         """Summarise overall adequacy of the fitted model.
 
         The summary merges assumption test outcomes, influence diagnostics, and
@@ -329,7 +375,7 @@ class ModelDiagnostics:
         Examples
         --------
         >>> adequacy = diagnostics.model_adequacy()
-        >>> sorted(adequacy['plots'].keys())
+        >>> sorted(adequacy["plots"].keys())
         ['cook_distance', 'qq_plot', 'residuals_vs_fitted']
         """
 
@@ -365,7 +411,7 @@ class ModelDiagnostics:
         }
 
     # ------------------------------------------------------------------
-    def recommendation_system(self) -> List[str]:
+    def recommendation_system(self) -> list[str]:
         """Produce actionable recommendations based on diagnostics.
 
         Recommendations interpret assumption violations and influential point
@@ -383,7 +429,7 @@ class ModelDiagnostics:
         ['No major issues detected. Consider validating on a holdout set.']
         """
 
-        suggestions: List[str] = []
+        suggestions: list[str] = []
         assumptions = self.assumption_tests()
         outliers = self.outlier_detection()
         influence = self.influence_analysis()
@@ -421,8 +467,8 @@ class ModelDiagnostics:
 
     # ------------------------------------------------------------------
     def _generate_diagnostic_plots(
-        self, influence: Dict[str, np.ndarray]
-    ) -> Dict[str, Figure]:
+        self, influence: dict[str, np.ndarray]
+    ) -> dict[str, Figure]:
         """Create diagnostic plots supporting :meth:`model_adequacy`.
 
         Parameters
@@ -439,7 +485,7 @@ class ModelDiagnostics:
         if plt is None:
             raise RuntimeError("matplotlib is required to generate diagnostic plots")
 
-        figures: Dict[str, Figure] = {}
+        figures: dict[str, Figure] = {}
 
         fig_rvf, ax_rvf = plt.subplots(figsize=(6, 4))
         ax_rvf.scatter(self.fitted_values, self.residuals, alpha=0.7)

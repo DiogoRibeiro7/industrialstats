@@ -231,7 +231,7 @@ class TestFactorialDesign(unittest.TestCase):
     def test_effect_calculation_validation(self):
         """Test effect calculation input validation."""
         design = FactorialDesign(self.factors_3level, replicates=1)  # 3-level design
-        design_matrix = design.generate_design()
+        design.generate_design()
 
         # Should raise error for non-2-level design
         with self.assertRaises(ValueError):
@@ -280,8 +280,6 @@ class TestFactorialDesign(unittest.TestCase):
 
     def test_randomization(self):
         """Test design randomization."""
-        np.random.seed(42)  # For reproducible test
-
         design = FactorialDesign(self.factors_2level, replicates=1, randomize=False)
         design_matrix = design.generate_design()
 
@@ -404,13 +402,13 @@ class TestFactorialDesign(unittest.TestCase):
 
         # Test that methods exist and don't raise errors with valid design
         # These would normally write files, but we just test the method calls
-        import os
         import tempfile
+        from pathlib import Path
 
-        with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as f:
-            design.to_csv(f.name)
-            self.assertTrue(os.path.exists(f.name))
-            os.unlink(f.name)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            csv_path = Path(tmpdir) / "design.csv"
+            design.to_csv(csv_path)
+            self.assertTrue(csv_path.exists())
 
         # Test error when no design matrix
         empty_design = FactorialDesign(self.factors_2level, replicates=1)

@@ -1,8 +1,18 @@
 # industrialstats
 
+[![CI](https://github.com/DiogoRibeiro7/industrialstats/actions/workflows/ci.yml/badge.svg)](https://github.com/DiogoRibeiro7/industrialstats/actions/workflows/ci.yml)
+[![Docs](https://github.com/DiogoRibeiro7/industrialstats/actions/workflows/docs.yml/badge.svg)](https://diogoribeiro7.github.io/industrialstats/)
+[![PyPI](https://img.shields.io/pypi/v/industrialstats.svg)](https://pypi.org/project/industrialstats/)
+[![Python versions](https://img.shields.io/pypi/pyversions/industrialstats.svg)](https://pypi.org/project/industrialstats/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![Checked with mypy](https://www.mypy-lang.org/static/mypy_badge.svg)](https://mypy-lang.org/)
+
 **Industrial statistics and design of experiments for Python.**
 
 `industrialstats` provides reproducible experimental-design generators, statistical analysis tools, diagnostics, power calculations, optimization methods, and visualizations for manufacturing, engineering, research, and other designed experiments.
+
+**Documentation: <https://diogoribeiro7.github.io/industrialstats/>**
 
 The project is currently pre-1.0. Its development priority is statistical correctness and validation against established DOE references before expanding the catalogue of design families.
 
@@ -202,12 +212,39 @@ Jupyter notebooks cover introductory DOE, response-surface optimization, and mod
 ```bash
 git clone https://github.com/DiogoRibeiro7/industrialstats.git
 cd industrialstats
-python -m pip install -e . pytest hypothesis pre-commit
+python -m pip install -e . pytest pytest-cov hypothesis ruff mypy pre-commit
 pre-commit install
 pytest
 ```
 
-When implementing or changing a statistical method, add tests that verify mathematical properties or compare against an independent reference. Passing shape and run-count tests alone is not sufficient for statistical algorithms.
+The quality toolchain is:
+
+| Tool | Purpose | Command |
+| --- | --- | --- |
+| [Ruff](https://docs.astral.sh/ruff/) | Linting and formatting (replaces black, isort, flake8) | `ruff check .` / `ruff format .` |
+| [mypy](https://mypy-lang.org/) | Static type checking over `src/industrialstats` | `mypy` |
+| [pytest](https://docs.pytest.org/) | Tests, with a coverage floor enforced in CI | `pytest` |
+| [Hypothesis](https://hypothesis.readthedocs.io/) | Property-based tests for design invariants | included in `pytest` |
+| [pre-commit](https://pre-commit.com/) | Runs the above on every commit | `pre-commit run --all-files` |
+
+`pytest` works on a fresh clone without an editable install, because `src` is on
+the pytest path. Timing-based benchmarks are excluded from the default run;
+select them with `pytest -m benchmark`.
+
+The package ships a PEP 561 `py.typed` marker, so its annotations are visible to
+type checkers in downstream projects.
+
+When implementing or changing a statistical method, add tests that verify mathematical properties or compare against an independent reference. Passing shape and run-count tests alone is not sufficient for statistical algorithms. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the validation requirements and the type-checking ratchet policy.
+
+### Documentation
+
+```bash
+python -m pip install mkdocs mkdocs-material "mkdocstrings[python]"
+mkdocs serve
+```
+
+The API reference is generated from the NumPy-style docstrings in the source, so
+improving a docstring improves the published site.
 
 ## Releases
 

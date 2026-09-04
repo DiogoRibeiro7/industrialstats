@@ -8,12 +8,9 @@ conditions in a chemical reaction optimization study.
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from mpl_toolkits.mplot3d import Axes3D
 
-from industrialstats.analysis.model_fitting import ModelFitting
 from industrialstats.designs.base import Factor
 from industrialstats.designs.response_surface import ResponseSurfaceDesign
-from industrialstats.visualizations.plots import ExperimentPlotter
 
 
 def main():
@@ -82,8 +79,8 @@ def main():
     print("-" * 35)
 
     # Simulate realistic chemical reaction data
-    np.random.seed(42)  # For reproducible results
-    yields = simulate_chemical_reaction_yield(design_matrix)
+    rng = np.random.default_rng(42)  # For reproducible results
+    yields = simulate_chemical_reaction_yield(design_matrix, rng=rng)
     design_matrix["Yield"] = yields
 
     print("Experimental data collected!")
@@ -141,7 +138,7 @@ def main():
     print("-" * 30)
 
     optimum_actual = response_analysis["optimum_actual"]
-    optimum_coded = response_analysis["optimum_coded"]
+    response_analysis["optimum_coded"]
 
     if optimum_actual:
         print("OPTIMAL CONDITIONS:")
@@ -369,7 +366,9 @@ def main():
     print("=" * 80)
 
 
-def simulate_chemical_reaction_yield(design_matrix: pd.DataFrame) -> np.ndarray:
+def simulate_chemical_reaction_yield(
+    design_matrix: pd.DataFrame, rng: np.random.Generator | None = None
+) -> np.ndarray:
     """
     Simulate realistic chemical reaction yield data.
 
@@ -378,7 +377,13 @@ def simulate_chemical_reaction_yield(design_matrix: pd.DataFrame) -> np.ndarray:
     - Higher pressure increases yield
     - There's an optimal temperature around 300°C
     - Temperature and pressure interact
+
+    Pass a seeded ``rng`` for reproducible output; a fresh unseeded generator
+    is used by default.
     """
+    if rng is None:
+        rng = np.random.default_rng()
+
     yields = []
 
     for _, row in design_matrix.iterrows():
@@ -400,7 +405,7 @@ def simulate_chemical_reaction_yield(design_matrix: pd.DataFrame) -> np.ndarray:
             + -3 * temp_coded**2  # Quadratic temperature (optimum)
             + -2 * pressure_coded**2  # Quadratic pressure
             + 4 * temp_coded * pressure_coded  # Interaction
-            + np.random.normal(0, 2.5)  # Experimental error
+            + rng.normal(0, 2.5)  # Experimental error
         )
 
         # Ensure realistic bounds
@@ -425,14 +430,13 @@ def get_significance_level(p_value: float) -> str:
     """Get significance level indicator."""
     if p_value < 0.001:
         return "***"
-    elif p_value < 0.01:
+    if p_value < 0.01:
         return "**"
-    elif p_value < 0.05:
+    if p_value < 0.05:
         return "*"
-    elif p_value < 0.1:
+    if p_value < 0.1:
         return "."
-    else:
-        return ""
+    return ""
 
 
 def predict_yield_at_conditions(conditions: dict, coefficients: dict) -> float:
@@ -623,7 +627,7 @@ def create_rsm_visualizations(
     contourf = ax3.contourf(X, Y, Z, levels=15, cmap="viridis", alpha=0.8)
 
     # Add experimental points
-    scatter = ax3.scatter(
+    ax3.scatter(
         design_matrix["Temperature"],
         design_matrix["Pressure"],
         c=design_matrix["Yield"],
@@ -652,7 +656,7 @@ def create_rsm_visualizations(
     ax3.set_title("Response Surface Contour Plot")
 
     # Add colorbar
-    cbar = plt.colorbar(contourf, label="Yield (%)")
+    plt.colorbar(contourf, label="Yield (%)")
 
     fig3.savefig("rsm_contour_plot.png", dpi=300, bbox_inches="tight")
     plt.close(fig3)
