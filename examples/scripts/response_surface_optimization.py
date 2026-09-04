@@ -138,7 +138,6 @@ def main():
     print("-" * 30)
 
     optimum_actual = response_analysis["optimum_actual"]
-    response_analysis["optimum_coded"]
 
     if optimum_actual:
         print("OPTIMAL CONDITIONS:")

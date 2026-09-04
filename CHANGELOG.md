@@ -30,13 +30,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   shrinking debt via per-module overrides; everything else is clean.
 - `zip()` calls over design matrices now pass `strict=True`, so a length
   mismatch raises instead of silently truncating.
-- `industrialstats.visualizations` now exports only `ExperimentPlotter` and
-  `ResponseSurfacePlotter`. It previously re-exported its third-party imports
-  (`np`, `pd`, `plt`, `sns`, `go`, `stats`) as public API.
 - The CLI reports a stable program name in help output rather than inheriting
   it from `sys.argv[0]`.
 - Example scripts use `numpy.random.Generator` instead of the legacy global
   `numpy.random.seed` API.
+
+### Removed
+
+- **BREAKING:** `industrialstats.visualizations` no longer re-exports its
+  third-party imports. A star-import plus a computed `__all__` made `np`, `pd`,
+  `plt`, `sns`, `go` and `stats` part of the package's public API; the module
+  now exports only `ExperimentPlotter` and `ResponseSurfacePlotter`. Import
+  those libraries directly instead of via `industrialstats.visualizations`.
 
 ### Fixed
 

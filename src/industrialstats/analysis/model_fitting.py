@@ -221,7 +221,7 @@ class ModelFitting:
         >>> df = pd.DataFrame(
         ...     {"A": [1, -1, 1, -1], "B": [1, 1, -1, -1], "y": [4, 2, 3, 1]}
         ... )
-        >>> fitter = ModelFitting(df, response="y")
+        >>> fitter = ModelFitting(df, response_column="y")
         >>> res = fitter.hierarchical_fitting(max_order=1)
         >>> res["selected_terms"]
         ['Intercept', 'A', 'B']

@@ -53,7 +53,10 @@ Prefer resolution V when you intend to interpret interactions, and resolution
 IV when you mainly need clean main effects.
 
 ```python
+from industrialstats.designs.base import Factor
 from industrialstats.designs.fractional_factorial import FractionalFactorialDesign
+
+factors = [Factor(name, [-1, 1], "continuous") for name in "ABCDE"]
 
 design = FractionalFactorialDesign(factors, fraction="1/4", randomize=False)
 design.generate_design()
@@ -75,7 +78,13 @@ response surface design.
   factors at their high settings simultaneously is impractical or unsafe.
 
 ```python
+from industrialstats.designs.base import Factor
 from industrialstats.designs.response_surface import ResponseSurfaceDesign
+
+factors = [
+    Factor("temperature", [180, 220], factor_type="continuous"),
+    Factor("pressure", [10, 20], factor_type="continuous"),
+]
 
 design = ResponseSurfaceDesign(factors, design_type="CCD", center_points=4)
 ```

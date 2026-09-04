@@ -43,13 +43,15 @@ class RandomizedCompleteBlockDesign(ExperimentalDesign):
         if len(blocks) < 2:
             raise ValueError("Must have at least 2 blocks")
 
-        self.treatments = treatments
-        self.blocks = blocks
+        # Copy the caller's lists so a later mutation cannot desynchronise the
+        # design from the factor levels derived from them.
+        self.treatments = list(treatments)
+        self.blocks = list(blocks)
         self.blocking_factor = blocking_factor
         self.seed = seed
 
-        treatment_levels: list[str | float | int] = list(treatments)
-        block_levels: list[str | float | int] = list(blocks)
+        treatment_levels: list[str | float | int] = list(self.treatments)
+        block_levels: list[str | float | int] = list(self.blocks)
         self.factors = [
             Factor("Treatment", treatment_levels, "categorical"),
             Factor(blocking_factor, block_levels, "categorical"),

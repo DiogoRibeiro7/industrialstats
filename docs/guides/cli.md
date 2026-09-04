@@ -12,8 +12,10 @@ standard output.
 
 ## Factor specification
 
-Design subcommands take repeated `-f/--factor` arguments in the form
-`NAME=level1,level2`:
+The `factorial`, `fractional` and `screening` subcommands take repeated
+`-f/--factor` arguments in the form `NAME=level1,level2`. The `crd` and `rcbd`
+subcommands instead take repeated `-t/--treatment` arguments, one per treatment
+level, because they describe a single treatment factor:
 
 ```bash
 industrialstats factorial -f "Temperature=180,220" -f "Pressure=10,20"
@@ -118,8 +120,14 @@ industrialstats model \
 
 ## Reproducibility
 
-Subcommands that randomize accept `--seed`. Record the seed with your results:
-it is what allows the exact run order to be reconstructed later.
+The `crd`, `rcbd` and `screening` subcommands accept `--seed`. Record it with
+your results: it is what allows the exact run order to be reconstructed later.
+
+!!! warning "factorial and fractional randomize without a seed"
+    `FactorialDesign` randomizes by default, but the `factorial` and
+    `fractional` subcommands expose no `--seed` flag, so their run order cannot
+    currently be reproduced from the command line. Save the generated CSV with
+    `-o`, or use the Python API, which accepts `seed`.
 
 ## Errors
 

@@ -7,6 +7,9 @@ maintainers = ["Diogo Ribeiro <dfr@esmad.ipp.pt>"]
 license = "MIT"
 readme = "README.md"
 packages = [{ include = "industrialstats", from = "src" }]
+# poetry-core does not read MANIFEST.in, so sdist extras are declared here.
+# Files inside the package directory (py.typed included) ship automatically.
+include = [{ path = "CHANGELOG.md", format = "sdist" }]
 homepage = "https://github.com/DiogoRibeiro7/industrialstats"
 repository = "https://github.com/DiogoRibeiro7/industrialstats"
 documentation = "https://diogoribeiro7.github.io/industrialstats/"
@@ -93,6 +96,11 @@ addopts = [
     "--strict-config",
     "--import-mode=importlib",
     "-ra",
+    # Timing-based checks are excluded by default so an ordinary run stays fast
+    # and cannot fail on a loaded machine. Run them with `pytest -m benchmark`,
+    # which overrides this selection.
+    "-m",
+    "not benchmark",
 ]
 markers = [
     "benchmark: performance regression checks; excluded from the default run",
@@ -152,6 +160,8 @@ select = [
     "PTH", # flake8-use-pathlib
     "NPY", # numpy-specific rules
     "PD",  # pandas-vet
+    "N",   # pep8-naming
+    "T20", # flake8-print: no stray prints in library code
     "RUF", # ruff-specific rules
 ]
 ignore = [
@@ -178,7 +188,12 @@ allowed-confusables = ["α", "–", "×"]
     "N806",
     "B008",  # pytest fixtures legitimately call in argument defaults
 ]
-"examples/**" = ["T201"]
+# The CLI and the reporting scripts exist to write to stdout.
+"src/industrialstats/cli.py" = ["T201"]
+"scripts/**" = ["T201"]
+# Examples are runnable narratives: they print, and they use the same
+# mathematical notation as the library.
+"examples/**" = ["T201", "T203", "N802", "N803", "N806"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["industrialstats"]

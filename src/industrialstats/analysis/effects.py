@@ -367,10 +367,9 @@ class EffectsAnalysis:
         n_rows = (n_plots + n_cols - 1) // n_cols
 
         fig, axes = plt.subplots(n_rows, n_cols, figsize=figsize)
-        if n_plots == 1 or n_rows == 1:
-            axes = [axes]
-        else:
-            axes = axes.flatten()
+        # subplots returns a bare Axes for a 1x1 grid, a 1-D array for a single
+        # row, and a 2-D array otherwise; normalise all three to a flat list.
+        axes = np.atleast_1d(axes).ravel()
 
         for i, (interaction_name, effect) in enumerate(sorted_interactions):
             factor1, factor2 = interaction_name.split("*")

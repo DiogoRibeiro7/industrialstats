@@ -2,8 +2,10 @@
 
 Plotting helpers for designs, effects, diagnostics, and response surfaces.
 
-All plotting functions return Matplotlib objects, so they can be further
-customised or embedded before display.
+`ExperimentPlotter` methods return Matplotlib figures and axes.
+`ResponseSurfacePlotter` methods return Plotly `graph_objects.Figure` objects,
+which are interactive in a notebook and support `.show()` and `.write_html()`.
+Either way the returned object can be customised before display.
 
 ## Experiment plots
 

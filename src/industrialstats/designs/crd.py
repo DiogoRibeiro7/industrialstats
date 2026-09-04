@@ -41,13 +41,15 @@ class CompletelyRandomizedDesign(ExperimentalDesign):
         if replicates < 1:
             raise ValueError("Must have at least 1 replicate")
 
-        self.treatments = treatments
+        # Copy the caller's list so a later mutation cannot desynchronise
+        # the design from the factor levels derived from it.
+        self.treatments = list(treatments)
         self.replicates = replicates
         self.seed = seed
         self.response_variables = response_variables or []
 
         # Create a single factor with treatment levels
-        treatment_levels: list[str | float | int] = list(treatments)
+        treatment_levels: list[str | float | int] = list(self.treatments)
         treatment_factor = Factor("Treatment", treatment_levels, "categorical")
         self.factors = [treatment_factor]
 

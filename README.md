@@ -105,13 +105,7 @@ python -m pip install industrialstats
 
 The supported Python range is 3.11 through 3.14.
 
-For development from source:
-
-```bash
-git clone https://github.com/DiogoRibeiro7/industrialstats.git
-cd industrialstats
-python -m pip install -e . pytest hypothesis pre-commit
-```
+For development from source, see [Development](#development) below.
 
 Core dependencies include NumPy, pandas, SciPy, statsmodels, scikit-learn, Matplotlib, seaborn, Plotly, openpyxl, and DataExcept.
 
@@ -212,7 +206,7 @@ Jupyter notebooks cover introductory DOE, response-surface optimization, and mod
 ```bash
 git clone https://github.com/DiogoRibeiro7/industrialstats.git
 cd industrialstats
-python -m pip install -e . pytest pytest-cov hypothesis ruff mypy pre-commit
+python -m pip install -e . \n    pytest pytest-cov hypothesis ruff mypy pre-commit \n    pandas-stubs types-openpyxl types-PyYAML
 pre-commit install
 pytest
 ```

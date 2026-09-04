@@ -8,6 +8,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 from statsmodels.stats.outliers_influence import variance_inflation_factor
+from statsmodels.tools.sm_exceptions import ModelWarning
 
 from ..designs.base import Factor
 
@@ -123,12 +124,17 @@ class DesignValidator:
                 warnings.catch_warnings(),
                 np.errstate(divide="ignore", invalid="ignore"),
             ):
-                # statsmodels reports degeneracy through several UserWarning
-                # subclasses (poor conditioning, rank deficiency, and more in
-                # later releases). Matching on message text would need
-                # revisiting on every upgrade, so the whole category is
-                # silenced for this call and this call only.
-                warnings.simplefilter("ignore", UserWarning)
+                # statsmodels signals rank deficiency and related model
+                # problems through ModelWarning subclasses, and reports poor
+                # conditioning as a plain UserWarning. Silence those two
+                # specific channels rather than the whole UserWarning
+                # category, so an unrelated diagnostic still reaches callers.
+                warnings.filterwarnings("ignore", category=ModelWarning)
+                warnings.filterwarnings(
+                    "ignore",
+                    message=".*poorly conditioned.*",
+                    category=UserWarning,
+                )
                 for i in range(1, X_with_const.shape[1]):
                     result["vif"][numeric.columns[i - 1]] = variance_inflation_factor(
                         X_with_const, i

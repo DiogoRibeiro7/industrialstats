@@ -657,7 +657,7 @@ class DataSimulator:
         response_types: Sequence[str] | None = None,
         noise_scales: Sequence[float] | None = None,
         noise_dist: str = "normal",
-        measurement_error: Sequence[dict[str, Any]] | None = None,
+        measurement_error: Sequence[dict[str, Any] | None] | None = None,
     ) -> pd.DataFrame:
         """Simulate correlated multi-response experimental outcomes.
 

@@ -62,7 +62,7 @@ def main():
     print("-" * 40)
 
     # Create 2^4 factorial design with replicates
-    design = FactorialDesign(factors, replicates=2, center_points=4)
+    design = FactorialDesign(factors, replicates=2, center_points=4, seed=42)
     design_matrix = design.generate_design()
 
     print(f"Design Type: {design.name}")
@@ -748,7 +748,6 @@ def create_interaction_subplot(
         if valid_indices:
             x_vals = list(valid_indices)
             y_vals = [means[i] for i in valid_indices]
-            [levels2[i] for i in valid_indices]
 
             plt.plot(
                 x_vals,
