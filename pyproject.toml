@@ -1,16 +1,40 @@
 [tool.poetry]
 name = "industrialstats"
 version = "0.1.0"
-description = "Industrial Statistics for Python - Professional-grade statistical tools for manufacturing excellence"
+description = "Industrial statistics and design of experiments for Python"
 authors = ["Diogo Ribeiro <diogo.debastos.ribeiro@gmail.com>"]
 maintainers = ["Diogo Ribeiro <dfr@esmad.ipp.pt>"]
 license = "MIT"
 readme = "README.md"
 packages = [{ include = "industrialstats", from = "src" }]
+homepage = "https://github.com/DiogoRibeiro7/industrialstats"
 repository = "https://github.com/DiogoRibeiro7/industrialstats"
+keywords = [
+    "design of experiments",
+    "industrial statistics",
+    "DOE",
+    "ANOVA",
+    "factorial design",
+    "response surface methodology",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Manufacturing",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Scientific/Engineering :: Mathematics",
+]
 
 [tool.poetry.dependencies]
-python = ">=3.11"
+python = ">=3.11,<3.15"
 numpy = "^2.3"
 pandas = "^2.3"
 scipy = "^1.16"
