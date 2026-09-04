@@ -1,593 +1,556 @@
-# industrialstats Development Roadmap
+# industrialstats Roadmap
 
-A comprehensive plan to fully implement the Design of Experiments package as defined in the README.
+This roadmap describes the path from the current pre-1.0 package to a statistically trustworthy and maintainable Design of Experiments library.
 
-## 📋 Overview
+The previous roadmap was organized as a week-by-week greenfield implementation plan. That no longer reflects the repository: many advanced methods already exist, while several important correctness and validation issues remain. The roadmap is therefore now organized by **technical priority and release gate**, not by elapsed calendar time.
 
-This roadmap outlines the development phases, priorities, and milestones needed to transform the industrialstats concept into a production-ready package. The plan is organized into phases with clear deliverables and timelines.
+## Guiding principles
 
-## 🎯 Project Phases
+1. **Correctness before breadth**
+   - A statistically mislabelled method is worse than a missing one.
+   - Mathematical properties must be tested directly where possible.
 
-### **Phase 1: Foundation (Weeks 1-4)**
-*Core infrastructure and basic functionality*
+2. **Independent validation**
+   - Major methods should be checked against published examples, hand calculations, or trusted external implementations.
+   - Shape/run-count tests are necessary but not sufficient.
 
-### **Phase 2: Core Designs (Weeks 5-8)**
-*Essential experimental design implementations*
+3. **Transparent semantics**
+   - DOE terminology such as effect, resolution, alias, block, whole plot, and optimality criterion must map to standard statistical definitions.
 
-### **Phase 3: Analysis Engine (Weeks 9-12)**
-*Statistical analysis and model fitting*
+4. **Structured operational exceptions**
+   - DataExcept will be the preferred exception framework for data-loading, schema, transformation, import/export, and other external operational boundaries.
+   - Mathematical precondition failures should not be wrapped mechanically when a native numerical or domain-specific error is clearer.
 
-### **Phase 4: Advanced Methods (Weeks 13-16)**
-*Response surface and optimal designs*
+5. **Reproducibility**
+   - All randomized algorithms should provide deterministic seeded execution.
+   - Tests should exercise reproducibility guarantees.
 
-### **Phase 5: Visualization & UX (Weeks 17-20)**
-*User interface and plotting capabilities*
-
-### **Phase 6: Documentation & Examples (Weeks 21-24)**
-*Comprehensive documentation and tutorials*
-
-### **Phase 7: Testing & Quality (Weeks 25-28)**
-*Testing, validation, and performance optimization*
-
-### **Phase 8: Release Preparation (Weeks 29-32)**
-*Packaging, CI/CD, and first release*
+6. **Narrow public claims**
+   - Documentation must distinguish implemented, experimental, partial, and planned capabilities.
 
 ---
 
-## 📅 Detailed Development Plan
+# Current baseline
 
-## Phase 1: Foundation (Weeks 1-4)
+The package already includes substantial functionality:
 
-### **Week 1: Project Setup**
-- [ ] **Repository Initialization**
-  - Create GitHub repository with branch protection
-  - Set up directory structure as per README
-  - Initialize git hooks and gitignore
-  - Create basic LICENSE and CONTRIBUTING.md
+- full factorial designs;
+- regular two-level fractional factorial designs with generator parsing, resolution, alias structures, minimum-aberration search, and foldover options;
+- CRD and RCBD;
+- Plackett-Burman screening designs;
+- a provisional DefinitiveScreeningDesign implementation;
+- central composite and Box-Behnken response-surface designs;
+- steepest ascent, ridge analysis, canonical analysis, and multiple-response response-surface optimization;
+- D-, A-, G-, and I-optimal coordinate-exchange designs;
+- basic split-plot generation;
+- simplex-lattice mixture designs;
+- ANOVA, mixed-effects modelling, contrasts, multiple comparisons, diagnostics, effects analysis, and power analysis;
+- plotting and export utilities;
+- statistical validation tests against statsmodels, hand calculations, Monte Carlo recovery, and the R FrF2 catalogue.
 
-- [ ] **Development Environment**
-  - Set up virtual environment
-  - Create requirements.txt and pyproject.toml
-  - Configure pre-commit hooks (black, isort, flake8, mypy)
-  - Set up IDE configurations (VS Code/PyCharm)
-
-- [ ] **CI/CD Pipeline**
-  - GitHub Actions for testing (ci.yml)
-  - Code quality checks workflow
-  - Basic packaging workflow
-  - Coverage reporting setup
-
-### **Week 2: Base Classes**
-- [ ] **Core Infrastructure**
-  - `src/industrialstats/__init__.py` with version management
-  - `src/industrialstats/designs/base.py` - Factor and ExperimentalDesign classes ✅ (Already created)
-  - Input validation utilities in `src/industrialstats/utils/validation.py`
-  - Basic error handling and logging setup
-
-- [ ] **Testing Framework**
-  - `tests/conftest.py` with pytest fixtures
-  - `tests/test_designs/test_base.py` for base classes
-  - Test data generation utilities
-  - Coverage configuration
-
-### **Week 3: Data Utilities**
-- [ ] **Data Management**
-  - `src/industrialstats/utils/data_generation.py` - Synthetic data creation
-  - `src/industrialstats/utils/export.py` - Export to CSV/Excel/JSON
-  - `src/industrialstats/utils/transforms.py` - Data transformations
-  - `src/industrialstats/datasets/sample_data.py` - Built-in datasets
-
-- [ ] **Validation System**
-  - Input validation for all design parameters
-  - Data quality checks
-  - Error messages and warnings system
-  - Type hints throughout codebase
-
-### **Week 4: Basic CLI**
-- [ ] **Command Line Interface**
-  - `src/industrialstats/cli.py` basic structure
-  - Simple design generation commands
-  - Help system and argument parsing
-  - Basic output formatting
+The following roadmap assumes this codebase as the starting point.
 
 ---
 
-## Phase 2: Core Designs (Weeks 5-8)
+# Milestone 1 — Statistical correctness hardening
 
-### **Week 5: Factorial Designs**
-- [ ] **Complete Factorial Implementation**
-  - Enhance `src/industrialstats/designs/factorial.py` ✅ (Base created)
-  - Add mixed-level factorial support
-  - Implement blocking capabilities
-  - Add confounding pattern analysis for fractional factorials
+**Release gate:** no method documented as standard/implemented should knowingly violate its defining DOE properties.
 
-- [ ] **Fractional Factorial Designs**
-  - `src/industrialstats/designs/fractional_factorial.py`
-  - Generator string parsing and validation
-  - Alias structure calculation
-  - Resolution determination
+## 1.1 Definitive Screening Designs
 
-### **Week 6: Randomized Designs**
-- [ ] **CRD Implementation**
-  - Complete `src/industrialstats/designs/crd.py` ✅ (Base created)
-  - Add multiple response handling
-  - Sample size calculations
-  - Efficiency comparisons
+**Priority: critical**
 
-- [ ] **RCBD Implementation**
-  - `src/industrialstats/designs/rcbd.py`
-  - Blocking algorithms
-  - Missing plot handling
-  - Efficiency analysis vs CRD
+- [ ] Replace the current axial/OAT-style construction with a genuine DSD construction.
+- [ ] Define supported factor counts and run-count rules explicitly.
+- [ ] Verify required main-effect orthogonality properties.
+- [ ] Verify main-effect versus two-factor-interaction alias properties.
+- [ ] Verify quadratic estimability properties where applicable.
+- [ ] Add deterministic randomization.
+- [ ] Add published-reference examples.
+- [ ] Add property-based tests for the design matrix.
+- [ ] Keep the public status labelled experimental until these tests pass.
 
-### **Week 7: Screening Designs**
-- [ ] **Plackett-Burman Designs**
-  - `src/industrialstats/designs/screening.py`
-  - Hadamard matrix generation
-  - Foldover designs
-  - Definitive screening designs (DSD)
+## 1.2 Factorial blocking
 
-- [ ] **Testing and Validation**
-  - Comprehensive tests for all design types
-  - Validate against known design properties
-  - Performance benchmarking
-  - Documentation strings
+**Priority: critical**
 
-### **Week 8: Design Integration**
-- [ ] **Unified Design Interface**
-  - Common design properties calculation
-  - Design comparison utilities
-  - Design augmentation methods
-  - Catalog of standard designs
+- [ ] Remove row-index modulo blocking as the statistical blocking mechanism.
+- [ ] Add explicit defining contrasts / block generators for regular two-level factorials.
+- [ ] Make intended confounding visible in design metadata.
+- [ ] Validate treatment/block orthogonality when appropriate.
+- [ ] Reject impossible or statistically invalid block configurations.
+- [ ] Add textbook examples for blocked 2^k experiments.
+- [ ] Add tests that prove blocks are not accidentally confounded with main effects unless explicitly requested.
 
----
+## 1.3 Canonical factorial effects
 
-## Phase 3: Analysis Engine (Weeks 9-12)
+**Priority: high**
 
-### **Week 9: ANOVA System**
-- [ ] **Enhanced ANOVA**
-  - Complete `src/industrialstats/analysis/anova.py` ✅ (Base created)
-  - Mixed effects models
-  - Unbalanced designs support
-  - Multiple comparison methods (Tukey, Bonferroni, etc.)
+- [ ] Define one canonical effect convention for two-level factorials using orthogonal contrasts.
+- [ ] Remove semantic disagreement between `FactorialDesign.calculate_effects` and `EffectsAnalysis`.
+- [ ] Centralize effect computation in one implementation.
+- [ ] Validate main effects, two-factor interactions, and higher-order interactions with hand-derived examples.
+- [ ] Add tests with non-zero interactions to distinguish marginal factorial effects from conditional 0/1 regression coefficients.
+- [ ] Document the relationship between coded regression coefficients and factorial effects.
 
-- [ ] **Assumption Testing**
-  - Normality tests (Shapiro-Wilk, Anderson-Darling)
-  - Homogeneity tests (Levene, Bartlett)
-  - Independence checks (Durbin-Watson)
-  - Transformation recommendations
+## 1.4 General factorial model structure
 
-### **Week 10: Effects Analysis**
-- [ ] **Effects Calculation**
-  - Complete `src/industrialstats/analysis/effects.py` ✅ (Base created)
-  - Higher-order interaction effects
-  - Effect inheritance and hierarchy
-  - Pooling strategies for small effects
+**Priority: high**
 
-- [ ] **Model Diagnostics**
-  - `src/industrialstats/analysis/diagnostics.py`
-  - Residual analysis
-  - Outlier detection
-  - Influence measures (Cook's D, leverage)
+- [ ] Generate interaction terms combinatorially up to arbitrary requested order.
+- [ ] Generalize degrees-of-freedom decomposition beyond three-way interactions.
+- [ ] Support saturated and truncated hierarchical models explicitly.
+- [ ] Add tests for k >= 4 factors.
+- [ ] Validate total model degrees of freedom against full factorial identities.
 
-### **Week 11: Model Fitting**
-- [ ] **Advanced Model Selection**
-  - Complete `src/industrialstats/analysis/model_fitting.py` ✅ (Base created)
-  - Regularization methods (LASSO, Ridge)
-  - Bayesian model selection
-  - Model averaging techniques
+## 1.5 Split-plot correctness
 
-- [ ] **Cross-Validation**
-  - K-fold cross-validation
-  - Leave-one-out CV
-  - Bootstrap validation
-  - Time series cross-validation
+**Priority: high**
 
-### **Week 12: Power Analysis**
-- [ ] **Comprehensive Power Analysis**
-  - Complete `src/industrialstats/analysis/power_analysis.py` ✅ (Base created)
-  - Bayesian power analysis
-  - Sequential testing power
-  - Multiple endpoint power
+- [ ] Treat replicated whole plots as distinct experimental units.
+- [ ] Preserve restricted randomization within whole plots.
+- [ ] Add explicit whole-plot and subplot identifiers.
+- [ ] Implement whole-plot/subplot error-stratum analysis.
+- [ ] Integrate mixed-effects modelling for correct inference.
+- [ ] Add expected-mean-square tests for canonical examples.
+- [ ] Add tests for multiple replicates and multiple whole-plot factors.
+
+## 1.6 Plackett-Burman catalogue and guarantees
+
+**Priority: medium**
+
+- [ ] Document exactly which run sizes are currently supported.
+- [ ] Expand the supported catalogue or use a general construction where feasible.
+- [ ] Verify pairwise orthogonality for every supported run size.
+- [ ] Add reference tables for selected designs.
+- [ ] Validate foldover properties.
 
 ---
 
-## Phase 4: Advanced Methods (Weeks 13-16)
+# Milestone 2 — DataExcept integration
 
-### **Week 13: Response Surface Methodology**
-- [ ] **RSM Implementation**
-  - Complete `src/industrialstats/designs/response_surface.py` ✅ (Base created)
-  - Box-Behnken design variants
-  - Custom response surface designs
-  - Prediction variance optimization
+**Release gate:** operational data failures expose structured exceptions with useful context while statistical/numerical failures preserve mathematically meaningful semantics.
 
-- [ ] **Optimization Methods**
-  - Steepest ascent/descent
-  - Ridge analysis
-  - Canonical analysis
-  - Multiple response optimization
+DataExcept is a planned core integration for `industrialstats`.
 
-### **Week 14: Optimal Designs**
-- [ ] **Optimal Design Algorithms**
-  - Complete `src/industrialstats/designs/optimal.py` ✅ (Base created)
-  - Federov exchange algorithm
-  - Genetic algorithms for design
-  - Custom optimality criteria
+## 2.1 Dependency and compatibility
 
-- [ ] **Design Efficiency**
-  - A, D, G, I-efficiency calculations
-  - Relative efficiency comparisons
-  - Design robustness measures
-  - Minimax designs
+- [ ] Add `DataExcept` as a package dependency using a compatible released version.
+- [ ] Verify Python-version compatibility across the industrialstats CI matrix.
+- [ ] Pin only where required by reproducibility policy; otherwise use an appropriate compatible range.
+- [ ] Document the minimum DataExcept version.
 
-### **Week 15: Advanced Factorial Methods**
-- [ ] **Split-Plot Designs**
-  - Hard-to-change factor handling
-  - Whole plot and subplot analysis
-  - Restricted randomization
-  - Strip-plot and split-split-plot designs
+## 2.2 Exception policy
 
-- [ ] **Robust Design**
-  - Taguchi methods
-  - Signal-to-noise ratios
-  - Control and noise factor designs
-  - Robust parameter design
+Define and document a project-wide policy.
 
-### **Week 16: Mixture Designs**
-- [ ] **Mixture Experiments**
-  - Simplex-lattice designs
-  - Simplex-centroid designs
-  - Extreme vertices designs
-  - Constrained mixture designs
+### Use DataExcept for
 
----
+- [ ] dataset/file loading failures;
+- [ ] missing required columns;
+- [ ] dtype mismatches;
+- [ ] malformed tabular schemas;
+- [ ] data transformation failures;
+- [ ] import/export failures;
+- [ ] external serialization failures;
+- [ ] wrapped lower-level data-operation failures;
+- [ ] optional future network/database-backed dataset boundaries.
 
-## Phase 5: Visualization & UX (Weeks 17-20)
+### Do not mechanically wrap
 
-### **Week 17: Core Plotting**
-- [ ] **Basic Visualization**
-  - Complete `src/industrialstats/visualization/plots.py` ✅ (Base created)
-  - Design space visualization
-  - Factor level plots
-  - Response distribution plots
+- [ ] invalid mathematical parameter domains where `ValueError` remains precise;
+- [ ] linear-algebra singularity where `LinAlgError` or an explicit DOE error is more informative;
+- [ ] unsupported statistical method choices unless a structured exception materially improves the API;
+- [ ] programmer errors such as `TypeError` caused by violating the function contract.
 
-- [ ] **Interactive Features**
-  - Plotly integration for interactive plots
-  - Hover information and tooltips
-  - Zoom and pan capabilities
-  - Export to various formats
+## 2.3 Boundary migration
 
-### **Week 18: Advanced Plots**
-- [ ] **Specialized Visualizations**
-  - `src/industrialstats/visualization/interaction_plots.py`
-  - `src/industrialstats/visualization/response_surface_plots.py`
-  - `src/industrialstats/visualization/diagnostic_plots.py`
-  - Half-normal plots and Lenth's method
+- [ ] Audit `datasets/`.
+- [ ] Audit CSV/Excel/JSON export paths.
+- [ ] Audit validation utilities.
+- [ ] Audit CLI input boundaries.
+- [ ] Audit response-data ingestion paths.
+- [ ] Preserve original exceptions using exception chaining / DataExcept context.
+- [ ] Add focused tests for structured exception attributes, not only message text.
 
-- [ ] **3D Visualizations**
-  - 3D response surfaces
-  - Factor space cubes
-  - Contour plots with constraints
-  - Animation capabilities
+## 2.4 Documentation
 
-### **Week 19: Dashboard Interface**
-- [ ] **Web Interface** (Optional)
-  - Streamlit/Dash dashboard
-  - Interactive design creation
-  - Real-time analysis updates
-  - Report generation interface
-
-- [ ] **Plotting Themes**
-  - Publication-ready themes
-  - Corporate branding options
-  - Color accessibility compliance
-  - Customizable templates
-
-### **Week 20: User Experience**
-- [ ] **Enhanced CLI**
-  - Interactive design wizard
-  - Progress bars and status updates
-  - Configuration file support
-  - Plugin architecture
+- [ ] Add a DataExcept section to API documentation.
+- [ ] Add migration examples from generic errors to structured operational errors.
+- [ ] Document which errors intentionally remain native.
 
 ---
 
-## Phase 6: Documentation & Examples (Weeks 21-24)
+# Milestone 3 — Statistical validation framework
 
-### **Week 21: API Documentation**
-- [ ] **Sphinx Documentation**
-  - `docs/` structure setup
-  - API reference generation
-  - Cross-references and linking
-  - Search functionality
+**Release gate:** every core design family has algebraic/property tests and at least one independent reference check.
 
-- [ ] **Docstring Standards**
-  - NumPy/Google style docstrings
-  - Type annotations
-  - Example usage in docstrings
-  - Parameter validation documentation
+## 3.1 Reference implementations
 
-### **Week 22: Tutorials**
-- [ ] **Jupyter Notebooks**
-  - `examples/notebooks/01_introduction_to_doe.ipynb`
-  - `examples/notebooks/02_factorial_designs.ipynb`
-  - `examples/notebooks/03_response_surface_methodology.ipynb`
-  - Interactive widgets and explanations
+- [ ] Extend FrF2 comparison coverage for regular fractional factorials.
+- [ ] Cross-check full and fractional designs with R `DoE.base` where appropriate.
+- [ ] Cross-check response-surface designs and canonical quantities with R `rsm`.
+- [ ] Compare ANOVA/mixed-model results with statsmodels reference fits.
+- [ ] Validate optimal-design criteria against independently computed information matrices.
+- [ ] Validate mixture designs against published Cornell examples.
 
-- [ ] **Getting Started Guide**
-  - Installation instructions
-  - First example walkthrough
-  - Common workflows
-  - Troubleshooting guide
+## 3.2 Textbook regression suite
 
-### **Week 23: Example Scripts**
-- [ ] **Real-World Examples**
-  - Complete `examples/scripts/manufacturing_optimization.py` ✅ (Base created)
-  - Complete `examples/scripts/response_surface_optimization.py` ✅ (Base created)
-  - `examples/scripts/agricultural_experiment.py`
-  - `examples/scripts/pharmaceutical_development.py`
+Build a small permanent catalogue from:
 
-- [ ] **Domain-Specific Examples**
-  - Web A/B testing workflows
-  - Quality control applications
-  - Clinical trial designs
-  - Marketing experiments
+- [ ] Montgomery, *Design and Analysis of Experiments*;
+- [ ] Box, Hunter & Hunter, *Statistics for Experimenters*;
+- [ ] Wu & Hamada, *Experiments: Planning, Analysis, and Optimization*;
+- [ ] Goos & Jones, *Optimal Design of Experiments*;
+- [ ] Cornell, *Experiments with Mixtures*;
+- [ ] Jones & Nachtsheim DSD examples.
 
-### **Week 24: Advanced Documentation**
-- [ ] **Best Practices Guide**
-  - Design selection guidelines
-  - Sample size recommendations
-  - Model selection strategies
-  - Interpretation guidelines
+For each reference example, store only the minimal data and expected statistical results required for verification.
 
-- [ ] **Comparison Studies**
-  - Benchmarks against R packages
-  - Performance comparisons
-  - Feature compatibility matrices
-  - Migration guides from other tools
+## 3.3 Property-based testing
+
+Use Hypothesis or deterministic algebraic checks for:
+
+- [ ] orthogonality;
+- [ ] balance;
+- [ ] alias equivalence;
+- [ ] resolution;
+- [ ] foldover transformations;
+- [ ] mixture sum-to-one constraints;
+- [ ] block assignment invariants;
+- [ ] randomization reproducibility;
+- [ ] information-matrix nonsingularity where required.
+
+## 3.4 Monte Carlo validation
+
+- [ ] effect-estimator unbiasedness under known factorial models;
+- [ ] empirical Type I error checks for selected ANOVA workflows;
+- [ ] power-calculation verification;
+- [ ] response-surface coefficient recovery;
+- [ ] robustness checks under mild non-normality / variance heterogeneity where documented.
 
 ---
 
-## Phase 7: Testing & Quality (Weeks 25-28)
+# Milestone 4 — API and architecture cleanup
 
-### **Week 25: Comprehensive Testing**
-- [ ] **Unit Tests**
-  - Complete test coverage (>95%)
-  - Property-based testing with Hypothesis
-  - Edge case handling
-  - Error condition testing
+**Release gate:** a coherent public API exists and internal duplication is removed.
 
-- [ ] **Integration Tests**
-  - End-to-end workflow testing
-  - Cross-module compatibility
-  - Performance regression tests
-  - Memory usage monitoring
+## 4.1 Public exports
 
-### **Week 26: Validation & Verification**
-- [ ] **Statistical Validation**
-  - Compare results with known solutions
-  - Validate against textbook examples
-  - Cross-check with R packages (DoE.base, rsm, etc.)
-  - Monte Carlo validation studies
+- [ ] Export CRD from the documented public design namespace.
+- [ ] Export ResponseSurfaceDesign.
+- [ ] Export OptimalDesign.
+- [ ] Export SplitPlotDesign.
+- [ ] Export MixtureDesign.
+- [ ] Decide whether top-level `industrialstats` should expose all major design classes or only stable ones.
+- [ ] Mark experimental methods clearly.
 
-- [ ] **Performance Optimization**
-  - Profile bottlenecks
-  - Optimize critical paths
-  - Memory usage optimization
-  - Parallel processing where applicable
+## 4.2 Shared model-matrix layer
 
-### **Week 27: Quality Assurance**
-- [ ] **Code Quality**
-  - Code review process
-  - Style guide enforcement
-  - Documentation completeness
-  - Security vulnerability scanning
+- [ ] Introduce a reusable model-term representation.
+- [ ] Support main effects, interactions, polynomial terms, and hierarchical model construction.
+- [ ] Reuse the layer across factorial analysis, RSM, and optimal-design algorithms.
+- [ ] Centralize coding rules for continuous and categorical factors.
 
-- [ ] **User Testing**
-  - Beta user feedback collection
-  - Usability testing
-  - API ergonomics review
-  - Error message clarity
+## 4.3 Validation layer
 
-### **Week 28: Reliability Testing**
-- [ ] **Stress Testing**
-  - Large dataset handling
-  - Long-running computations
-  - Memory leak detection
-  - Concurrent usage testing
+- [ ] Separate structural design validation from data validation.
+- [ ] Avoid duplicate checks across design classes.
+- [ ] Integrate DataExcept only at appropriate operational boundaries.
+- [ ] Add reusable validation result objects where they improve user diagnostics.
+
+## 4.4 Reproducible RNG policy
+
+- [ ] Use `numpy.random.Generator` consistently.
+- [ ] Avoid hidden global RNG state.
+- [ ] Standardize `seed` / `random_state` conventions.
+- [ ] Add reproducibility contract tests.
 
 ---
 
-## Phase 8: Release Preparation (Weeks 29-32)
+# Milestone 5 — Optimal-design hardening
 
-### **Week 29: Packaging**
-- [ ] **Distribution Setup**
-  - PyPI package configuration
-  - Wheel and source distributions
-  - Dependency management
-  - Version numbering scheme
+## 5.1 Search algorithms
 
-- [ ] **Installation Testing**
-  - Multiple Python versions (3.10-3.12)
-  - Different operating systems
-  - Conda package creation
-  - Docker container setup
+- [ ] Add Fedorov exchange.
+- [ ] Consider modified Fedorov / KL exchange where justified.
+- [ ] Add deterministic initialization options.
+- [ ] Add seeded random-start handling.
+- [ ] Consider genetic search only after deterministic algorithms are validated.
 
-### **Week 30: Release Infrastructure**
-- [ ] **Automated Release**
-  - GitHub Actions release workflow
-  - Automated changelog generation
-  - Tag-based versioning
-  - PyPI upload automation
+## 5.2 Model support
 
-- [ ] **Documentation Hosting**
-  - ReadTheDocs setup
-  - GitHub Pages configuration
-  - Search functionality
-  - Mobile responsiveness
+- [ ] General polynomial model terms.
+- [ ] Quadratic response-surface models.
+- [ ] Categorical-factor coding beyond simple binary 0/1 handling.
+- [ ] Constrained candidate regions.
 
-### **Week 31: Community Preparation**
-- [ ] **Community Guidelines**
-  - Contributing guidelines
-  - Code of conduct
-  - Issue templates
-  - Pull request templates
+## 5.3 Criteria
 
-- [ ] **Support Infrastructure**
-  - GitHub Discussions setup
-  - FAQ compilation
-  - Troubleshooting database
-  - Community moderation guidelines
+- [ ] Validate D-optimality.
+- [ ] Validate A-optimality.
+- [ ] Validate G-optimality.
+- [ ] Validate I-optimality.
+- [ ] Add tests for all four criteria.
+- [ ] Add custom criterion interface only after built-in semantics are stable.
 
-### **Week 32: Launch**
-- [ ] **Release v0.1.0**
-  - Final testing and validation
-  - Release notes and announcement
-  - Social media promotion
-  - Conference/workshop submissions
+## 5.4 Efficiency and diagnostics
+
+- [ ] Standard D-efficiency definition.
+- [ ] Standard A-efficiency definition.
+- [ ] G-efficiency / maximum prediction variance diagnostics.
+- [ ] I-efficiency / integrated prediction variance diagnostics.
+- [ ] equivalence-theorem diagnostics where practical.
 
 ---
 
-## Phase 9: Path to v1.0
+# Milestone 6 — Mixture DOE
 
-Following the initial release, the project will focus on hardening the
-package and building a sustainable community:
+Move from simplex-lattice generation to a complete mixture-analysis subsystem.
 
-- **Packaging**: finalize distribution metadata, publish to PyPI and
-  conda-forge, and maintain semantic versioning.
-- **CI/CD**: expand the test matrix across platforms and Python
-  versions, integrate documentation builds, and automate release notes.
-- **Community release**: establish contribution guidelines, a code of
-  conduct, and outreach channels (website, social media, workshops) to
-  encourage adoption and feedback.
+## 6.1 Designs
 
-These steps will move the project toward a stable v1.0 release.
+- [ ] simplex-lattice;
+- [ ] simplex-centroid;
+- [ ] augmented simplex-centroid;
+- [ ] extreme-vertices designs;
+- [ ] constrained mixtures;
+- [ ] mixture-process variable designs.
 
-## 🎯 Success Metrics
+## 6.2 Models
 
-### **Technical Metrics**
-- [ ] **Code Quality**
-  - Test coverage >95%
-  - Documentation coverage >90%
-  - Performance benchmarks within 10% of R equivalents
-  - Zero critical security vulnerabilities
+- [ ] Scheffé linear model;
+- [ ] Scheffé quadratic model;
+- [ ] special cubic model;
+- [ ] lack-of-fit handling;
+- [ ] prediction on the simplex.
 
-- [ ] **Functionality**
-  - All design types from README implemented
-  - All analysis methods functional
-  - All visualization types working
-  - CLI fully operational
+## 6.3 Optimization and visualization
 
-### **User Experience Metrics**
-- [ ] **Adoption**
-  - 100+ GitHub stars within 3 months
-  - 1000+ PyPI downloads within 6 months
-  - 10+ contributors within 1 year
-  - 5+ case studies from real users
-
-- [ ] **Quality**
-  - Average issue resolution time <7 days
-  - User satisfaction score >4.5/5
-  - Documentation clarity score >4.0/5
-  - API usability score >4.0/5
+- [ ] constrained desirability optimization;
+- [ ] ternary contours;
+- [ ] response surfaces over the simplex;
+- [ ] feasible-region visualization.
 
 ---
 
-## 🚧 Risk Management
+# Milestone 7 — Additional classical designs
 
-### **Technical Risks**
-| Risk | Probability | Impact | Mitigation |
-|------|-------------|--------|------------|
-| Performance bottlenecks | Medium | High | Early benchmarking, profiling tools |
-| Statistical accuracy issues | Low | Critical | Extensive validation against R |
-| Memory usage problems | Medium | Medium | Memory profiling, optimization |
-| Dependency conflicts | Medium | Medium | Minimal dependencies, version pinning |
+Add only after correctness and validation infrastructure is mature.
 
-### **Project Risks**
-| Risk | Probability | Impact | Mitigation |
-|------|-------------|--------|------------|
-| Scope creep | High | Medium | Strict phase boundaries, MVP focus |
-| Resource constraints | Medium | High | Prioritized feature list, community help |
-| Competition from existing tools | Low | Medium | Unique value proposition, better UX |
-| User adoption challenges | Medium | High | Strong documentation, examples |
+## 7.1 Blocking and restricted randomization
 
----
+- [ ] Latin-square design as a first-class class rather than an RCBD helper;
+- [ ] Graeco-Latin squares;
+- [ ] balanced incomplete block designs;
+- [ ] partially balanced incomplete block designs where justified;
+- [ ] strip-plot designs;
+- [ ] split-split-plot designs;
+- [ ] nested designs.
 
-## 🤝 Resource Requirements
+## 7.2 Robust parameter design
 
-### **Development Team**
-- **Lead Developer** (Full-time): Core implementation, architecture
-- **Statistical Consultant** (Part-time): Validation, algorithm review
-- **Documentation Writer** (Part-time): Tutorials, examples, guides
-- **UI/UX Designer** (Part-time): Visualization, user experience
-- **DevOps Engineer** (Part-time): CI/CD, deployment, infrastructure
-
-### **External Dependencies**
-- **Beta Users**: 10-20 users for testing and feedback
-- **Domain Experts**: Manufacturing, pharmaceutical, agricultural experts
-- **Academic Advisors**: Statistics professors for validation
-- **Community Contributors**: Open source contributors
-
-### **Infrastructure**
-- **Development**: GitHub repository, cloud computing credits
-- **Testing**: Multiple OS environments, performance testing tools
-- **Documentation**: ReadTheDocs, hosting for examples
-- **Distribution**: PyPI account, conda-forge submission
+- [ ] Taguchi orthogonal arrays;
+- [ ] control/noise-factor separation;
+- [ ] inner/outer arrays;
+- [ ] signal-to-noise ratios;
+- [ ] robust parameter optimization;
+- [ ] explicit documentation distinguishing Taguchi methods from classical factorial/RSM approaches.
 
 ---
 
-## 📈 Future Roadmap (Beyond v1.0)
+# Milestone 8 — Computer experiments and space-filling designs
 
-### **Version 1.1** (Months 9-12)
-- [ ] **Advanced Features**
-  - Bayesian experimental design
-  - Machine learning integration
-  - Automated design recommendation
-  - Real-time experiment monitoring
+## 8.1 Space-filling designs
 
-### **Version 1.2** (Months 13-18)
-- [ ] **Enterprise Features**
-  - Database integration
-  - Multi-user collaboration
-  - Enterprise security features
-  - Custom reporting templates
+- [ ] Latin hypercube sampling;
+- [ ] maximin Latin hypercubes;
+- [ ] correlation-reduced Latin hypercubes;
+- [ ] Sobol / low-discrepancy designs where they fit the package scope;
+- [ ] maximin distance designs.
 
-### **Version 2.0** (Months 19-24)
-- [ ] **Next Generation**
-  - AI-powered experiment design
-  - Cloud-native architecture
-  - Real-time optimization
-  - Integration with major platforms
+## 8.2 Surrogate modelling
 
----
+- [ ] Gaussian-process response surfaces;
+- [ ] kriging diagnostics;
+- [ ] prediction uncertainty;
+- [ ] sequential design criteria.
 
-## 📋 Action Items (Immediate Next Steps)
+## 8.3 Sequential computer experiments
 
-### **Week 1 Priority Tasks**
-1. [ ] **Repository Setup**
-   - Create GitHub repository with proper structure
-   - Set up development environment
-   - Initialize CI/CD pipeline
-   - Create project documentation
+- [ ] expected improvement;
+- [ ] uncertainty sampling;
+- [ ] integrated variance reduction;
+- [ ] constrained sequential design.
 
-2. [ ] **Team Assembly**
-   - Recruit core development team
-   - Establish communication channels
-   - Set up project management tools
-   - Define roles and responsibilities
-
-3. [ ] **Technical Foundation**
-   - Finalize technical architecture
-   - Choose specific libraries and dependencies
-   - Set up development standards
-   - Create coding guidelines
-
-4. [ ] **Community Building**
-   - Create project website/landing page
-   - Set up social media presence
-   - Reach out to potential beta users
-   - Establish feedback channels
+This milestone should remain separate from classical DOE internally even if the user-facing API shares common factor/design abstractions.
 
 ---
 
-This roadmap provides a comprehensive path from concept to production-ready package. The timeline is aggressive but achievable with dedicated resources and proper execution. Regular milestone reviews and adjustments will ensure the project stays on track and delivers value to the DOE community.
+# Milestone 9 — Sequential and adaptive experimentation
+
+- [ ] design augmentation APIs;
+- [ ] foldover as a general augmentation operation;
+- [ ] sequential RSM workflows;
+- [ ] adaptive screening-to-optimization workflows;
+- [ ] Bayesian optimal design where mathematically justified;
+- [ ] interim-analysis/sequential-testing support only with explicit control of error rates.
+
+---
+
+# Milestone 10 — Documentation and user experience
+
+## 10.1 Documentation architecture
+
+- [ ] API reference generated from the stable public API;
+- [ ] mathematical background pages;
+- [ ] design-selection guide;
+- [ ] assumptions and limitations for every design family;
+- [ ] DataExcept exception guide;
+- [ ] reproducibility guide.
+
+## 10.2 Tutorials
+
+Planned notebook sequence:
+
+1. introduction to DOE;
+2. full factorials and interactions;
+3. fractional factorials, aliasing, and foldover;
+4. blocking and RCBD;
+5. screening designs;
+6. response-surface methodology;
+7. split-plot experiments;
+8. optimal designs;
+9. mixture experiments;
+10. robust parameter design;
+11. computer experiments.
+
+## 10.3 Domain examples
+
+- [ ] manufacturing process optimization;
+- [ ] pharmaceutical formulation/process development;
+- [ ] agricultural blocked experiments;
+- [ ] quality engineering;
+- [ ] web/product experiments;
+- [ ] simulation/computer experiments.
+
+---
+
+# Milestone 11 — Quality engineering and release readiness
+
+## 11.1 Tooling
+
+- [ ] replace legacy lint configuration with a single modern Ruff-based policy;
+- [ ] enable strict or near-strict mypy incrementally;
+- [ ] remove `ignore_errors = true` from mypy configuration;
+- [ ] define a coverage floor based on meaningful tested code;
+- [ ] package build verification in CI;
+- [ ] dependency/security scanning.
+
+## 11.2 CI matrix
+
+- [ ] supported Python versions;
+- [ ] Linux;
+- [ ] Windows;
+- [ ] macOS where practical;
+- [ ] documentation build;
+- [ ] package install test from built wheel;
+- [ ] statistical-reference test subset.
+
+## 11.3 Performance
+
+- [ ] factorial generation benchmarks;
+- [ ] fractional-generator search benchmarks;
+- [ ] optimal-design exchange benchmarks;
+- [ ] response-surface optimization benchmarks;
+- [ ] memory checks for large candidate sets.
+
+---
+
+# Milestone 12 — Release path
+
+## v0.2 — Correctness release
+
+Target:
+
+- corrected DSD;
+- corrected factorial blocking;
+- unified effects semantics;
+- generalized factorial DF/interactions;
+- split-plot replication correction;
+- first DataExcept integration;
+- expanded statistical validation.
+
+## v0.3 — Analysis and architecture release
+
+Target:
+
+- coherent public API;
+- shared model-matrix layer;
+- optimal-design hardening;
+- mixture-model analysis;
+- improved CLI and documentation.
+
+## v0.4 — Classical DOE breadth
+
+Target:
+
+- incomplete block designs;
+- expanded restricted-randomization designs;
+- robust/Taguchi design family.
+
+## v0.5 — Computer experiments
+
+Target:
+
+- Latin hypercube and space-filling designs;
+- Gaussian-process surrogate modelling;
+- sequential computer-experiment criteria.
+
+## v1.0 — Stable statistical contract
+
+`1.0` should mean more than API stability. The following conditions should hold:
+
+- [ ] every documented stable design family has independent statistical validation;
+- [ ] known statistical limitations are documented explicitly;
+- [ ] core APIs are stable and typed;
+- [ ] operational boundaries use structured exceptions consistently;
+- [ ] supported Python versions and release artifacts are tested in CI;
+- [ ] documentation includes design-selection and assumptions guidance;
+- [ ] no experimental method is presented as statistically validated without evidence.
+
+---
+
+# Validation matrix
+
+The following matrix should be maintained as functionality matures.
+
+| Area | Unit tests | Algebra/property tests | Independent reference | Monte Carlo | Status target |
+| --- | --- | --- | --- | --- | --- |
+| Full factorial | Yes | Expand | Add textbook/R | Yes | Stable |
+| Fractional factorial | Yes | Yes | FrF2 | Add | Stable |
+| CRD | Yes | Expand | statsmodels/textbook | Add | Stable |
+| RCBD | Yes | Expand | textbook | Add | Stable |
+| Plackett-Burman | Yes | Orthogonality | Add catalogue reference | Optional | Stable |
+| Definitive screening | Minimal | Required | Required | Optional | Experimental until complete |
+| RSM | Yes | Expand | R rsm/textbook | Add | Stable |
+| Optimal design | Basic | Required | Independent criterion calculations | Optional | Beta |
+| Split-plot | Basic | Required | Mixed-model/textbook | Add | Beta |
+| Mixture | Basic | Sum-to-one | Cornell/reference software | Add | Beta |
+
+---
+
+# Deferred ideas
+
+These are valid future directions but should not displace the correctness milestones above:
+
+- dashboard/web UI;
+- plugin architecture;
+- Bayesian model averaging;
+- genetic algorithms for design search;
+- animation-heavy visualization;
+- cloud execution;
+- automatic report generation;
+- domain-specific wrappers.
+
+They can be revisited once the statistical core is trustworthy and the public API is coherent.
