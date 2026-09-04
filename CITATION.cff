@@ -8,7 +8,6 @@ abstract: >-
   diagnostics, power calculations, and visualization utilities.
 type: software
 version: "0.1.0"
-date-released: 2026-09-04
 license: MIT
 repository-code: "https://github.com/DiogoRibeiro7/industrialstats"
 url: "https://github.com/DiogoRibeiro7/industrialstats"

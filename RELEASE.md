@@ -1,80 +1,62 @@
-# Release checklist
+# Automated releases
 
-This repository publishes one GitHub Release to two destinations:
+`industrialstats` uses one long-lived branch, `main`, and one release workflow: `.github/workflows/release.yml`.
 
-1. PyPI receives the built wheel and source distribution through GitHub Actions and PyPI Trusted Publishing.
-2. Zenodo archives the GitHub Release and mints the software DOI through the Zenodo GitHub integration.
+Zenodo archives each published GitHub Release through the Zenodo GitHub integration.
 
-## One-time PyPI setup
+## Normal development
 
-Before the first release, configure a pending GitHub Trusted Publisher in PyPI for:
+All normal work targets `main` through pull requests. Commit and PR titles should follow Conventional Commits because Release Please derives semantic versions from them:
 
-- PyPI project name: `industrialstats`
-- GitHub owner: `DiogoRibeiro7`
-- GitHub repository: `industrialstats`
-- workflow file: `release.yml`
+- `fix:` -> patch release
+- `feat:` -> minor release
+- `feat!:` / `fix!:` / `BREAKING CHANGE:` -> major release
+
+Release Please maintains `CHANGELOG.md` and synchronizes version metadata automatically.
+
+## Release flow
+
+There is no manual version editing, tag creation, GitHub Release creation, PyPI API token, or personal GitHub token.
+
+After conventional commits land on `main`, `.github/workflows/release.yml` runs Release Please and creates or updates a release pull request. That PR contains the generated changelog and synchronized version metadata, including the Python package version and `CITATION.cff` version.
+
+When a release is desired:
+
+1. review the Release Please pull request;
+2. merge it into `main`;
+3. Release Please creates the version tag and published GitHub Release;
+4. the same `release.yml` run checks out that exact tag;
+5. it builds wheel and sdist and runs `twine check`;
+6. it attaches both distributions to the GitHub Release;
+7. it publishes to PyPI through OIDC Trusted Publishing;
+8. Zenodo archives that GitHub Release and mints the DOI.
+
+The only human release action is merging the Release Please pull request.
+
+Because Release Please uses GitHub's built-in `GITHUB_TOKEN`, its generated release PR does not start a separate pull-request CI workflow. Publication safety therefore remains inside `release.yml`: the release artifacts are built and validated from the created tag before PyPI publication.
+
+## PyPI
+
+PyPI publishing is tokenless. The Trusted Publisher configuration is:
+
+- project: `industrialstats`
+- owner: `DiogoRibeiro7`
+- repository: `industrialstats`
+- workflow: `release.yml`
 - environment: `pypi`
 
-The workflow intentionally does not use a long-lived PyPI API token. The `pypi` GitHub environment and the Trusted Publisher configuration must match.
+The `pypi` GitHub environment must exist and match the Trusted Publisher configuration.
 
-## One-time Zenodo setup
+## Zenodo
 
-Before the first release:
+Connect GitHub to Zenodo and enable `DiogoRibeiro7/industrialstats`. Zenodo archives each published GitHub Release automatically.
 
-1. Connect the GitHub account to Zenodo.
-2. Synchronize the repository list in Zenodo.
-3. Enable `DiogoRibeiro7/industrialstats` in the Zenodo GitHub integration.
-
-The repository uses `CITATION.cff` as the software metadata source. Do not add a DOI to `CITATION.cff` before Zenodo has minted the real DOI.
-
-## Release preparation
-
-For each release:
-
-1. Set the same version in:
-   - `pyproject.toml`
-   - `src/industrialstats/__init__.py`
-   - `CITATION.cff`
-2. Set `date-released` in `CITATION.cff` to the intended release date.
-3. Run the full PR CI and ensure quality plus Python 3.11, 3.12, 3.13, and 3.14 are green.
-4. Build locally if desired:
-
-   ```bash
-   python -m pip install --upgrade build twine
-   python -m build
-   python -m twine check dist/*
-   ```
-
-5. Merge the release-preparation PR into `develop`.
-6. Create a Git tag matching the package version exactly, for example `v0.1.0`.
-7. Create and publish a GitHub Release from that tag.
-
-## Automated release behaviour
-
-Publishing the GitHub Release triggers `.github/workflows/release.yml`.
-
-The workflow:
-
-- checks that the GitHub Release tag equals `v<pyproject version>`;
-- builds the wheel and source distribution;
-- validates the distributions with `twine check`;
-- attaches both distributions to the GitHub Release;
-- publishes them to PyPI through OIDC Trusted Publishing.
-
-If the repository has been enabled in Zenodo, the same GitHub Release is automatically ingested and archived there.
-
-## After the first Zenodo release
-
-After Zenodo creates the first record:
-
-1. verify the title, author, version, licence, release date, keywords, and repository URL;
-2. verify that Software Heritage archival is scheduled or complete;
-3. record the Zenodo DOI in the release notes and README if desired;
-4. only add a DOI to `CITATION.cff` if you deliberately want to pin citation metadata to a specific Zenodo DOI rather than let Zenodo manage release metadata from the CFF.
+`CITATION.cff` is the repository metadata source. Release Please maintains its version. The optional `date-released` field is intentionally omitted so it cannot become stale; the GitHub/Zenodo publication timestamp is the authoritative release date. The DOI must not be fabricated or pre-filled before Zenodo mints it.
 
 ## Release invariants
 
-- Never reuse or overwrite a published version on PyPI.
-- Never move an existing public release tag to different source code.
-- Never publish from a dirty or unreviewed branch.
-- A GitHub Release is the canonical release event for both PyPI and Zenodo.
+- Never reuse a version already published to PyPI.
+- Never move a published release tag.
+- Never publish from an unreviewed branch.
+- `main` is the only long-lived branch.
+- A published GitHub Release is the canonical release event for both PyPI and Zenodo.

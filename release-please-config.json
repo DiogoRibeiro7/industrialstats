@@ -1,0 +1,24 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "bootstrap-sha": "66eeb2c4df59eef3c91ee4da7f7405a32b812d56",
+  "release-type": "python",
+  "include-component-in-tag": false,
+  "include-v-in-tag": true,
+  "packages": {
+    ".": {
+      "package-name": "industrialstats",
+      "initial-version": "0.1.0",
+      "extra-files": [
+        {
+          "type": "yaml",
+          "path": "CITATION.cff",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "generic",
+          "path": "src/industrialstats/__init__.py"
+        }
+      ]
+    }
+  }
+}
