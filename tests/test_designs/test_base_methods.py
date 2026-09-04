@@ -1,6 +1,5 @@
 import json
 import math
-import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -61,27 +60,25 @@ class TestBaseMethods(unittest.TestCase):
                 self.assertIn("Balanced", summary_df.index)
 
     def test_to_excel_requires_valid_extension(self):
-        with tempfile.NamedTemporaryFile(suffix=".csv") as tmp:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "design.csv"
             with self.assertRaises(ValueError):
-                self.design.to_excel(tmp.name)
+                self.design.to_excel(path)
 
     def test_to_json_contains_metadata(self):
-        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as tmp:
-            filename = tmp.name
-        try:
-            self.design.to_json(filename)
-            with open(filename, "r", encoding="utf-8") as handle:
-                payload = json.load(handle)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "design.json"
+            self.design.to_json(path)
+            payload = json.loads(path.read_text(encoding="utf-8"))
             self.assertEqual(payload["name"], self.design.name)
             self.assertIn("design_efficiency", payload["metadata"])
             self.assertIn("design_matrix", payload)
-        finally:
-            os.unlink(filename)
 
     def test_to_json_extension_validation(self):
-        with tempfile.NamedTemporaryFile(suffix=".txt") as tmp:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "design.txt"
             with self.assertRaises(ValueError):
-                self.design.to_json(tmp.name)
+                self.design.to_json(path)
 
     def test_is_balanced_and_design_efficiency_metrics(self):
         self.assertTrue(self.design.is_balanced)

@@ -92,7 +92,7 @@ def export_to_json(df: pd.DataFrame, path: str | Path, **kwargs: Any) -> None:
         "columns": list(df.columns),
     }
     try:
-        with open(path, "w", encoding="utf-8") as f:
+        with Path(path).open("w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, **kwargs)
     except (OSError, ValueError, TypeError, UnicodeError) as exc:
         raise FileWriteError(str(path), exc) from exc

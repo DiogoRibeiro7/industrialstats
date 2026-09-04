@@ -99,9 +99,9 @@ def assess_risk(
             )
             sim = simulate_responses(sim_design, seed=rng.integers(0, 10_000))
             if (
-                sim["Efficacy"].iat[0] >= EFFICACY_THRESHOLD
-                and sim["Stability"].iat[0] >= STABILITY_THRESHOLD
-                and sim["Cost"].iat[0] <= COST_THRESHOLD
+                sim["Efficacy"].iloc[0] >= EFFICACY_THRESHOLD
+                and sim["Stability"].iloc[0] >= STABILITY_THRESHOLD
+                and sim["Cost"].iloc[0] <= COST_THRESHOLD
             ):
                 passes += 1
         risks.append(1 - passes / n_sim)

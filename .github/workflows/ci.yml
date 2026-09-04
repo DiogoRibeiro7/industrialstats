@@ -1,6 +1,8 @@
 name: CI
 
 on:
+  push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
@@ -8,38 +10,112 @@ concurrency:
   group: ci-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
+env:
+  FORCE_COLOR: "1"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
 jobs:
   quality:
-    name: quality
+    name: lint and format
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
           python-version: "3.14"
+          cache: pip
       - name: Install pre-commit
         run: python -m pip install --upgrade pip pre-commit
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
       - name: Run pre-commit
+        # mypy is a system hook needing the full scientific stack; the
+        # dedicated `type check` job installs the package and runs it there.
+        env:
+          SKIP: mypy
         run: pre-commit run --show-diff-on-failure --color=always --all-files
 
-  tests:
-    name: tests (${{ matrix.python-version }})
+  types:
+    name: type check
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+          cache: pip
+      - name: Install package and typing dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e . mypy pandas-stubs types-openpyxl types-PyYAML
+      - name: Run mypy
+        run: mypy
+
+  tests:
+    name: tests (${{ matrix.os }}, ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
+        os: [ubuntu-latest]
         python-version: ["3.11", "3.12", "3.13", "3.14"]
+        include:
+          # The library writes design files and reads them back, so exercise
+          # the platforms with different path and file-locking semantics.
+          - os: windows-latest
+            python-version: "3.14"
+          - os: macos-latest
+            python-version: "3.14"
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
+          cache: pip
       - name: Install package and test dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e . pytest hypothesis
-      - name: Run correctness tests
-        run: pytest --ignore=tests/test_performance
+          python -m pip install -e . pytest pytest-cov hypothesis
+      - name: Run tests
+        env:
+          HYPOTHESIS_PROFILE: ci
+        run: >-
+          pytest -m "not benchmark"
+          --cov=industrialstats --cov-report=xml --cov-report=term
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.os }}-${{ matrix.python-version }}
+          path: coverage.xml
+          if-no-files-found: ignore
+
+  coverage:
+    name: coverage threshold
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+          cache: pip
+      - name: Install package and test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e . pytest pytest-cov hypothesis
+      - name: Enforce the coverage floor
+        env:
+          HYPOTHESIS_PROFILE: ci
+        # The floor only ever moves up. Raise it as coverage improves; never
+        # lower it to make a red build green.
+        run: >-
+          pytest -m "not benchmark"
+          --cov=industrialstats --cov-report=term-missing --cov-fail-under=63
 
   package:
     name: package
@@ -49,6 +125,7 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: "3.14"
+          cache: pip
       - name: Build and validate distributions
         run: |
           python -m pip install --upgrade pip
@@ -60,6 +137,8 @@ jobs:
           python -m pip install dist/*.whl
           python - <<'PY'
           import importlib.metadata
+          import importlib.resources
+
           import industrialstats
 
           installed = importlib.metadata.version("industrialstats")
@@ -68,4 +147,9 @@ jobs:
                   f"Installed metadata version {installed!r} does not match "
                   f"package version {industrialstats.__version__!r}"
               )
+
+          # PEP 561: without this marker the shipped annotations are invisible
+          # to type checkers in downstream projects.
+          if not importlib.resources.files("industrialstats").joinpath("py.typed").is_file():
+              raise SystemExit("py.typed marker missing from the built wheel")
           PY

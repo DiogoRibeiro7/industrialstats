@@ -6,19 +6,34 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
-    reviewers:
-      - "diogoribeiro7"
     labels:
       - "dependencies"
       - "python"
+    groups:
+      # The scientific stack moves together; reviewing one PR against the whole
+      # set is more informative than seven separate bumps.
+      scientific-python:
+        patterns:
+          - "numpy"
+          - "pandas"
+          - "scipy"
+          - "statsmodels"
+          - "scikit-learn"
+          - "matplotlib"
+          - "seaborn"
+          - "plotly"
+      dev-tooling:
+        dependency-type: "development"
 
   # GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "monthly"
-    reviewers:
-      - "diogoribeiro7"
     labels:
       - "dependencies"
       - "github-actions"
+    groups:
+      actions:
+        patterns:
+          - "*"

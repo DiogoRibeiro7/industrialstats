@@ -30,6 +30,7 @@ responses = sim.simulate_correlated_responses(
 )
 
 from industrialstats.utils.performance import profile_function
+
 profile_stats = profile_function(design.generate_design)
 
 # compute and visualise design efficiencies

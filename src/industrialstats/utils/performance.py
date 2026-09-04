@@ -1,10 +1,11 @@
-from __future__ import annotations
-
 """Utilities for profiling code execution paths."""
+
+from __future__ import annotations
 
 import cProfile
 import pstats
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 
 def profile_function(

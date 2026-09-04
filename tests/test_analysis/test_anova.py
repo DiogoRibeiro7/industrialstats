@@ -16,7 +16,7 @@ def test_anova_analysis_basic():
     model = analysis.fit_model("Response ~ A + B + A:B")
     assert model is not None
     table = analysis.anova_table_calculation()
-    assert set(["sum_sq", "df"]).issubset(table.columns)
+    assert {"sum_sq", "df"}.issubset(table.columns)
     tests = analysis.assumptions_tests()
     assert "normality" in tests
 
@@ -57,7 +57,7 @@ def test_mixed_effects_model_with_nested_random_effects():
 def test_unbalanced_anova():
     factors = [Factor("A", [0, 1]), Factor("B", [0, 1])]
     design = FactorialDesign(factors, replicates=2, randomize=False)
-    dm = design.generate_design().iloc[:-1]
+    dm = design.generate_design().iloc[:-1].copy()
     dm["Response"] = list(range(1, len(dm) + 1))
     analysis2 = ANOVAAnalysis(dm, "Response")
     analysis2.fit_model("Response ~ A + B")

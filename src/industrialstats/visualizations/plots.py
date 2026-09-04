@@ -1,7 +1,6 @@
 """Visualization functions for experimental designs and analysis."""
 
-import warnings
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -22,8 +21,8 @@ class ExperimentPlotter:
 
     def __init__(
         self,
-        data: Optional[pd.DataFrame] = None,
-        design_matrix: Optional[pd.DataFrame] = None,
+        data: pd.DataFrame | None = None,
+        design_matrix: pd.DataFrame | None = None,
     ):
         """Initialize the plotter.
 
@@ -53,7 +52,7 @@ class ExperimentPlotter:
             self.factor_columns = []
 
     def main_effects_plot(
-        self, response_column: str, figsize: Tuple[int, int] = (12, 8)
+        self, response_column: str, figsize: tuple[int, int] = (12, 8)
     ) -> plt.Figure:
         """Create a main-effects plot of factor level means.
 
@@ -136,7 +135,7 @@ class ExperimentPlotter:
             ax.grid(True, alpha=0.3)
 
             # Add value labels on bars
-            for idx, (bar, mean_val) in enumerate(zip(bars, means)):
+            for idx, (bar, mean_val) in enumerate(zip(bars, means, strict=True)):
                 height = bar.get_height()
                 ax.text(
                     bar.get_x() + bar.get_width() / 2.0,
@@ -156,8 +155,8 @@ class ExperimentPlotter:
 
     @staticmethod
     def design_comparison_plot(
-        designs: Dict[str, ExperimentalDesign],
-        figsize: Tuple[int, int] = (12, 8),
+        designs: dict[str, ExperimentalDesign],
+        figsize: tuple[int, int] = (12, 8),
     ) -> plt.Figure:
         """Compare multiple designs side by side.
 
@@ -198,7 +197,7 @@ class ExperimentPlotter:
         fig = plt.figure(figsize=figsize)
         gs = fig.add_gridspec(2, n_designs, height_ratios=[3, 1])
 
-        summary_rows: List[Dict[str, Any]] = []
+        summary_rows: list[dict[str, Any]] = []
 
         for idx, (name, design) in enumerate(designs.items()):
             if design.design_matrix is None:
@@ -241,8 +240,8 @@ class ExperimentPlotter:
         ax_table = fig.add_subplot(gs[1, :])
         ax_table.axis("off")
         table = ax_table.table(
-            cellText=summary_df.values,
-            colLabels=summary_df.columns,
+            cellText=summary_df.astype(str).to_numpy().tolist(),
+            colLabels=list(summary_df.columns),
             loc="center",
         )
         table.auto_set_font_size(False)
@@ -254,8 +253,8 @@ class ExperimentPlotter:
 
     def interactive_design_explorer(
         self,
-        response_column: Optional[str] = None,
-        filename: Optional[str] = None,
+        response_column: str | None = None,
+        filename: str | None = None,
     ) -> go.Figure:
         """Create an interactive design-space explorer using Plotly.
 
@@ -306,7 +305,10 @@ class ExperimentPlotter:
         if response_column and response_column in dm.columns:
             hover_cols.append(response_column)
 
-        marker_base: Dict[str, Any] = dict(size=10, line=dict(width=1, color="black"))
+        marker_base: dict[str, Any] = {
+            "size": 10,
+            "line": {"width": 1, "color": "black"},
+        }
 
         combos = dm[factors].drop_duplicates().reset_index(drop=True)
         traces = []
@@ -319,7 +321,7 @@ class ExperimentPlotter:
                     color=subset[response_column],
                     colorscale="Viridis",
                     showscale=True,
-                    colorbar=dict(title=response_column),
+                    colorbar={"title": response_column},
                 )
             hovertemplate = (
                 "<br>".join(
@@ -344,7 +346,7 @@ class ExperimentPlotter:
         updatemenus = []
         for idx, factor in enumerate(factors):
             buttons = []
-            levels = ["All"] + sorted(dm[factor].unique().tolist())
+            levels = ["All", *sorted(dm[factor].unique().tolist())]
             for level in levels:
                 visibility = []
                 for _, row in combos.iterrows():
@@ -354,18 +356,22 @@ class ExperimentPlotter:
                         visibility.append(row[factor] == level)
                 label = f"All {factor}" if level == "All" else f"{factor}={level}"
                 buttons.append(
-                    dict(label=label, method="update", args=[{"visible": visibility}])
+                    {
+                        "label": label,
+                        "method": "update",
+                        "args": [{"visible": visibility}],
+                    }
                 )
             updatemenus.append(
-                dict(
-                    buttons=buttons,
-                    direction="down",
-                    x=0.0,
-                    y=1.15 - idx * 0.1,
-                    xanchor="left",
-                    yanchor="top",
-                    showactive=True,
-                )
+                {
+                    "buttons": buttons,
+                    "direction": "down",
+                    "x": 0.0,
+                    "y": 1.15 - idx * 0.1,
+                    "xanchor": "left",
+                    "yanchor": "top",
+                    "showactive": True,
+                }
             )
 
         fig.update_layout(
@@ -385,7 +391,7 @@ class ExperimentPlotter:
         factor1: str,
         factor2: str,
         response_column: str,
-        figsize: Tuple[int, int] = (10, 6),
+        figsize: tuple[int, int] = (10, 6),
     ) -> plt.Figure:
         """Create an interaction plot between two factors.
 
@@ -468,7 +474,7 @@ class ExperimentPlotter:
         return fig
 
     def residual_plots(
-        self, model_results: Dict[str, np.ndarray], figsize: Tuple[int, int] = (15, 10)
+        self, model_results: dict[str, np.ndarray], figsize: tuple[int, int] = (15, 10)
     ) -> plt.Figure:
         """Create comprehensive residual analysis plots.
 
@@ -547,7 +553,6 @@ class ExperimentPlotter:
 
             # Add Cook's distance contours
             x_range = np.linspace(leverage.min(), leverage.max(), 100)
-            n = len(residuals)
             p = 2  # Simplified assumption
 
             for cook_level in [0.5, 1.0]:
@@ -574,8 +579,8 @@ class ExperimentPlotter:
         self,
         factor1: str,
         factor2: str,
-        response_column: Optional[str] = None,
-        figsize: Tuple[int, int] = (10, 8),
+        response_column: str | None = None,
+        figsize: tuple[int, int] = (10, 8),
     ) -> plt.Figure:
         """Create design space plot showing experimental points.
 
@@ -626,9 +631,9 @@ class ExperimentPlotter:
             # Color by design point type if available
             if "DesignPoint" in data_to_use.columns:
                 design_types = data_to_use["DesignPoint"].unique()
-                colors = plt.cm.Set1(np.linspace(0, 1, len(design_types)))
+                colors = plt.get_cmap("Set1")(np.linspace(0, 1, len(design_types)))
 
-                for design_type, color in zip(design_types, colors):
+                for design_type, color in zip(design_types, colors, strict=True):
                     mask = data_to_use["DesignPoint"] == design_type
                     ax.scatter(
                         x[mask],
@@ -645,7 +650,9 @@ class ExperimentPlotter:
 
         # Add run numbers if available
         if "RunOrder" in data_to_use.columns:
-            for i, (xi, yi, run) in enumerate(zip(x, y, data_to_use["RunOrder"])):
+            for _i, (xi, yi, run) in enumerate(
+                zip(x, y, data_to_use["RunOrder"], strict=True)
+            ):
                 ax.annotate(
                     str(run),
                     (xi, yi),
@@ -664,9 +671,9 @@ class ExperimentPlotter:
 
     def factorial_cube_plot(
         self,
-        factors: List[str],
-        response_column: Optional[str] = None,
-        figsize: Tuple[int, int] = (10, 8),
+        factors: list[str],
+        response_column: str | None = None,
+        figsize: tuple[int, int] = (10, 8),
     ) -> plt.Figure:
         """Create 3D cube plot for 3-factor designs.
 
@@ -762,12 +769,12 @@ class ExperimentPlotter:
         ax.set_xlabel(factors[0])
         ax.set_ylabel(factors[1])
         ax.set_zlabel(factors[2])
-        ax.set_title(f'Factorial Cube: {" × ".join(factors)}')
+        ax.set_title(f"Factorial Cube: {' × '.join(factors)}")
 
         return fig
 
     def box_plots_by_factor(
-        self, response_column: str, figsize: Tuple[int, int] = (15, 8)
+        self, response_column: str, figsize: tuple[int, int] = (15, 8)
     ) -> plt.Figure:
         """Create box plots for each factor.
 
@@ -820,8 +827,8 @@ class ExperimentPlotter:
             box_plot = ax.boxplot(box_data, labels=factor_levels, patch_artist=True)
 
             # Color the boxes
-            colors = plt.cm.Set3(np.linspace(0, 1, len(factor_levels)))
-            for patch, color in zip(box_plot["boxes"], colors):
+            colors = plt.get_cmap("Set3")(np.linspace(0, 1, len(factor_levels)))
+            for patch, color in zip(box_plot["boxes"], colors, strict=True):
                 patch.set_facecolor(color)
                 patch.set_alpha(0.7)
 

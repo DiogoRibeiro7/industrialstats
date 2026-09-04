@@ -1,9 +1,10 @@
-from __future__ import annotations
-
 """Advanced experimental designs."""
 
+from __future__ import annotations
+
+from collections.abc import Callable
 from itertools import product
-from typing import Callable, List, Optional
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -54,11 +55,11 @@ class SplitPlotDesign(ExperimentalDesign):
 
     def __init__(
         self,
-        whole_plot_factors: List[Factor],
-        sub_plot_factors: List[Factor],
+        whole_plot_factors: list[Factor],
+        sub_plot_factors: list[Factor],
         replicates: int = 1,
         randomize: bool = True,
-        seed: Optional[int] = None,
+        seed: int | None = None,
     ) -> None:
         super().__init__("Split-Plot Design")
         if not whole_plot_factors:
@@ -92,9 +93,9 @@ class SplitPlotDesign(ExperimentalDesign):
         wp_levels = [f.levels for f in self.whole_plot_factors]
         sp_levels = [f.levels for f in self.sub_plot_factors]
         for wp_combo in product(*wp_levels):
-            for rep in range(self.replicates):
+            for _rep in range(self.replicates):
                 for sp_combo in product(*sp_levels):
-                    row = {
+                    row: dict[str, Any] = {
                         "StdOrder": run_id,
                         "WholePlot": whole_plot_id,
                     }
@@ -183,11 +184,11 @@ class MixtureDesign(ExperimentalDesign):
 
     def __init__(
         self,
-        factors: List[Factor],
+        factors: list[Factor],
         order: int = 2,
-        constraints: Optional[List[Callable[[np.ndarray], bool]]] = None,
+        constraints: list[Callable[[np.ndarray], bool]] | None = None,
         randomize: bool = False,
-        seed: Optional[int] = None,
+        seed: int | None = None,
     ) -> None:
         super().__init__("Mixture Design")
         if len(factors) < 3:
@@ -234,7 +235,7 @@ class MixtureDesign(ExperimentalDesign):
         self.design_matrix = design
         return design
 
-    def plot_simplex(self, ax: Optional[Axes] = None) -> Axes:
+    def plot_simplex(self, ax: Axes | None = None) -> Axes:
         """Plot mixture design points for three components.
 
         Parameters

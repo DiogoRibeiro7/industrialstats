@@ -4,9 +4,6 @@ import numpy as np
 import pandas as pd
 import pytest
 import statsmodels.api as sm
-
-matplotlib = pytest.importorskip("matplotlib")
-matplotlib.use("Agg")
 from matplotlib.figure import Figure
 
 from industrialstats.analysis.diagnostics import ModelDiagnostics

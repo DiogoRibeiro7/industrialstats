@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-from typing import List
 
 import pandas as pd
 
@@ -20,7 +19,7 @@ from .utils.export import export_to_csv
 from .utils.io import load_csv
 
 
-def parse_factors(factors: List[str]) -> List[Factor]:
+def parse_factors(factors: list[str]) -> list[Factor]:
     """Parse factor specifications.
 
     Parameters
@@ -126,6 +125,7 @@ def crd_command(args: argparse.Namespace) -> None:
 def screening_command(args: argparse.Namespace) -> None:
     """Execute the ``screening`` CLI command."""
     factors = parse_factors(args.factor)
+    design: PlackettBurmanDesign | DefinitiveScreeningDesign
     if args.design == "pb":
         design = PlackettBurmanDesign(factors, seed=args.seed)
     else:
@@ -227,7 +227,8 @@ def fractional_command(args: argparse.Namespace) -> None:
 def build_parser() -> argparse.ArgumentParser:
     """Build the top-level command-line parser."""
     parser = argparse.ArgumentParser(
-        description="industrialstats command line interface"
+        prog="industrialstats",
+        description="industrialstats command line interface",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
@@ -395,7 +396,7 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main(argv: List[str] | None = None) -> None:
+def main(argv: list[str] | None = None) -> None:
     """Entry point for the command-line interface.
 
     Parameters

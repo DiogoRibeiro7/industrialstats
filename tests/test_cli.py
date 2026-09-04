@@ -66,8 +66,8 @@ def test_cli_rcbd_deterministic(tmp_path: Path) -> None:
     ]
     out1 = tmp_path / "rcbd1.csv"
     out2 = tmp_path / "rcbd2.csv"
-    main(args + ["-o", str(out1)])
-    main(args + ["-o", str(out2)])
+    main([*args, "-o", str(out1)])
+    main([*args, "-o", str(out2)])
     df1 = pd.read_csv(out1)
     df2 = pd.read_csv(out2)
     pd.testing.assert_frame_equal(df1, df2)
@@ -287,7 +287,7 @@ def test_cli_subcommand_help(capsys: pytest.CaptureFixture[str]) -> None:
     with pytest.raises(SystemExit):
         main(["factorial", "--help"])
     captured = capsys.readouterr()
-    assert "usage: pytest factorial" in captured.out
+    assert "usage: industrialstats factorial" in captured.out
 
 
 def test_cli_workflow_factorial_anova(tmp_path: Path) -> None:

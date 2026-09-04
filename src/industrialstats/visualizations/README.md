@@ -21,10 +21,12 @@ factorial.generate_design()
 rcbd = RandomizedCompleteBlockDesign(["T1", "T2"], ["B1", "B2"])
 rcbd.generate_design()
 
-fig = ExperimentPlotter.design_comparison_plot({
-    "Factorial": factorial,
-    "RCBD": rcbd,
-})
+fig = ExperimentPlotter.design_comparison_plot(
+    {
+        "Factorial": factorial,
+        "RCBD": rcbd,
+    }
+)
 fig.show()
 ```
 
@@ -66,7 +68,7 @@ from industrialstats.visualizations import ResponseSurfacePlotter
 factors = [Factor("x1", [-1, 1]), Factor("x2", [-1, 1])]
 design = ResponseSurfaceDesign(factors)
 dm = design.generate_design()
-dm["y"] = dm["x1"]**2 + dm["x2"]**2
+dm["y"] = dm["x1"] ** 2 + dm["x2"] ** 2
 model = smf.ols("y ~ x1 + x2 + I(x1**2) + I(x2**2) + x1:x2", data=dm).fit()
 
 plotter = ResponseSurfacePlotter(design, model)

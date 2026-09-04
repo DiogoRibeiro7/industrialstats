@@ -1,0 +1,71 @@
+name: Bug report
+description: Report incorrect behaviour, an unexpected exception, or a broken API.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a report.
+
+        If the problem is a **wrong statistical result**, please use the
+        "Statistical correctness" template instead — it asks for the reference
+        value needed to verify the fix.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Describe the behaviour you observed and what you expected.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: >-
+        The shortest script that shows the problem, including how the design is
+        constructed. Pass an explicit `seed` so the run is reproducible.
+      render: python
+      placeholder: |
+        from industrialstats.designs.base import Factor
+        from industrialstats.designs.factorial import FactorialDesign
+
+        factors = [Factor("temperature", [180, 220], factor_type="continuous")]
+        design = FactorialDesign(factors=factors, replicates=2, seed=42)
+        print(design.generate_design())
+    validations:
+      required: true
+
+  - type: textarea
+    id: traceback
+    attributes:
+      label: Traceback or output
+      description: The full traceback, or the output you got versus the output you expected.
+      render: text
+
+  - type: input
+    id: version
+    attributes:
+      label: industrialstats version
+      description: "`python -c \"import industrialstats; print(industrialstats.__version__)\"`"
+      placeholder: "0.1.0"
+    validations:
+      required: true
+
+  - type: input
+    id: python
+    attributes:
+      label: Python version and platform
+      placeholder: "3.12 on Windows 11"
+    validations:
+      required: true
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Relevant dependency versions
+      description: >-
+        Output of `pip show numpy pandas scipy statsmodels | findstr /R "Name Version"`
+        on Windows, or `pip list | grep -E 'numpy|pandas|scipy|statsmodels'` elsewhere.
+      render: text

@@ -2,19 +2,17 @@
 
 from __future__ import annotations
 
-import ast
 import doctest
 import importlib
 import inspect
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 PACKAGE_ROOT = Path(__file__).resolve().parents[1] / "src" / "industrialstats"
 
 
-def _iter_modules() -> List[str]:
+def _iter_modules() -> list[str]:
     """Return dotted module paths for all modules in the package."""
-    modules: List[str] = []
+    modules: list[str] = []
     for path in PACKAGE_ROOT.rglob("*.py"):
         if path.name == "__init__.py":
             continue
@@ -23,18 +21,18 @@ def _iter_modules() -> List[str]:
     return modules
 
 
-def check_docstring_examples() -> Dict[str, doctest.TestResults]:
+def check_docstring_examples() -> dict[str, doctest.TestResults]:
     """Run doctest on all modules and collect results."""
-    results: Dict[str, doctest.TestResults] = {}
+    results: dict[str, doctest.TestResults] = {}
     for mod_path in _iter_modules():
         module = importlib.import_module(mod_path)
         results[mod_path] = doctest.testmod(module, verbose=False)
     return results
 
 
-def check_parameter_documentation() -> Dict[str, List[str]]:
+def check_parameter_documentation() -> dict[str, list[str]]:
     """Verify all parameters in functions appear in docstrings."""
-    missing: Dict[str, List[str]] = {}
+    missing: dict[str, list[str]] = {}
     for mod_path in _iter_modules():
         module = importlib.import_module(mod_path)
         for name, func in inspect.getmembers(module, inspect.isfunction):
@@ -46,9 +44,9 @@ def check_parameter_documentation() -> Dict[str, List[str]]:
     return missing
 
 
-def generate_documentation_report() -> (
-    Tuple[Dict[str, doctest.TestResults], Dict[str, List[str]]]
-):
+def generate_documentation_report() -> tuple[
+    dict[str, doctest.TestResults], dict[str, list[str]]
+]:
     """Generate a tuple containing doctest and parameter coverage results."""
     example_results = check_docstring_examples()
     param_results = check_parameter_documentation()

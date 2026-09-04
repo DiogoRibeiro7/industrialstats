@@ -1,8 +1,6 @@
-from __future__ import annotations
-
 """Design efficiency metrics and visualization utilities."""
 
-from typing import Dict
+from __future__ import annotations
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -223,7 +221,7 @@ def estimate_power(
     return float(power)
 
 
-def plot_efficiencies(efficiencies: Dict[str, float]) -> plt.Axes:
+def plot_efficiencies(efficiencies: dict[str, float]) -> plt.Axes:
     """Plot efficiency metrics for multiple designs.
 
     Parameters
@@ -239,7 +237,7 @@ def plot_efficiencies(efficiencies: Dict[str, float]) -> plt.Axes:
 
     labels = list(efficiencies)
     values = [efficiencies[k] for k in labels]
-    fig, ax = plt.subplots()
+    _fig, ax = plt.subplots()
     ax.bar(labels, values, color="steelblue")
     ax.set_ylabel("Efficiency")
     ax.set_ylim(0, max(values) * 1.1)
@@ -248,12 +246,12 @@ def plot_efficiencies(efficiencies: Dict[str, float]) -> plt.Axes:
 
 
 __all__ = [
-    "d_efficiency",
     "a_efficiency",
+    "d_efficiency",
+    "estimate_power",
     "g_efficiency",
     "i_efficiency",
+    "plot_efficiencies",
     "relative_efficiency",
     "variance_inflation_factors",
-    "estimate_power",
-    "plot_efficiencies",
 ]

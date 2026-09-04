@@ -92,7 +92,7 @@ class TestResponseSurfaceOptimisation(unittest.TestCase):
         radii = [0.8, 1.0]
         ridge = self.design.ridge_analysis(self.results, radii)
         solutions = ridge["solutions"]
-        for radius, (_, row) in zip(radii, solutions.iterrows()):
+        for radius, (_, row) in zip(radii, solutions.iterrows(), strict=True):
             coded_point = row[["coded_x1", "coded_x2"]].to_numpy()
             self.assertAlmostEqual(np.linalg.norm(coded_point), radius, places=3)
             gradient = self.B @ coded_point + 0.5 * self.b

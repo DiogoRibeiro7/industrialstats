@@ -1,8 +1,8 @@
-from __future__ import annotations
-
 """Validation utilities for experimental designs."""
 
-from typing import Any, Dict, List
+from __future__ import annotations
+
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -15,7 +15,7 @@ class DesignValidator:
     """Comprehensive design validation."""
 
     @staticmethod
-    def validate_factors(factors: List[Factor]) -> List[str]:
+    def validate_factors(factors: list[Factor]) -> list[str]:
         """Validate factor specifications and return warnings.
 
         Parameters
@@ -28,7 +28,7 @@ class DesignValidator:
         list of str
             Validation warnings, if any.
         """
-        warnings: List[str] = []
+        warnings: list[str] = []
         factor_types = {f.factor_type for f in factors}
         if len(factor_types) > 1:
             warnings.append("Mixed factor types detected")
@@ -39,7 +39,7 @@ class DesignValidator:
             if len(set(f.levels)) != len(f.levels):
                 warnings.append(f"Factor {f.name} has duplicate levels")
             if f.factor_type == "continuous" and not all(
-                isinstance(l, (int, float)) for l in f.levels
+                isinstance(level, (int, float)) for level in f.levels
             ):
                 warnings.append(
                     f"Factor {f.name} is continuous but has non-numeric levels"
@@ -47,7 +47,7 @@ class DesignValidator:
         return warnings
 
     @staticmethod
-    def validate_design_matrix(design_matrix: pd.DataFrame) -> Dict[str, Any]:
+    def validate_design_matrix(design_matrix: pd.DataFrame) -> dict[str, Any]:
         """Validate a generated design matrix.
 
         Parameters
@@ -61,9 +61,9 @@ class DesignValidator:
             Validation summary including missing values, duplicates and
             single-level factors.
         """
-        result: Dict[str, Any] = {
-            "missing_values": design_matrix.isnull().any().any(),
-            "missing_counts": design_matrix.isnull().sum().to_dict(),
+        result: dict[str, Any] = {
+            "missing_values": design_matrix.isna().any().any(),
+            "missing_counts": design_matrix.isna().sum().to_dict(),
             "duplicate_rows": design_matrix.duplicated().any(),
             "single_level_factors": [
                 col
@@ -74,7 +74,7 @@ class DesignValidator:
         return result
 
     @staticmethod
-    def check_confounding(design_matrix: pd.DataFrame) -> Dict[str, Any]:
+    def check_confounding(design_matrix: pd.DataFrame) -> dict[str, Any]:
         """Check for confounding patterns.
 
         Parameters
@@ -95,7 +95,7 @@ class DesignValidator:
                for Experimenters*.
         .. [2] Montgomery, D. C. (2017). *Design and Analysis of Experiments*.
         """
-        result: Dict[str, Any] = {
+        result: dict[str, Any] = {
             "high_correlation": {},
             "vif": {},
             "alias_structure": [],
@@ -112,10 +112,16 @@ class DesignValidator:
         if numeric.shape[1] >= 2:
             X = numeric.values
             X_with_const = np.column_stack([np.ones(len(numeric)), X])
-            for i in range(1, X_with_const.shape[1]):
-                result["vif"][numeric.columns[i - 1]] = variance_inflation_factor(
-                    X_with_const, i
-                )
+            # A perfectly confounded column has R^2 == 1, so the VIF
+            # computation divides by zero. That is the defining case this
+            # validator exists to report, not an anomaly, so allow the
+            # arithmetic to yield the mathematically correct infinite
+            # inflation instead of surfacing a numpy RuntimeWarning.
+            with np.errstate(divide="ignore", invalid="ignore"):
+                for i in range(1, X_with_const.shape[1]):
+                    result["vif"][numeric.columns[i - 1]] = variance_inflation_factor(
+                        X_with_const, i
+                    )
 
             from scipy.linalg import null_space
 
@@ -123,7 +129,7 @@ class DesignValidator:
             for vec in ns.T:
                 involved = [
                     col
-                    for col, coeff in zip(numeric.columns, vec)
+                    for col, coeff in zip(numeric.columns, vec, strict=True)
                     if abs(coeff) > 1e-10
                 ]
                 if involved:

@@ -4,8 +4,9 @@ This module implements the :class:`ResponseSurfaceDesign` class for constructing
 central composite and Box–Behnken designs used in process optimization.
 """
 
+from collections.abc import Callable, Iterable, Sequence
 from itertools import product
-from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -46,9 +47,9 @@ class ResponseSurfaceDesign(ExperimentalDesign):
 
     def __init__(
         self,
-        factors: List[Factor],
+        factors: list[Factor],
         design_type: str = "CCD",
-        alpha: Optional[float] = None,
+        alpha: float | None = None,
         center_points: int = 5,
     ) -> None:
         """Initialize response surface design.
@@ -93,8 +94,9 @@ class ResponseSurfaceDesign(ExperimentalDesign):
 
         if self.design_type == "CCD":
             return self._generate_ccd()
-        elif self.design_type == "BBD":
+        if self.design_type == "BBD":
             return self._generate_bbd()
+        return None
 
     def _generate_ccd(self) -> pd.DataFrame:
         """Generate Central Composite Design."""
@@ -139,7 +141,7 @@ class ResponseSurfaceDesign(ExperimentalDesign):
             run_id += 1
 
         # 3. Center points
-        for cp in range(self.center_points):
+        for _cp in range(self.center_points):
             point = {"RunID": run_id, "DesignPoint": "Center", "PointType": "Center"}
             for factor in self.factors:
                 point[factor.name] = 0  # Coded center
@@ -196,7 +198,7 @@ class ResponseSurfaceDesign(ExperimentalDesign):
                         run_id += 1
 
         # Center points
-        for cp in range(self.center_points):
+        for _cp in range(self.center_points):
             point = {"RunID": run_id, "DesignPoint": "Center", "PointType": "Center"}
             for factor in self.factors:
                 point[factor.name] = 0
@@ -245,10 +247,7 @@ class ResponseSurfaceDesign(ExperimentalDesign):
             if len(factor.levels) != 2:
                 return False
 
-        if self.center_points < 1:
-            return False
-
-        return True
+        return not self.center_points < 1
 
     def n_runs(self) -> int:
         """Calculate total number of runs."""
@@ -258,12 +257,13 @@ class ResponseSurfaceDesign(ExperimentalDesign):
             factorial_runs = 2**k
             axial_runs = 2 * k
             return factorial_runs + axial_runs + self.center_points
-        elif self.design_type == "BBD":
+        if self.design_type == "BBD":
             # Box-Behnken: 2 * k * (k-1) + center points
             bbd_runs = 2 * k * (k - 1)
             return bbd_runs + self.center_points
+        return None
 
-    def design_properties(self) -> Dict[str, Any]:
+    def design_properties(self) -> dict[str, Any]:
         """Calculate design properties (rotatability, orthogonality, etc.)."""
         if self.design_matrix is None:
             raise ValueError("Design not generated yet")
@@ -298,7 +298,7 @@ class ResponseSurfaceDesign(ExperimentalDesign):
 
         return properties
 
-    def prediction_variance(self, prediction_points: List[List[float]]) -> np.ndarray:
+    def prediction_variance(self, prediction_points: list[list[float]]) -> np.ndarray:
         """Calculate prediction variance at specified points.
 
         Parameters
@@ -372,7 +372,7 @@ class ResponseSurfaceDesign(ExperimentalDesign):
 
         return coded_matrix
 
-    def response_surface_analysis(self, response_data: List[float]) -> Dict[str, Any]:
+    def response_surface_analysis(self, response_data: list[float]) -> dict[str, Any]:
         """Fit response surface model and analyze results.
 
         Parameters
@@ -459,10 +459,10 @@ class ResponseSurfaceDesign(ExperimentalDesign):
 
             # Prepare results
             results = {
-                "coefficients": dict(zip(term_names, coefficients)),
-                "std_errors": dict(zip(term_names, std_errors)),
-                "t_statistics": dict(zip(term_names, t_stats)),
-                "p_values": dict(zip(term_names, p_values)),
+                "coefficients": dict(zip(term_names, coefficients, strict=True)),
+                "std_errors": dict(zip(term_names, std_errors, strict=True)),
+                "t_statistics": dict(zip(term_names, t_stats, strict=True)),
+                "p_values": dict(zip(term_names, p_values, strict=True)),
                 "r_squared": r_squared,
                 "adj_r_squared": adj_r_squared,
                 "rmse": np.sqrt(mse),
@@ -477,12 +477,12 @@ class ResponseSurfaceDesign(ExperimentalDesign):
 
             return results
 
-        except np.linalg.LinAlgError:
-            raise ValueError("Unable to fit model - design matrix is singular")
+        except np.linalg.LinAlgError as e:
+            raise ValueError("Unable to fit model - design matrix is singular") from e
 
     def _find_optimum_coded(
-        self, coefficients: np.ndarray, term_names: List[str]
-    ) -> Optional[np.ndarray]:
+        self, coefficients: np.ndarray, term_names: list[str]
+    ) -> np.ndarray | None:
         """Find stationary point (optimum) in coded units."""
         k = len(self.factors)
 
@@ -516,8 +516,7 @@ class ResponseSurfaceDesign(ExperimentalDesign):
             # Check if stationary point is within reasonable bounds
             if np.all(np.abs(x_stationary) <= 3):  # Within ±3 coded units
                 return x_stationary
-            else:
-                return None  # Optimum outside reasonable region
+            return None  # Optimum outside reasonable region
 
         except np.linalg.LinAlgError:
             return None  # Singular matrix
@@ -526,7 +525,7 @@ class ResponseSurfaceDesign(ExperimentalDesign):
         """Convert an iterable of actual factor levels to coded coordinates."""
 
         coded = np.zeros(len(self.factors), dtype=float)
-        for i, (value, factor) in enumerate(zip(actual, self.factors)):
+        for i, (value, factor) in enumerate(zip(actual, self.factors, strict=True)):
             low_level, high_level = factor.levels
             center = (low_level + high_level) / 2
             half_range = (high_level - low_level) / 2
@@ -541,7 +540,7 @@ class ResponseSurfaceDesign(ExperimentalDesign):
         """Convert an iterable of coded coordinates to actual factor levels."""
 
         actual = np.zeros(len(self.factors), dtype=float)
-        for i, (value, factor) in enumerate(zip(coded, self.factors)):
+        for i, (value, factor) in enumerate(zip(coded, self.factors, strict=True)):
             low_level, high_level = factor.levels
             center = (low_level + high_level) / 2
             half_range = (high_level - low_level) / 2
@@ -549,8 +548,8 @@ class ResponseSurfaceDesign(ExperimentalDesign):
         return actual
 
     def _quadratic_components(
-        self, coefficient_map: Dict[str, float]
-    ) -> Tuple[float, np.ndarray, np.ndarray]:
+        self, coefficient_map: dict[str, float]
+    ) -> tuple[float, np.ndarray, np.ndarray]:
         """Extract intercept, linear vector, and Hessian matrix for the surface."""
 
         k = len(self.factors)
@@ -575,19 +574,19 @@ class ResponseSurfaceDesign(ExperimentalDesign):
         return intercept, b, B
 
     def _evaluate_quadratic(
-        self, coefficient_map: Dict[str, float], coded_point: np.ndarray
+        self, coefficient_map: dict[str, float], coded_point: np.ndarray
     ) -> float:
         """Evaluate the quadratic response model at a coded point."""
 
         intercept, b, B = self._quadratic_components(coefficient_map)
         return float(intercept + coded_point @ b + coded_point.T @ B @ coded_point)
 
-    def _quadratic_plotter(self, coefficient_map: Dict[str, float]):
+    def _quadratic_plotter(self, coefficient_map: dict[str, float]):
         """Create a ResponseSurfacePlotter backed by the quadratic coefficients."""
 
         class _QuadraticPredictor:
             def __init__(
-                self, design: "ResponseSurfaceDesign", coefs: Dict[str, float]
+                self, design: "ResponseSurfaceDesign", coefs: dict[str, float]
             ):
                 self.design = design
                 self.coefs = coefs
@@ -615,14 +614,14 @@ class ResponseSurfaceDesign(ExperimentalDesign):
 
     def steepest_ascent(
         self,
-        model_results: Dict[str, Any],
-        start_point: Optional[Dict[str, float]] = None,
+        model_results: dict[str, Any],
+        start_point: dict[str, float] | None = None,
         step_length: float = 0.5,
         n_steps: int = 10,
         direction: str = "ascent",
         visualize: bool = False,
-        plot_factors: Optional[Tuple[str, str]] = None,
-    ) -> Dict[str, Any]:
+        plot_factors: tuple[str, str] | None = None,
+    ) -> dict[str, Any]:
         """Compute the steepest ascent/descent path for the fitted surface.
 
         This routine follows the gradient-based approach described by Box and
@@ -630,44 +629,58 @@ class ResponseSurfaceDesign(ExperimentalDesign):
         the largest increase (or decrease) in the response. Steps are taken in
         coded units and converted back to actual factor levels for reporting.
 
-        Args:
-            model_results: Output from :meth:`response_surface_analysis`
-                containing the fitted coefficients.
-            start_point: Starting location in actual units. If omitted, the
-                design centre is used.
-            step_length: Length of each step in coded units once the gradient
-                direction is normalised. Defaults to ``0.5``.
-            n_steps: Number of steps to compute along the path. Defaults to
-                ``10``.
-            direction: Direction of movement relative to the gradient. Defaults
-                to ``"ascent"``.
-            visualize: Whether to return a contour plot overlay. Defaults to
-                ``False``.
-            plot_factors: Pair of factor names to use on the contour plot. When
-                ``None`` the first two factors are used.
+        Parameters
+        ----------
+        model_results
+            Output from :meth:`response_surface_analysis`
+            containing the fitted coefficients.
+        start_point
+            Starting location in actual units. If omitted, the
+            design centre is used.
+        step_length
+            Length of each step in coded units once the gradient
+            direction is normalised. Defaults to ``0.5``.
+        n_steps
+            Number of steps to compute along the path. Defaults to
+            ``10``.
+        direction
+            Direction of movement relative to the gradient. Defaults
+            to ``"ascent"``.
+        visualize
+            Whether to return a contour plot overlay. Defaults to
+            ``False``.
+        plot_factors
+            Pair of factor names to use on the contour plot. When
+            ``None`` the first two factors are used.
 
-        Returns:
-            Dict[str, Any]: Dictionary with keys ``"path"`` (DataFrame of coded
+        Returns
+        -------
+        Dict[str, Any]
+            Dictionary with keys ``"path"`` (DataFrame of coded
             and actual points) and ``"figure"`` (Plotly figure when
             ``visualize`` is ``True``).
 
-        Raises:
-            ValueError: If an invalid direction is provided or the gradient is
-                zero.
+        Raises
+        ------
+        ValueError
+            If an invalid direction is provided or the gradient is
+            zero.
 
-        Examples:
-            >>> factors = [Factor("x1", [-1, 1]), Factor("x2", [-1, 1])]
-            >>> design = ResponseSurfaceDesign(factors)
-            >>> dm = design.generate_design()
-            >>> y = dm["x1"] * -2 + dm["x2"]
-            >>> results = design.response_surface_analysis(y.tolist())
-            >>> path = design.steepest_ascent(results, n_steps=3)
-            >>> list(path["path"]["Step"])
-            [0, 1, 2, 3]
+        Examples
+        --------
+        >>> factors = [Factor("x1", [-1, 1]), Factor("x2", [-1, 1])]
+        >>> design = ResponseSurfaceDesign(factors)
+        >>> dm = design.generate_design()
+        >>> y = dm["x1"] * -2 + dm["x2"]
+        >>> results = design.response_surface_analysis(y.tolist())
+        >>> path = design.steepest_ascent(results, n_steps=3)
+        >>> list(path["path"]["Step"])
+        [0, 1, 2, 3]
 
-        References:
-            Box, G. E. P., & Draper, N. R. (2007). *Response Surfaces, Mixtures,
-            and Ridge Analyses* (2nd ed.). Wiley.
+        References
+        ----------
+        Box, G. E. P., & Draper, N. R. (2007). *Response Surfaces, Mixtures,
+        and Ridge Analyses* (2nd ed.). Wiley.
         """
 
         if direction not in {"ascent", "descent"}:
@@ -741,13 +754,13 @@ class ResponseSurfaceDesign(ExperimentalDesign):
 
     def ridge_analysis(
         self,
-        model_results: Dict[str, Any],
+        model_results: dict[str, Any],
         radii: Sequence[float],
-        constraints: Optional[Sequence[Callable[[np.ndarray], float]]] = None,
+        constraints: Sequence[Callable[[np.ndarray], float]] | None = None,
         penalty_weight: float = 100.0,
         visualize: bool = False,
-        plot_factors: Optional[Tuple[str, str]] = None,
-    ) -> Dict[str, Any]:
+        plot_factors: tuple[str, str] | None = None,
+    ) -> dict[str, Any]:
         """Perform ridge analysis for constrained optimisation.
 
         Ridge analysis seeks the best point on a hypersphere of radius ``r`` in
@@ -797,7 +810,7 @@ class ResponseSurfaceDesign(ExperimentalDesign):
         identity = np.eye(k)
         penalties = constraints or []
 
-        def _solve_radius(radius: float) -> Tuple[np.ndarray, float, float]:
+        def _solve_radius(radius: float) -> tuple[np.ndarray, float, float]:
             def norm_difference(lmbda: float) -> float:
                 matrix = B + lmbda * identity
                 solution = np.linalg.solve(matrix, -0.5 * b)
@@ -895,7 +908,7 @@ class ResponseSurfaceDesign(ExperimentalDesign):
 
         return {"solutions": results_df, "figure": figure}
 
-    def canonical_analysis(self, model_results: Dict[str, Any]) -> Dict[str, Any]:
+    def canonical_analysis(self, model_results: dict[str, Any]) -> dict[str, Any]:
         """Carry out canonical analysis of the fitted response surface.
 
         Canonical analysis diagonalises the quadratic form to reveal the surface
@@ -986,15 +999,15 @@ class ResponseSurfaceDesign(ExperimentalDesign):
 
     def multiple_response_optimization(
         self,
-        response_models: Dict[str, Dict[str, Any]],
-        weights: Optional[Dict[str, float]] = None,
-        desirability_functions: Optional[Dict[str, Callable[[float], float]]] = None,
-        constraint_functions: Optional[Sequence[Callable[[np.ndarray], float]]] = None,
+        response_models: dict[str, dict[str, Any]],
+        weights: dict[str, float] | None = None,
+        desirability_functions: dict[str, Callable[[float], float]] | None = None,
+        constraint_functions: Sequence[Callable[[np.ndarray], float]] | None = None,
         grid_resolution: int = 25,
         search_radius: float = 1.5,
         penalty_weight: float = 50.0,
         weight_perturbation: float = 0.15,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Simultaneously optimise multiple responses.
 
         The optimisation proceeds by evaluating fitted response models on a
@@ -1050,7 +1063,7 @@ class ResponseSurfaceDesign(ExperimentalDesign):
         response_names = list(response_models)
 
         if weights is None:
-            weights = {name: 1.0 for name in response_names}
+            weights = dict.fromkeys(response_names, 1.0)
         missing_weights = set(response_names).difference(weights)
         if missing_weights:
             for name in missing_weights:
@@ -1067,8 +1080,8 @@ class ResponseSurfaceDesign(ExperimentalDesign):
         ]
         grid_points = np.array(list(product(*axes)))
 
-        predictions: Dict[str, np.ndarray] = {}
-        goals: Dict[str, str] = {}
+        predictions: dict[str, np.ndarray] = {}
+        goals: dict[str, str] = {}
         for name, result in response_models.items():
             coeffs = result.get("coefficients")
             if coeffs is None:
@@ -1083,7 +1096,7 @@ class ResponseSurfaceDesign(ExperimentalDesign):
                 raise ValueError("goal must be 'max' or 'min'")
             predictions[name] = preds
 
-        desirabilities: Dict[str, np.ndarray] = {}
+        desirabilities: dict[str, np.ndarray] = {}
         for name in response_names:
             if name in desirability_functions:
                 func = desirability_functions[name]
@@ -1115,7 +1128,7 @@ class ResponseSurfaceDesign(ExperimentalDesign):
                     violation += max(0.0, violation_value) ** 2
                 penalties[idx] = penalty_weight * violation
 
-        def combined_desirability(weight_map: Dict[str, float]) -> np.ndarray:
+        def combined_desirability(weight_map: dict[str, float]) -> np.ndarray:
             overall = np.ones(len(grid_points), dtype=float)
             for name in response_names:
                 overall *= desirabilities[name] ** weight_map[name]
@@ -1138,7 +1151,7 @@ class ResponseSurfaceDesign(ExperimentalDesign):
             if constraint_functions
             else np.arange(len(grid_points))
         )
-        pareto_indices: List[int] = []
+        pareto_indices: list[int] = []
         if feasible_indices.size > 0:
             signed = []
             for name in response_names:
@@ -1172,7 +1185,7 @@ class ResponseSurfaceDesign(ExperimentalDesign):
                 }
             )
 
-        def _weight_analysis(new_weights: Dict[str, float]) -> Dict[str, Any]:
+        def _weight_analysis(new_weights: dict[str, float]) -> dict[str, Any]:
             total = float(sum(new_weights.values()))
             if total <= 0:
                 return {"weights": new_weights, "best_index": None}
@@ -1187,7 +1200,7 @@ class ResponseSurfaceDesign(ExperimentalDesign):
                 "overall_desirability": float(scores[idx]),
             }
 
-        sensitivity: List[Dict[str, Any]] = []
+        sensitivity: list[dict[str, Any]] = []
         for name in response_names:
             base = dict(weights)
             base[name] *= 1 + weight_perturbation
@@ -1223,11 +1236,11 @@ class ResponseSurfaceDesign(ExperimentalDesign):
 
     def contour_data(
         self,
-        coefficients: Dict[str, float],
+        coefficients: dict[str, float],
         factor1: str,
         factor2: str,
         grid_size: int = 20,
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Generate contour plot data for two factors.
 
         Parameters
@@ -1278,11 +1291,11 @@ class ResponseSurfaceDesign(ExperimentalDesign):
 
                 # Interaction terms
                 for k in range(len(self.factors)):
-                    for l in range(k + 1, len(self.factors)):
+                    for m in range(k + 1, len(self.factors)):
                         interaction_coef = coefficients.get(
-                            f"{self.factors[k].name}*{self.factors[l].name}", 0
+                            f"{self.factors[k].name}*{self.factors[m].name}", 0
                         )
-                        response += interaction_coef * point[k] * point[l]
+                        response += interaction_coef * point[k] * point[m]
 
                 Z[i, j] = response
 

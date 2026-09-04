@@ -8,13 +8,13 @@ from .rcbd import RandomizedCompleteBlockDesign
 from .screening import DefinitiveScreeningDesign, PlackettBurmanDesign
 
 __all__ = [
-    "Factor",
-    "ExperimentalDesign",
-    "FactorialDesign",
-    "RandomizedCompleteBlockDesign",
-    "FractionalFactorialDesign",
-    "PlackettBurmanDesign",
     "DefinitiveScreeningDesign",
-    "SplitPlotDesign",
+    "ExperimentalDesign",
+    "Factor",
+    "FactorialDesign",
+    "FractionalFactorialDesign",
     "MixtureDesign",
+    "PlackettBurmanDesign",
+    "RandomizedCompleteBlockDesign",
+    "SplitPlotDesign",
 ]

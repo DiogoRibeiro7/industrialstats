@@ -1,8 +1,7 @@
 """Optimal experimental designs using algorithmic approaches."""
 
-import logging
-from itertools import combinations
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from collections.abc import Callable
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -19,10 +18,10 @@ class OptimalDesign(ExperimentalDesign):
 
     def __init__(
         self,
-        factors: List[Factor],
+        factors: list[Factor],
         n_runs: int,
         criterion: str = "D",
-        model_terms: Optional[List[str]] = None,
+        model_terms: list[str] | None = None,
     ) -> None:
         """Initialize optimal design.
 
@@ -49,11 +48,11 @@ class OptimalDesign(ExperimentalDesign):
         self.n_runs = n_runs
         self.criterion = criterion
         self.model_terms = model_terms or self._default_model_terms()
-        self.candidate_set: Optional[pd.DataFrame] = None
-        self.candidate_model_matrix: Optional[np.ndarray] = None
-        self.exchange_history: List[Dict[str, Any]] = []
+        self.candidate_set: pd.DataFrame | None = None
+        self.candidate_model_matrix: np.ndarray | None = None
+        self.exchange_history: list[dict[str, Any]] = []
 
-    def _default_model_terms(self) -> List[str]:
+    def _default_model_terms(self) -> list[str]:
         """Generate default model terms (main effects + two-factor interactions)."""
         terms = ["Intercept"]
 
@@ -145,7 +144,7 @@ class OptimalDesign(ExperimentalDesign):
         best_criterion_value = float("-inf")
 
         # Try multiple random starts
-        for start in range(n_random_starts):
+        for _start in range(n_random_starts):
             design = self._coordinate_exchange(
                 max_iterations, random_start, improvement_threshold
             )
@@ -194,9 +193,9 @@ class OptimalDesign(ExperimentalDesign):
             for run_idx in range(self.n_runs):
                 x_current = current_X[run_idx]
                 best_value = current_criterion
-                best_candidate_idx: Optional[int] = None
+                best_candidate_idx: int | None = None
 
-                for cand_idx, candidate in self.candidate_set.iterrows():
+                for cand_idx in self.candidate_set.index:
                     x_cand = self.candidate_model_matrix[cand_idx]
                     new_XtX = (
                         XtX - np.outer(x_current, x_current) + np.outer(x_cand, x_cand)
@@ -342,7 +341,7 @@ class OptimalDesign(ExperimentalDesign):
         if term == "Intercept":
             return 1.0
 
-        elif "*" in term:
+        if "*" in term:
             # Interaction term
             factors = term.split("*")
             value = 1.0
@@ -363,26 +362,24 @@ class OptimalDesign(ExperimentalDesign):
 
             return value
 
-        else:
-            # Main effect
-            factor_obj = next(f for f in self.factors if f.name == term)
-            factor_value = point[term]
+        # Main effect
+        factor_obj = next(f for f in self.factors if f.name == term)
+        factor_value = point[term]
 
-            if factor_obj.factor_type == "continuous":
-                # Code as -1/+1
-                min_val = min(factor_obj.levels)
-                max_val = max(factor_obj.levels)
-                return 2 * (factor_value - min_val) / (max_val - min_val) - 1
-            else:
-                # Categorical: use 0/1 coding
-                return 1.0 if factor_value == factor_obj.levels[-1] else 0.0
+        if factor_obj.factor_type == "continuous":
+            # Code as -1/+1
+            min_val = min(factor_obj.levels)
+            max_val = max(factor_obj.levels)
+            return 2 * (factor_value - min_val) / (max_val - min_val) - 1
+        # Categorical: use 0/1 coding
+        return 1.0 if factor_value == factor_obj.levels[-1] else 0.0
 
     def _is_better_criterion(self, new_value: float, current_value: float) -> bool:
         """Check if new criterion value is better than current."""
         if self.criterion in ["D", "A", "I"]:
             return new_value > current_value  # Maximize (or minimize negative)
-        else:  # G-optimal
-            return new_value > current_value  # Maximize (minimize negative)
+        # G-optimal
+        return new_value > current_value  # Maximize (minimize negative)
 
     def validate_design(self) -> bool:
         """Validate optimal design parameters."""
@@ -392,14 +389,11 @@ class OptimalDesign(ExperimentalDesign):
         if self.n_runs < len(self.model_terms):
             return False
 
-        if self.criterion not in ["D", "A", "G", "I"]:
-            return False
-
-        return True
+        return self.criterion in ["D", "A", "G", "I"]
 
     def design_efficiency(
-        self, reference_design: Optional[pd.DataFrame] = None
-    ) -> Dict[str, float]:
+        self, reference_design: pd.DataFrame | None = None
+    ) -> dict[str, float]:
         """Calculate design efficiency metrics.
 
         Parameters
@@ -460,7 +454,7 @@ class OptimalDesign(ExperimentalDesign):
 
     def prediction_variance_map(
         self, factor1: str, factor2: str, grid_size: int = 20
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Generate prediction variance map for two factors.
 
         Parameters
@@ -532,7 +526,7 @@ class OptimalDesign(ExperimentalDesign):
         return X, Y, Z
 
     def augment_design(
-        self, additional_runs: int, current_data: Optional[pd.DataFrame] = None
+        self, additional_runs: int, current_data: pd.DataFrame | None = None
     ) -> pd.DataFrame:
         """Augment existing design with additional runs.
 
@@ -594,7 +588,7 @@ class OptimalDesign(ExperimentalDesign):
 
         return augmented_design
 
-    def design_diagnostics(self) -> Dict[str, Any]:
+    def design_diagnostics(self) -> dict[str, Any]:
         """Calculate design diagnostics and properties.
 
         Returns
@@ -670,7 +664,7 @@ class CustomOptimalDesign(OptimalDesign):
 
     def __init__(
         self,
-        factors: List[Factor],
+        factors: list[Factor],
         n_runs: int,
         criterion_function: Callable[[np.ndarray], float],
         criterion_name: str = "Custom",

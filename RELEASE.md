@@ -58,4 +58,7 @@ For an already-published Zenodo record, changing `.zenodo.json` does not retroac
 - Never move a published release tag.
 - Never publish from an unreviewed commit.
 - `main` is the only long-lived branch.
-- `CHANGELOG.md` is updated as part of the normal release-preparation PR.
+- `CHANGELOG.md` is updated as part of the normal release-preparation PR:
+  the accumulated `## [Unreleased]` entries are retitled to the new
+  version and dated, and a fresh empty `## [Unreleased]` section is left
+  at the top.

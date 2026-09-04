@@ -2,7 +2,7 @@
 
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -21,7 +21,7 @@ class PowerAnalysisResult:
     power: float
     sample_size: int
     test_type: str
-    additional_info: Dict[str, Any]
+    additional_info: dict[str, Any]
 
 
 class PowerAnalysis:
@@ -34,14 +34,14 @@ class PowerAnalysis:
 
     def __init__(self):
         """Initialize power analysis."""
-        self.results_history: List[PowerAnalysisResult] = []
+        self.results_history: list[PowerAnalysisResult] = []
 
     def t_test_power(
         self,
-        effect_size: Optional[float] = None,
+        effect_size: float | None = None,
         alpha: float = 0.05,
-        power: Optional[float] = None,
-        sample_size: Optional[int] = None,
+        power: float | None = None,
+        sample_size: int | None = None,
         test_type: str = "two_sample",
     ) -> PowerAnalysisResult:
         """Power analysis for t-tests.
@@ -115,10 +115,10 @@ class PowerAnalysis:
 
     def anova_power(
         self,
-        effect_size: Optional[float] = None,
+        effect_size: float | None = None,
         alpha: float = 0.05,
-        power: Optional[float] = None,
-        sample_size: Optional[int] = None,
+        power: float | None = None,
+        sample_size: int | None = None,
         n_groups: int = 3,
     ) -> PowerAnalysisResult:
         """Power analysis for one-way ANOVA.
@@ -193,12 +193,12 @@ class PowerAnalysis:
 
     def factorial_power(
         self,
-        effect_size: Optional[float] = None,
+        effect_size: float | None = None,
         alpha: float = 0.05,
-        power: Optional[float] = None,
-        replicates: Optional[int] = None,
-        factor_levels: List[int] = [2, 2],
-        effect: Optional[Tuple[int, ...]] = None,
+        power: float | None = None,
+        replicates: int | None = None,
+        factor_levels: list[int] | None = None,
+        effect: tuple[int, ...] | None = None,
     ) -> PowerAnalysisResult:
         """Power analysis for factorial designs.
 
@@ -230,6 +230,8 @@ class PowerAnalysis:
             raise ValueError(
                 "Exactly two of effect_size, power, replicates must be specified"
             )
+
+        factor_levels = list(factor_levels) if factor_levels is not None else [2, 2]
 
         if len(factor_levels) < 1:
             raise ValueError("At least one factor required")
@@ -290,10 +292,10 @@ class PowerAnalysis:
 
     def regression_power(
         self,
-        effect_size: Optional[float] = None,
+        effect_size: float | None = None,
         alpha: float = 0.05,
-        power: Optional[float] = None,
-        sample_size: Optional[int] = None,
+        power: float | None = None,
+        sample_size: int | None = None,
         n_predictors: int = 1,
     ) -> PowerAnalysisResult:
         """Power analysis for multiple regression.
@@ -373,10 +375,10 @@ class PowerAnalysis:
     def power_curve(
         self,
         test_type: str,
-        fixed_params: Dict[str, Any],
+        fixed_params: dict[str, Any],
         varying_param: str,
-        param_range: List[float],
-    ) -> Dict[str, Any]:
+        param_range: list[float],
+    ) -> dict[str, Any]:
         """Generate power curve by varying one parameter.
 
         Parameters
@@ -445,13 +447,11 @@ class PowerAnalysis:
         if varying_param == "power":
             y_values = [r["effect_size"] for r in results]
             ax.set_ylabel("Effect Size")
-        elif varying_param == "effect_size":
-            y_values = [r["power"] for r in results]
-            ax.set_ylabel("Statistical Power")
-        elif varying_param == "sample_size":
-            y_values = [r["power"] for r in results]
-            ax.set_ylabel("Statistical Power")
-        elif varying_param == "alpha":
+        elif (
+            varying_param == "effect_size"
+            or varying_param == "sample_size"
+            or varying_param == "alpha"
+        ):
             y_values = [r["power"] for r in results]
             ax.set_ylabel("Statistical Power")
         else:
@@ -460,7 +460,7 @@ class PowerAnalysis:
 
         ax.plot(x_values, y_values, "b-", linewidth=2, marker="o", markersize=4)
         ax.set_xlabel(varying_param.replace("_", " ").title())
-        ax.set_title(f'Power Curve: {test_type.replace("_", " ").title()}')
+        ax.set_title(f"Power Curve: {test_type.replace('_', ' ').title()}")
         ax.grid(True, alpha=0.3)
 
         # Add reference lines
@@ -484,12 +484,12 @@ class PowerAnalysis:
 
     def factorial_power_curve(
         self,
-        effect_sizes: List[float],
+        effect_sizes: list[float],
         alpha: float = 0.05,
         replicates: int = 1,
-        factor_levels: List[int] = [2, 2],
-        effect: Optional[Tuple[int, ...]] = None,
-    ) -> Dict[str, Any]:
+        factor_levels: list[int] | None = None,
+        effect: tuple[int, ...] | None = None,
+    ) -> dict[str, Any]:
         """Generate power curve for factorial designs over effect sizes.
 
         Parameters
@@ -511,6 +511,8 @@ class PowerAnalysis:
         Dict[str, Any]
             Power curve data and the generated figure.
         """
+        factor_levels = list(factor_levels) if factor_levels is not None else [2, 2]
+
         powers = []
         for es in effect_sizes:
             result = self.factorial_power(
@@ -544,8 +546,8 @@ class PowerAnalysis:
     def sample_size_table(
         self,
         test_type: str,
-        effect_sizes: List[float],
-        powers: List[float] = [0.8, 0.9, 0.95],
+        effect_sizes: list[float],
+        powers: list[float] | None = None,
         alpha: float = 0.05,
         **kwargs,
     ) -> pd.DataFrame:
@@ -569,6 +571,8 @@ class PowerAnalysis:
         pd.DataFrame
             Sample size table.
         """
+        powers = list(powers) if powers is not None else [0.8, 0.9, 0.95]
+
         table_data = []
 
         for effect_size in effect_sizes:
@@ -638,20 +642,19 @@ class PowerAnalysis:
             return self.t_test_power(
                 alpha=alpha, power=power, sample_size=sample_size, **kwargs
             )
-        elif test_type == "anova":
+        if test_type == "anova":
             return self.anova_power(
                 alpha=alpha, power=power, sample_size=sample_size, **kwargs
             )
-        elif test_type == "factorial":
+        if test_type == "factorial":
             return self.factorial_power(
                 alpha=alpha, power=power, replicates=sample_size, **kwargs
             )
-        elif test_type == "regression":
+        if test_type == "regression":
             return self.regression_power(
                 alpha=alpha, power=power, sample_size=sample_size, **kwargs
             )
-        else:
-            raise ValueError(f"Unknown test_type: {test_type}")
+        raise ValueError(f"Unknown test_type: {test_type}")
 
     # Helper methods for calculations
     def _calculate_power_t_test(
@@ -702,8 +705,8 @@ class PowerAnalysis:
         effect_size: float,
         alpha: float,
         replicates: int,
-        factor_levels: List[int],
-        effect: Tuple[int, ...],
+        factor_levels: list[int],
+        effect: tuple[int, ...],
     ) -> float:
         """Calculate power for factorial design."""
         n_treatment_combinations = int(np.prod(factor_levels))
@@ -772,8 +775,8 @@ class PowerAnalysis:
         effect_size: float,
         alpha: float,
         power: float,
-        factor_levels: List[int],
-        effect: Tuple[int, ...],
+        factor_levels: list[int],
+        effect: tuple[int, ...],
     ) -> int:
         """Solve for replicates in factorial design."""
         for r in range(1, 1000):
@@ -846,8 +849,8 @@ class PowerAnalysis:
         alpha: float,
         power: float,
         replicates: int,
-        factor_levels: List[int],
-        effect: Tuple[int, ...],
+        factor_levels: list[int],
+        effect: tuple[int, ...],
     ) -> float:
         """Solve for effect size in factorial design."""
         low, high = 0.01, 5.0
