@@ -43,6 +43,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   now exports only `ExperimentPlotter` and `ResponseSurfacePlotter`. Import
   those libraries directly instead of via `industrialstats.visualizations`.
 
+### Security
+
+- Raised the `pytest` development dependency past
+  [GHSA-6w46-j5rx-g56g](https://github.com/advisories/GHSA-6w46-j5rx-g56g)
+  (predictable `/tmp/pytest-of-{user}` handling on UNIX, allowing a local user
+  to cause denial of service or possibly escalate privileges). The constraint
+  was `^8.0.0`, which pins to a range that is affected in its entirety, and did
+  not match the 9.x that CI already installed. It is now `>=9.0.3,<10`, matched
+  by `minversion` and by an explicit floor in the workflow install steps.
+  `pytest` is a development dependency and is never installed by users of the
+  package.
+
 ### Fixed
 
 - Eight modules had `from __future__ import annotations` placed above their
@@ -72,6 +84,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `DesignValidator.check_confounding` also suppresses the singular-matrix
   conditioning warning newer statsmodels emits for perfectly confounded
   designs, which is the case the function exists to report.
+- The performance regression benchmark compared two adjacent timings of the
+  same call, so a single descheduled run failed it. It now warms up and takes
+  the minimum of several repetitions on each side.
 
 ## 0.1.0 (2026-09-04)
 

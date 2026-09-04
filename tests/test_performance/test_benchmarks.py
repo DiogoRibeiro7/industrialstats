@@ -123,14 +123,29 @@ def test_mixture_design_benchmark() -> None:
 
 
 def test_performance_regression_detection() -> None:
-    """Repeated runs have comparable execution times."""
+    """Repeated runs have comparable execution times.
+
+    Comparing two adjacent timings measures scheduler noise as much as it
+    measures the code: a single descheduled run can exceed the previous one by
+    far more than the tolerance. The generation is therefore warmed up first,
+    and each side takes the minimum of several repetitions, which is the least
+    noise-sensitive estimator of how long the work actually takes.
+    """
     factors = _build_factors(4)
 
     def _generate() -> None:
         design = FactorialDesign(factors, randomize=False)
         design.generate_design()
 
-    stats1 = profile_function(_generate)
-    stats2 = profile_function(_generate)
-    # Ensure subsequent run does not exceed 150% of initial time
-    assert stats2.total_tt <= stats1.total_tt * 1.5
+    def _best_of(repeats: int = 5) -> float:
+        return min(profile_function(_generate).total_tt for _ in range(repeats))
+
+    _generate()  # warm up import and attribute caches before timing
+
+    baseline = _best_of()
+    repeat = _best_of()
+
+    # A genuine regression shows up as a large multiple, not a few percent.
+    assert repeat <= baseline * 3.0, (
+        f"repeat run took {repeat:.6f}s against a {baseline:.6f}s baseline"
+    )
