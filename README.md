@@ -100,7 +100,7 @@ For development from source:
 ```bash
 git clone https://github.com/DiogoRibeiro7/industrialstats.git
 cd industrialstats
-python -m pip install -e .
+python -m pip install -e . pytest hypothesis pre-commit
 ```
 
 Core dependencies include NumPy, pandas, SciPy, statsmodels, scikit-learn, Matplotlib, seaborn, Plotly, openpyxl, and DataExcept.
@@ -202,7 +202,7 @@ Jupyter notebooks cover introductory DOE, response-surface optimization, and mod
 ```bash
 git clone https://github.com/DiogoRibeiro7/industrialstats.git
 cd industrialstats
-python -m pip install -e .
+python -m pip install -e . pytest hypothesis pre-commit
 pre-commit install
 pytest
 ```
