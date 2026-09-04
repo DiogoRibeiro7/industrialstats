@@ -1,10 +1,10 @@
 import json
+import math
 import os
 import tempfile
 import unittest
 from pathlib import Path
 
-import math
 import pandas as pd
 
 from industrialstats.designs.base import Factor
@@ -27,7 +27,9 @@ class TestBaseMethods(unittest.TestCase):
 
     def test_merge_with_appends_and_aligns_columns(self):
         extended_factor = Factor("C", [0, 1])
-        other_design = FactorialDesign([self.factors[0], extended_factor], randomize=False)
+        other_design = FactorialDesign(
+            [self.factors[0], extended_factor], randomize=False
+        )
         other_design.generate_design()
 
         merged = self.design.merge_with(other_design)
@@ -36,7 +38,9 @@ class TestBaseMethods(unittest.TestCase):
             self.design.run_count + other_design.run_count,
         )
         self.assertIn("C", merged.design_matrix.columns)
-        self.assertTrue(merged.design_matrix["C"].isna().head(self.design.run_count).all())
+        self.assertTrue(
+            merged.design_matrix["C"].isna().head(self.design.run_count).all()
+        )
 
     def test_merge_with_incompatible_factors_raises(self):
         other = self.design.clone()
