@@ -1,0 +1,20 @@
+name: Performance
+
+on:
+  workflow_dispatch:
+
+jobs:
+  benchmarks:
+    name: benchmarks (3.14)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+      - name: Install package and benchmark dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e . pytest hypothesis
+      - name: Run performance benchmarks
+        run: pytest tests/test_performance

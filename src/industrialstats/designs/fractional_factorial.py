@@ -78,7 +78,9 @@ def _mask_from_terms(terms: Sequence[str], name_to_index: Dict[str, int]) -> int
         try:
             idx = name_to_index[name]
         except KeyError as exc:  # pragma: no cover - defensive
-            raise ValueError(f"Unknown factor '{name}' in generator definition") from exc
+            raise ValueError(
+                f"Unknown factor '{name}' in generator definition"
+            ) from exc
         mask |= 1 << idx
     return mask
 
@@ -102,7 +104,7 @@ def _extend_basis(basis: List[int], mask: int) -> Optional[List[int]]:
     vector = mask
     while vector:
         lsb = vector & -vector
-        idx = (lsb.bit_length() - 1)
+        idx = lsb.bit_length() - 1
         if new_basis[idx]:
             vector ^= new_basis[idx]
         else:
@@ -131,7 +133,9 @@ class _SearchResult:
 class _MinimumAberrationSearch:
     """Search for minimum aberration generator sets."""
 
-    def __init__(self, base_count: int, generator_count: int, candidates: Sequence[int]):
+    def __init__(
+        self, base_count: int, generator_count: int, candidates: Sequence[int]
+    ):
         self.base_count = base_count
         self.generator_count = generator_count
         self.candidates = list(candidates)
@@ -159,7 +163,9 @@ class _MinimumAberrationSearch:
         if len(chosen) == self.generator_count:
             pattern = _word_length_pattern(defining_words)
             resolution = min(pattern) if pattern else float("inf")
-            result = _SearchResult(resolution=int(resolution), pattern=pattern, generators=tuple(chosen))
+            result = _SearchResult(
+                resolution=int(resolution), pattern=pattern, generators=tuple(chosen)
+            )
             if self._is_better(result):
                 self.best = result
             return
@@ -196,7 +202,9 @@ class _MinimumAberrationSearch:
         if result.resolution < self.best.resolution:
             return False
         # Lexicographic comparison of the word-length pattern counts.
-        max_length = max(max(result.pattern, default=0), max(self.best.pattern, default=0))
+        max_length = max(
+            max(result.pattern, default=0), max(self.best.pattern, default=0)
+        )
         for length in range(result.resolution, max_length + 1):
             cand = result.pattern.get(length, 0)
             current = self.best.pattern.get(length, 0)
@@ -206,6 +214,7 @@ class _MinimumAberrationSearch:
                 return False
         # Tie-breaker: prefer lexicographically smaller generator masks.
         return result.generators < self.best.generators
+
 
 class FractionalFactorialDesign(ExperimentalDesign):
     """Two-level fractional factorial design.
@@ -301,14 +310,18 @@ class FractionalFactorialDesign(ExperimentalDesign):
 
         factor_count = len(factors)
         if factor_count < 3 or factor_count > 15:
-            raise ValueError("Fractional factorial designs support between 3 and 15 factors")
+            raise ValueError(
+                "Fractional factorial designs support between 3 and 15 factors"
+            )
         if not all(len(f.levels) == 2 for f in factors):
             raise ValueError("All factors must have exactly two levels")
 
         try:
             numerator, denominator = fraction.split("/")
         except ValueError as exc:  # pragma: no cover - defensive
-            raise ValueError("Fraction must be provided as 'numerator/denominator'") from exc
+            raise ValueError(
+                "Fraction must be provided as 'numerator/denominator'"
+            ) from exc
         if numerator.strip() != "1":
             raise ValueError("Only regular fractions with numerator 1 are supported")
         denom = int(denominator)
@@ -319,7 +332,9 @@ class FractionalFactorialDesign(ExperimentalDesign):
 
         self._base_count = factor_count - p
         if self._base_count <= 0:
-            raise ValueError("Number of generators exceeds number of available base factors")
+            raise ValueError(
+                "Number of generators exceeds number of available base factors"
+            )
 
         if not self.generators:
             self.generators = self._auto_generators()
@@ -397,7 +412,11 @@ class FractionalFactorialDesign(ExperimentalDesign):
         return sorted(set(words))
 
     def _mask_to_effect(self, mask: int) -> str:
-        names = [self.factors[idx].name for idx in range(len(self.factors)) if mask & (1 << idx)]
+        names = [
+            self.factors[idx].name
+            for idx in range(len(self.factors))
+            if mask & (1 << idx)
+        ]
         return ":".join(names)
 
     def calculate_resolution(self) -> Tuple[Optional[int], Dict[int, int]]:
@@ -489,8 +508,12 @@ class FractionalFactorialDesign(ExperimentalDesign):
             if canonical != mask:
                 continue
             canonical_name = self._mask_to_effect(canonical)
-            effect_names = sorted(self._mask_to_effect(alias_mask) for alias_mask in alias_class)
-            ordered = [canonical_name] + [name for name in effect_names if name != canonical_name]
+            effect_names = sorted(
+                self._mask_to_effect(alias_mask) for alias_mask in alias_class
+            )
+            ordered = [canonical_name] + [
+                name for name in effect_names if name != canonical_name
+            ]
             alias_map[canonical_name] = ordered
             processed.update(alias_class)
         return alias_map
@@ -506,7 +529,10 @@ class FractionalFactorialDesign(ExperimentalDesign):
                 "meets_requested_resolution": None,
             }
         max_length = max(pattern)
-        aberration = [(length, pattern.get(length, 0)) for length in range(resolution, max_length + 1)]
+        aberration = [
+            (length, pattern.get(length, 0))
+            for length in range(resolution, max_length + 1)
+        ]
         meets = None
         if self.requested_resolution is not None:
             meets = resolution >= self.requested_resolution
@@ -540,7 +566,9 @@ class FractionalFactorialDesign(ExperimentalDesign):
         severity.sort(key=lambda item: (-item[1], item[0]))
 
         # Full foldover suggestion.
-        expected_resolution = None if resolution is None else min(resolution + 1, len(self.factors))
+        expected_resolution = (
+            None if resolution is None else min(resolution + 1, len(self.factors))
+        )
         options: List[Dict[str, Any]] = [
             {
                 "type": "full",
@@ -568,7 +596,9 @@ class FractionalFactorialDesign(ExperimentalDesign):
                         "to separate it from its aliases."
                     ),
                     "generators_to_reverse": impacted_generators,
-                    "confounded_with": [effect for effect in chain if effect != factor_name],
+                    "confounded_with": [
+                        effect for effect in chain if effect != factor_name
+                    ],
                 }
             )
 

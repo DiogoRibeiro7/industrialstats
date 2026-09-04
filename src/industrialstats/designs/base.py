@@ -390,9 +390,7 @@ class ExperimentalDesign(ABC):
 
         # Count occurrences for each categorical combination.
         level_counts = (
-            df[categorical_factors]
-            .groupby(categorical_factors, dropna=False)
-            .size()
+            df[categorical_factors].groupby(categorical_factors, dropna=False).size()
         )
 
         # Reject degenerate cases without category combinations.
@@ -456,19 +454,20 @@ class ExperimentalDesign(ABC):
 
         # Measure the prevalence of missing entries in the design matrix.
         missing_rate = float(
-            self.design_matrix.isna().to_numpy().sum()
-            / self.design_matrix.size
+            self.design_matrix.isna().to_numpy().sum() / self.design_matrix.size
         )
 
         # Assemble the metrics while converting NaNs to floats for JSON compatibility.
         return {
             "run_fraction": float(run_fraction),
-            "replication_factor": float(replication_factor)
-            if not np.isnan(replication_factor)
-            else np.nan,
-            "balance_index": float(balance_index)
-            if not np.isnan(balance_index)
-            else np.nan,
+            "replication_factor": (
+                float(replication_factor)
+                if not np.isnan(replication_factor)
+                else np.nan
+            ),
+            "balance_index": (
+                float(balance_index) if not np.isnan(balance_index) else np.nan
+            ),
             "missing_rate": missing_rate,
         }
 
@@ -589,7 +588,11 @@ class ExperimentalDesign(ABC):
 
         # Capture factor definitions with level details for downstream consumers.
         factors = [
-            {"name": factor.name, "levels": list(factor.levels), "factor_type": factor.factor_type}
+            {
+                "name": factor.name,
+                "levels": list(factor.levels),
+                "factor_type": factor.factor_type,
+            }
             for factor in self.factors
         ]
 
@@ -598,7 +601,9 @@ class ExperimentalDesign(ABC):
             "design_name": self.name,
             "run_count": summary.get("n_runs", self.run_count),
             "randomized": self.randomized,
-            "is_balanced": self.is_balanced if self.design_matrix is not None else False,
+            "is_balanced": (
+                self.is_balanced if self.design_matrix is not None else False
+            ),
             "design_efficiency": efficiency,
             "factors": factors,
         }
@@ -611,7 +616,9 @@ class ExperimentalDesign(ABC):
 
         return payload
 
-    def _merge_factor_metadata(self, other_design: "ExperimentalDesign") -> List[Factor]:
+    def _merge_factor_metadata(
+        self, other_design: "ExperimentalDesign"
+    ) -> List[Factor]:
         """Merge factor definitions from two designs ensuring compatibility.
 
         Args:
