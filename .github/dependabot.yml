@@ -25,6 +25,22 @@ updates:
       dev-tooling:
         dependency-type: "development"
 
+  # pre-commit hook revisions. Without this, the pins in
+  # .pre-commit-config.yaml go stale silently and drift from the equivalent
+  # constraints in pyproject.toml, so CI's linter and a contributor's local
+  # linter can be different versions.
+  - package-ecosystem: "pre-commit"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    labels:
+      - "dependencies"
+      - "pre-commit"
+    groups:
+      pre-commit:
+        patterns:
+          - "*"
+
   # GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
