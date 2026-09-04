@@ -41,16 +41,17 @@ class TestExportUtilities(unittest.TestCase):
         self.assertIs(error.__cause__, error.original)
 
     def test_export_to_json_wraps_serialization_failure(self):
-        path = Path(tempfile.gettempdir()) / "industrialstats-invalid.json"
         df = pd.DataFrame({"value": [object()]})
 
-        with self.assertRaises(FileWriteError) as ctx:
-            export_to_json(df, path)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "invalid.json"
+            with self.assertRaises(FileWriteError) as ctx:
+                export_to_json(df, path)
 
-        error = ctx.exception
-        self.assertEqual(error.path, str(path))
-        self.assertIsInstance(error.original, TypeError)
-        self.assertIs(error.__cause__, error.original)
+            error = ctx.exception
+            self.assertEqual(error.path, str(path))
+            self.assertIsInstance(error.original, TypeError)
+            self.assertIs(error.__cause__, error.original)
 
 
 if __name__ == "__main__":
