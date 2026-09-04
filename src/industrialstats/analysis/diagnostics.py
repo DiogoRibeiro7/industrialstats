@@ -32,6 +32,7 @@ True
 
 from __future__ import annotations
 
+import inspect
 import math
 from typing import TYPE_CHECKING, Any
 
@@ -131,6 +132,50 @@ class ModelDiagnostics:
         self._outlier_cache: dict[str, list[int]] | None = None
 
     # ------------------------------------------------------------------
+    @staticmethod
+    def _anderson_normality(
+        residuals: np.ndarray,
+    ) -> tuple[float, float | None, float | None, bool]:
+        """Run the Anderson-Darling normality test across SciPy versions.
+
+        SciPy 1.17 introduced an explicit ``method`` argument and deprecated
+        the implicit behaviour; from 1.19 the ``critical_values`` and
+        ``significance_level`` attributes are removed altogether. This helper
+        asks for an interpolated p-value where that is supported and falls
+        back to the critical-value table on older SciPy.
+
+        Parameters
+        ----------
+        residuals : numpy.ndarray
+            Model residuals to test for normality.
+
+        Returns
+        -------
+        tuple of (float, float or None, float or None, bool)
+            The test statistic, the p-value when SciPy can supply one, the 5%
+            critical value when SciPy still exposes the tables, and whether the
+            residuals pass the test at the 5% level. Exactly one of the p-value
+            and the critical value is available for a given SciPy version, so
+            the verdict is decided here rather than by the caller.
+        """
+
+        if "method" in inspect.signature(stats.anderson).parameters:
+            result = stats.anderson(residuals, dist="norm", method="interpolate")
+            p_value = float(result.pvalue)
+            return float(result.statistic), p_value, None, p_value > 0.05
+
+        result = stats.anderson(residuals, dist="norm")
+        critical = dict(
+            zip(result.significance_level, result.critical_values, strict=True)
+        )
+        threshold = critical.get(5.0)
+        if threshold is None:
+            threshold = result.critical_values[-1]
+        statistic = float(result.statistic)
+        threshold = float(threshold)
+        return statistic, None, threshold, statistic < threshold
+
+    # ------------------------------------------------------------------
     def assumption_tests(self) -> dict[str, dict[str, Any]]:
         """Evaluate classical regression assumptions.
 
@@ -144,6 +189,11 @@ class ModelDiagnostics:
             Nested mapping summarising each assumption. For example,
             ``result["normality"]["passes"]`` indicates whether both normality
             tests are satisfied at the 5% level.
+
+            The Anderson-Darling entry reports whichever evidence the installed
+            SciPy can supply: ``"p_value"`` on SciPy 1.17 and newer, or
+            ``"critical_value_5pct"`` on older releases. Both keys are always
+            present and the unavailable one is ``None``.
 
         Examples
         --------
@@ -164,18 +214,9 @@ class ModelDiagnostics:
 
         # Normality diagnostics
         shapiro_stat, shapiro_p = stats.shapiro(self.residuals)
-        anderson_res = stats.anderson(self.residuals, dist="norm")
-        anderson_crit = dict(
-            zip(
-                anderson_res.significance_level,
-                anderson_res.critical_values,
-                strict=True,
-            )
+        anderson_stat, anderson_p, anderson_crit, anderson_pass = (
+            self._anderson_normality(self.residuals)
         )
-        ad_threshold = anderson_crit.get(5.0)
-        if ad_threshold is None:
-            ad_threshold = anderson_res.critical_values[-1]
-        anderson_pass = anderson_res.statistic < ad_threshold
         normality_pass = (shapiro_p > 0.05) and anderson_pass
 
         # Homoscedasticity diagnostics via fitted quantile groups
@@ -211,8 +252,9 @@ class ModelDiagnostics:
                     "p_value": float(shapiro_p),
                 },
                 "anderson": {
-                    "statistic": float(anderson_res.statistic),
-                    "critical_value_5pct": float(ad_threshold),
+                    "statistic": anderson_stat,
+                    "p_value": anderson_p,
+                    "critical_value_5pct": anderson_crit,
                 },
             },
             "homoscedasticity": {

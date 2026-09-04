@@ -55,6 +55,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   no longer shared across calls.
 - Exceptions raised while wrapping model-fitting failures now chain the
   original error with `raise ... from`.
+- `ModelDiagnostics.assumption_tests` no longer depends on SciPy's deprecated
+  implicit Anderson-Darling behaviour. SciPy 1.17 requires an explicit p-value
+  method and removes the critical-value tables in 1.19; the test now requests an
+  interpolated p-value where that is supported and falls back to the tables on
+  older SciPy. The reported `anderson` mapping gains a `p_value` key alongside
+  `critical_value_5pct`; whichever the installed SciPy cannot supply is `None`.
+- `ModelFitting.regularized_fitting` no longer passes `alphas=None` explicitly
+  to scikit-learn, which is deprecated and removed in 1.9. The argument is now
+  omitted when unset, preserving the automatic grid on every supported version.
+- `DesignValidator.check_confounding` also suppresses the singular-matrix
+  conditioning warning newer statsmodels emits for perfectly confounded
+  designs, which is the case the function exists to report.
 
 ## 0.1.0 (2026-09-04)
 

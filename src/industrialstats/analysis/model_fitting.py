@@ -648,9 +648,15 @@ class ModelFitting:
         X = pd.get_dummies(self.data[self.factor_columns], drop_first=True)
         y = self.data[self.response].values
 
+        # scikit-learn deprecated passing ``alphas=None`` explicitly: from 1.9
+        # the default becomes an alpha count rather than None. Omitting the
+        # argument entirely selects the library default on every supported
+        # version and keeps the automatic grid behaviour.
+        alpha_kwargs = {} if alphas is None else {"alphas": alphas}
+
         if method.lower() == "lasso":
-            model = LassoCV(alphas=alphas, cv=cv, random_state=random_state).fit(X, y)
-            path_alphas, coefs, _ = lasso_path(X, y, alphas=alphas)
+            model = LassoCV(cv=cv, random_state=random_state, **alpha_kwargs).fit(X, y)
+            path_alphas, coefs, _ = lasso_path(X, y, **alpha_kwargs)
         elif method.lower() == "ridge":
             if alphas is None:
                 alphas = np.logspace(-6, 6, 100)
@@ -663,11 +669,11 @@ class ModelFitting:
         elif method.lower() == "elasticnet":
             model = ElasticNetCV(
                 l1_ratio=l1_ratio,
-                alphas=alphas,
                 cv=cv,
                 random_state=random_state,
+                **alpha_kwargs,
             ).fit(X, y)
-            path_alphas, coefs, _ = enet_path(X, y, l1_ratio=l1_ratio, alphas=alphas)
+            path_alphas, coefs, _ = enet_path(X, y, l1_ratio=l1_ratio, **alpha_kwargs)
         else:
             raise ValueError("method must be 'lasso', 'ridge', or 'elasticnet'")
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import warnings
 from typing import Any
 
 import numpy as np
@@ -113,11 +114,21 @@ class DesignValidator:
             X = numeric.values
             X_with_const = np.column_stack([np.ones(len(numeric)), X])
             # A perfectly confounded column has R^2 == 1, so the VIF
-            # computation divides by zero. That is the defining case this
-            # validator exists to report, not an anomaly, so allow the
-            # arithmetic to yield the mathematically correct infinite
-            # inflation instead of surfacing a numpy RuntimeWarning.
-            with np.errstate(divide="ignore", invalid="ignore"):
+            # computation divides by zero and the design matrix is singular.
+            # That is the defining case this validator exists to report, not an
+            # anomaly, so let the arithmetic yield the mathematically correct
+            # infinite inflation rather than surfacing numerical warnings that
+            # the caller has already asked about by calling this function.
+            with (
+                warnings.catch_warnings(),
+                np.errstate(divide="ignore", invalid="ignore"),
+            ):
+                # statsmodels reports degeneracy through several UserWarning
+                # subclasses (poor conditioning, rank deficiency, and more in
+                # later releases). Matching on message text would need
+                # revisiting on every upgrade, so the whole category is
+                # silenced for this call and this call only.
+                warnings.simplefilter("ignore", UserWarning)
                 for i in range(1, X_with_const.shape[1]):
                     result["vif"][numeric.columns[i - 1]] = variance_inflation_factor(
                         X_with_const, i
