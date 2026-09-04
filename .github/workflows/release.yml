@@ -19,26 +19,74 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.release.tag_name }}
+          fetch-depth: 0
+
+      - name: Verify release commit is on main
+        run: |
+          git fetch origin main:refs/remotes/origin/main
+          tag_commit="$(git rev-parse HEAD)"
+          if ! git merge-base --is-ancestor "$tag_commit" origin/main; then
+            echo "Release tag does not point to a commit contained in main"
+            exit 1
+          fi
 
       - uses: actions/setup-python@v7
         with:
           python-version: "3.14"
 
-      - name: Verify release version
+      - name: Verify release versions
         env:
           RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
           python - <<'PY'
           import os
+          import re
           import tomllib
           from pathlib import Path
 
-          version = tomllib.loads(Path("pyproject.toml").read_text())["tool"]["poetry"]["version"]
           tag = os.environ["RELEASE_TAG"]
-          expected = f"v{version}"
-          if tag != expected:
+          if not tag.startswith("v"):
+              raise SystemExit(f"Release tag {tag!r} must start with 'v'")
+          expected = tag[1:]
+
+          pyproject_version = tomllib.loads(
+              Path("pyproject.toml").read_text()
+          )["tool"]["poetry"]["version"]
+
+          init_text = Path("src/industrialstats/__init__.py").read_text()
+          init_match = re.search(
+              r'^__version__\s*=\s*["\']([^"\']+)["\']',
+              init_text,
+              re.MULTILINE,
+          )
+          if init_match is None:
+              raise SystemExit("Could not read __version__ from package __init__.py")
+          runtime_version = init_match.group(1)
+
+          citation_text = Path("CITATION.cff").read_text()
+          citation_match = re.search(
+              r'^version:\s*["\']?([^"\'\s]+)["\']?\s*$',
+              citation_text,
+              re.MULTILINE,
+          )
+          if citation_match is None:
+              raise SystemExit("Could not read version from CITATION.cff")
+          citation_version = citation_match.group(1)
+
+          versions = {
+              "pyproject.toml": pyproject_version,
+              "src/industrialstats/__init__.py": runtime_version,
+              "CITATION.cff": citation_version,
+          }
+          mismatches = {
+              source: version
+              for source, version in versions.items()
+              if version != expected
+          }
+          if mismatches:
               raise SystemExit(
-                  f"Release tag {tag!r} does not match package version {expected!r}"
+                  f"Release tag {tag!r} expects version {expected!r}, "
+                  f"but found mismatches: {mismatches}"
               )
           PY
 
