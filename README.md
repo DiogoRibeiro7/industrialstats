@@ -87,15 +87,21 @@ DataExcept `^1.3.0` is a runtime dependency. Broader schema and transformation i
 
 ## Installation
 
-The package is still pre-release. Install the development version from source:
+Install a released version from PyPI:
+
+```bash
+python -m pip install industrialstats
+```
+
+The supported Python range is 3.11 through 3.14.
+
+For development from source:
 
 ```bash
 git clone https://github.com/DiogoRibeiro7/industrialstats.git
 cd industrialstats
-pip install -e .
+python -m pip install -e . pytest hypothesis pre-commit
 ```
-
-The project currently requires Python 3.11 or newer.
 
 Core dependencies include NumPy, pandas, SciPy, statsmodels, scikit-learn, Matplotlib, seaborn, Plotly, openpyxl, and DataExcept.
 
@@ -196,12 +202,16 @@ Jupyter notebooks cover introductory DOE, response-surface optimization, and mod
 ```bash
 git clone https://github.com/DiogoRibeiro7/industrialstats.git
 cd industrialstats
-pip install -e .[dev]
+python -m pip install -e . pytest hypothesis pre-commit
 pre-commit install
 pytest
 ```
 
 When implementing or changing a statistical method, add tests that verify mathematical properties or compare against an independent reference. Passing shape and run-count tests alone is not sufficient for statistical algorithms.
+
+## Releases
+
+Release preparation and the PyPI/Zenodo publication workflow are documented in [`RELEASE.md`](RELEASE.md). GitHub Releases are the canonical release event for both destinations.
 
 ## Package status
 
@@ -211,7 +221,7 @@ The public API is still evolving. Design and analysis objects that are not expor
 
 ## Citation
 
-Citation metadata is provided in [`CITATION.cff`](CITATION.cff).
+Citation metadata is provided in [`CITATION.cff`](CITATION.cff). The real Zenodo DOI is minted from the first archived GitHub Release; placeholder DOIs are intentionally not stored in the citation metadata.
 
 ## License
 

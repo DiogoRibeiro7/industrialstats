@@ -1,12 +1,27 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it."
 title: "industrialstats"
+abstract: >-
+  Industrial statistics and design of experiments for Python, including
+  factorial and fractional factorial designs, randomized designs, screening,
+  response surface methodology, optimal designs, statistical analysis,
+  diagnostics, power calculations, and visualization utilities.
+type: software
 version: "0.1.0"
-doi: "10.5281/zenodo.1234567"
+date-released: 2026-09-04
+license: MIT
+repository-code: "https://github.com/DiogoRibeiro7/industrialstats"
+url: "https://github.com/DiogoRibeiro7/industrialstats"
+keywords:
+  - design of experiments
+  - industrial statistics
+  - DOE
+  - ANOVA
+  - factorial design
+  - response surface methodology
 authors:
   - family-names: "Ribeiro"
     given-names: "Diogo"
     email: "diogo.debastos.ribeiro@gmail.com"
     affiliation: "ESMAD - Instituto Politécnico do Porto"
     orcid: "https://orcid.org/0009-0001-2022-7072"
-
