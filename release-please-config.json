@@ -10,8 +10,9 @@
       "initial-version": "0.1.0",
       "extra-files": [
         {
-          "type": "generic",
-          "path": "CITATION.cff"
+          "type": "yaml",
+          "path": "CITATION.cff",
+          "jsonpath": "$.version"
         }
       ]
     }
