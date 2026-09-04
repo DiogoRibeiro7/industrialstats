@@ -43,9 +43,20 @@ jobs:
         with:
           python-version: "3.14"
           cache: pip
-      - name: Install package and audit tool
+      - name: Install the package
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e . pip-audit
-      - name: Audit installed dependencies
-        run: pip-audit --strict --progress-spinner=off
+          python -m pip install -e .
+      - name: Resolve the shipped dependency closure
+        # Frozen before pip-audit is installed, so the audited set is what an
+        # install of industrialstats actually pulls in. --exclude-editable
+        # drops this package itself; pip omits itself from freeze, and
+        # setuptools/wheel are build tooling that never reaches users.
+        run: |
+          python -m pip freeze --exclude-editable | grep -vEi '^(setuptools|wheel|pip)==' > audit-requirements.txt
+          echo "Auditing $(wc -l < audit-requirements.txt) dependencies"
+      - name: Audit dependencies
+        # Installed after the freeze so its own dependencies are not audited.
+        run: |
+          python -m pip install pip-audit
+          pip-audit --strict --progress-spinner=off --requirement audit-requirements.txt

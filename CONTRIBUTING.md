@@ -25,7 +25,9 @@ explicitly:
 ```bash
 git clone https://github.com/DiogoRibeiro7/industrialstats.git
 cd industrialstats
-python -m pip install -e .     pytest pytest-cov hypothesis ruff mypy pre-commit     pandas-stubs types-openpyxl types-PyYAML
+python -m pip install -e . \
+    pytest pytest-cov hypothesis ruff mypy pre-commit \
+    pandas-stubs types-openpyxl types-PyYAML
 pre-commit install
 ```
 

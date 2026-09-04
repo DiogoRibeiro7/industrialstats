@@ -80,20 +80,14 @@ jobs:
       - name: Install package and test dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e . pytest pytest-cov hypothesis
+          python -m pip install -e . "pytest>=9.0.3" pytest-cov hypothesis
       - name: Run tests
         env:
           HYPOTHESIS_PROFILE: ci
-        run: >-
-          pytest -m "not benchmark"
-          --cov=industrialstats --cov-report=xml --cov-report=term
-      - name: Upload coverage artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-${{ matrix.os }}-${{ matrix.python-version }}
-          path: coverage.xml
-          if-no-files-found: ignore
+        # Coverage is measured once in the `coverage threshold` job rather than
+        # on every matrix leg; running it here too would double the work and
+        # produce reports nothing consumes.
+        run: pytest
 
   coverage:
     name: coverage threshold
@@ -107,14 +101,14 @@ jobs:
       - name: Install package and test dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e . pytest pytest-cov hypothesis
+          python -m pip install -e . "pytest>=9.0.3" pytest-cov hypothesis
       - name: Enforce the coverage floor
         env:
           HYPOTHESIS_PROFILE: ci
-        # The floor only ever moves up. Raise it as coverage improves; never
-        # lower it to make a red build green.
+        # Measured on this one configuration. The floor only ever moves up:
+        # raise it as coverage improves, never lower it to make a build green.
         run: >-
-          pytest -m "not benchmark"
+          pytest
           --cov=industrialstats --cov-report=term-missing --cov-fail-under=63
 
   package:

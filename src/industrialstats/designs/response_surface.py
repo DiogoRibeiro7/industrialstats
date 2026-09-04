@@ -96,7 +96,9 @@ class ResponseSurfaceDesign(ExperimentalDesign):
             return self._generate_ccd()
         if self.design_type == "BBD":
             return self._generate_bbd()
-        return None
+        raise ValueError(
+            f"Unsupported design_type {self.design_type!r}; expected 'CCD' or 'BBD'"
+        )
 
     def _generate_ccd(self) -> pd.DataFrame:
         """Generate Central Composite Design."""
@@ -261,7 +263,9 @@ class ResponseSurfaceDesign(ExperimentalDesign):
             # Box-Behnken: 2 * k * (k-1) + center points
             bbd_runs = 2 * k * (k - 1)
             return bbd_runs + self.center_points
-        return None
+        raise ValueError(
+            f"Unsupported design_type {self.design_type!r}; expected 'CCD' or 'BBD'"
+        )
 
     def design_properties(self) -> dict[str, Any]:
         """Calculate design properties (rotatability, orthogonality, etc.)."""

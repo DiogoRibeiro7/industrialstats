@@ -44,3 +44,35 @@ def test_half_normal_plot_reference_lines():
     assert np.allclose(me_line.get_ydata(), [me, me])
     assert np.allclose(sme_line.get_ydata(), [sme, sme])
     plt.close(fig)
+
+
+@pytest.mark.parametrize("max_interactions", [1, 2, 3, 4])
+def test_interaction_plots_handles_every_subplot_layout(max_interactions):
+    """Subplot grids of 1x1, 1xN and MxN must all be indexable.
+
+    ``plt.subplots`` returns a bare Axes for a 1x1 grid, a 1-D array for a
+    single row, and a 2-D array otherwise. A single-row grid used to be wrapped
+    into a one-element list, so plotting two or three interactions raised
+    IndexError.
+    """
+    rng = np.random.default_rng(0)
+    design = pd.DataFrame(
+        [
+            {"A": a, "B": b, "C": c, "D": d}
+            for a in (-1, 1)
+            for b in (-1, 1)
+            for c in (-1, 1)
+            for d in (-1, 1)
+        ]
+    )
+    responses = (
+        3.0 * design["A"] * design["B"]
+        + 2.0 * design["A"] * design["C"]
+        + 1.5 * design["B"] * design["C"]
+        + 1.0 * design["C"] * design["D"]
+        + rng.normal(scale=0.01, size=len(design))
+    ).tolist()
+
+    ea = EffectsAnalysis(design, responses)
+    fig = ea.interaction_plots(max_interactions=max_interactions)
+    plt.close(fig)
