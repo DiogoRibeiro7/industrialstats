@@ -12,6 +12,7 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
+from dataexcept import DataLoadingError
 
 from industrialstats.cli import main
 
@@ -186,8 +187,8 @@ def test_cli_anova(tmp_path: Path) -> None:
 
 
 def test_cli_anova_missing_file(tmp_path: Path) -> None:
-    """ANOVA should raise when the data file is missing."""
-    with pytest.raises(FileNotFoundError):
+    """ANOVA should expose missing input files through DataExcept."""
+    with pytest.raises(DataLoadingError) as exc_info:
         main(
             [
                 "anova",
@@ -199,6 +200,9 @@ def test_cli_anova_missing_file(tmp_path: Path) -> None:
                 "y ~ 1",
             ]
         )
+
+    assert isinstance(exc_info.value.original, FileNotFoundError)
+    assert isinstance(exc_info.value.__cause__, FileNotFoundError)
 
 
 def test_cli_power_ttest(tmp_path: Path) -> None:

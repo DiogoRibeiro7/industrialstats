@@ -12,7 +12,7 @@ The project is currently pre-1.0. Its development priority is statistical correc
 - **Reproducible experiments**: randomization must be seedable and design matrices must remain inspectable.
 - **Transparent methods**: prefer explicit statistical calculations and documented assumptions over opaque abstractions.
 - **Clear design semantics**: terms such as effect, block, alias, resolution, whole plot, and optimality criterion must have precise DOE meanings.
-- **Structured operational failures**: DataExcept is planned as the standard exception layer for data-loading, schema, transformation, and other operational boundaries.
+- **Structured operational failures**: DataExcept is the standard exception layer for data-loading, file-export, and other operational boundaries, with further schema and transformation coverage planned.
 - **No false completeness**: partially implemented or statistically provisional methods are labelled as such.
 
 ## Current capabilities
@@ -74,16 +74,16 @@ See [`ROADMAP.md`](ROADMAP.md) for the full development sequence.
 
 ## DataExcept integration
 
-`industrialstats` will use [DataExcept](https://github.com/DiogoRibeiro7/DataExcept) as its structured exception layer at data and operational boundaries.
+`industrialstats` uses [DataExcept](https://github.com/DiogoRibeiro7/DataExcept) as its structured exception layer at data and operational boundaries.
 
-The intended policy is:
+The current boundary layer covers external CSV loading and shared CSV, Excel, and JSON export failures. The intended policy is:
 
 - use DataExcept for file loading, tabular schema, missing columns, dtype mismatches, data transformations, import/export, and wrapped lower-level operational failures;
 - preserve the original exception as context when wrapping an external failure;
 - use specific exception types rather than a generic package-wide catch-all;
 - do **not** mechanically replace every `ValueError` or numerical exception: mathematical precondition failures should remain explicit unless a DataExcept type gives genuinely better semantics.
 
-DataExcept integration is planned work and is not yet a runtime dependency of the current release.
+DataExcept `^1.3.0` is a runtime dependency. Broader schema and transformation integration remains planned work.
 
 ## Installation
 
@@ -97,7 +97,7 @@ pip install -e .
 
 The project currently requires Python 3.11 or newer.
 
-Core dependencies include NumPy, pandas, SciPy, statsmodels, scikit-learn, Matplotlib, seaborn, Plotly, and openpyxl.
+Core dependencies include NumPy, pandas, SciPy, statsmodels, scikit-learn, Matplotlib, seaborn, Plotly, openpyxl, and DataExcept.
 
 ## Quick start
 

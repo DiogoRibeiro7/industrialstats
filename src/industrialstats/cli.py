@@ -16,6 +16,8 @@ from .designs.factorial import FactorialDesign
 from .designs.fractional_factorial import FractionalFactorialDesign
 from .designs.rcbd import RandomizedCompleteBlockDesign
 from .designs.screening import DefinitiveScreeningDesign, PlackettBurmanDesign
+from .utils.export import export_to_csv
+from .utils.io import load_csv
 
 
 def parse_factors(factors: List[str]) -> List[Factor]:
@@ -83,7 +85,7 @@ def factorial_command(args: argparse.Namespace) -> None:
     )
     design_matrix = design.generate_design()
     if args.output:
-        design_matrix.to_csv(args.output, index=False)
+        export_to_csv(design_matrix, args.output)
     else:
         print(design_matrix.to_string(index=False))
 
@@ -104,7 +106,7 @@ def rcbd_command(args: argparse.Namespace) -> None:
     )
     design_matrix = design.generate_design()
     if args.output:
-        design_matrix.to_csv(args.output, index=False)
+        export_to_csv(design_matrix, args.output)
     else:
         print(design_matrix.to_string(index=False))
 
@@ -116,7 +118,7 @@ def crd_command(args: argparse.Namespace) -> None:
     )
     design_matrix = design.generate_design()
     if args.output:
-        design_matrix.to_csv(args.output, index=False)
+        export_to_csv(design_matrix, args.output)
     else:
         print(design_matrix.to_string(index=False))
 
@@ -130,19 +132,19 @@ def screening_command(args: argparse.Namespace) -> None:
         design = DefinitiveScreeningDesign(factors, seed=args.seed)
     design_matrix = design.generate_design()
     if args.output:
-        design_matrix.to_csv(args.output, index=False)
+        export_to_csv(design_matrix, args.output)
     else:
         print(design_matrix.to_string(index=False))
 
 
 def anova_command(args: argparse.Namespace) -> None:
     """Execute the ``anova`` CLI command."""
-    data = pd.read_csv(args.data)
+    data = load_csv(args.data)
     analysis = ANOVAAnalysis(data, response_column=args.response)
     analysis.fit_model(args.formula)
     table = analysis.anova_table_calculation(typ=args.typ)
     if args.output:
-        table.to_csv(args.output)
+        export_to_csv(table, args.output, include_index=True)
     else:
         print(table.to_string())
 
@@ -174,7 +176,7 @@ def power_command(args: argparse.Namespace) -> None:
         )
     df = pd.DataFrame([result.__dict__])
     if args.output:
-        df.to_csv(args.output, index=False)
+        export_to_csv(df, args.output)
     else:
         print(df.to_string(index=False))
 
@@ -187,7 +189,7 @@ def model_command(args: argparse.Namespace) -> None:
     args : argparse.Namespace
         Parsed command-line arguments.
     """
-    data = pd.read_csv(args.data)
+    data = load_csv(args.data)
     fitter = ModelFitting(data, response_column=args.response)
     result = fitter.stepwise_selection(
         entry_threshold=args.entry_threshold,
@@ -195,7 +197,7 @@ def model_command(args: argparse.Namespace) -> None:
     )
     df = pd.DataFrame({"selected_terms": result["selected_terms"]})
     if args.output:
-        df.to_csv(args.output, index=False)
+        export_to_csv(df, args.output)
     else:
         print(df.to_string(index=False))
 
@@ -217,13 +219,13 @@ def fractional_command(args: argparse.Namespace) -> None:
     )
     design_matrix = design.generate_design()
     if args.output:
-        design_matrix.to_csv(args.output, index=False)
+        export_to_csv(design_matrix, args.output)
     else:
         print(design_matrix.to_string(index=False))
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Build the top-level CLI argument parser."""
+    """Build the top-level command-line parser."""
     parser = argparse.ArgumentParser(
         description="industrialstats command line interface"
     )
