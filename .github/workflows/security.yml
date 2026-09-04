@@ -53,10 +53,10 @@ jobs:
         # drops this package itself; pip omits itself from freeze, and
         # setuptools/wheel are build tooling that never reaches users.
         run: |
-          python -m pip freeze --exclude-editable             | grep -vEi '^(setuptools|wheel|pip)=='             > audit-requirements.txt
+          python -m pip freeze --exclude-editable | grep -vEi '^(setuptools|wheel|pip)==' > audit-requirements.txt
           echo "Auditing $(wc -l < audit-requirements.txt) dependencies"
       - name: Audit dependencies
         # Installed after the freeze so its own dependencies are not audited.
         run: |
           python -m pip install pip-audit
-          pip-audit --strict --progress-spinner=off             --requirement audit-requirements.txt
+          pip-audit --strict --progress-spinner=off --requirement audit-requirements.txt
