@@ -1,0 +1,28 @@
+{
+  "title": "industrialstats: Industrial Statistics and Design of Experiments for Python",
+  "description": "industrialstats is a Python package for statistically rigorous design and analysis of experiments in manufacturing, engineering, research, and other experimental settings. It provides reproducible generators for full and fractional factorial designs, randomized and blocked designs, screening designs, response surface methodology, optimal designs, split-plot and mixture designs, together with ANOVA, factorial effect analysis, diagnostics, power and sample-size calculations, model fitting, optimization, and visualization utilities. The project emphasizes statistical correctness, reproducibility, transparent methodology, and validation against established references and independent implementations.",
+  "creators": [
+    {
+      "name": "Ribeiro, Diogo",
+      "orcid": "0009-0001-2022-7072",
+      "affiliation": "ESMAD - Instituto Politécnico do Porto"
+    }
+  ],
+  "license": "MIT",
+  "keywords": [
+    "design of experiments",
+    "industrial statistics",
+    "DOE",
+    "factorial design",
+    "fractional factorial design",
+    "ANOVA",
+    "response surface methodology",
+    "optimal design",
+    "screening design",
+    "statistical diagnostics",
+    "power analysis",
+    "Python"
+  ],
+  "upload_type": "software",
+  "access_right": "open"
+}
