@@ -5,9 +5,10 @@
     {
       "name": "Ribeiro, Diogo",
       "orcid": "0009-0001-2022-7072",
-      "affiliation": "ESMAD - Instituto Politécnico do Porto"
+      "affiliation": "Faculty of Media Arts and Design, Technical University of Porto"
     }
   ],
+  "language": "eng",
   "license": "MIT",
   "keywords": [
     "design of experiments",
@@ -22,6 +23,14 @@
     "statistical diagnostics",
     "power analysis",
     "Python"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/DiogoRibeiro7/industrialstats",
+      "relation": "isSupplementTo",
+      "scheme": "url",
+      "resource_type": "software"
+    }
   ],
   "upload_type": "software",
   "access_right": "open"
