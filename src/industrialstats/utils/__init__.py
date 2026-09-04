@@ -12,6 +12,7 @@ from .efficiency import (
     variance_inflation_factors,
 )
 from .export import export_to_csv, export_to_excel, export_to_json
+from .io import load_csv
 from .performance import profile_function
 from .transforms import center, log_transform, standardize
 from .validation import DesignValidator
@@ -19,6 +20,7 @@ from .validation import DesignValidator
 __all__ = [
     "DataSimulator",
     "DesignValidator",
+    "load_csv",
     "export_to_csv",
     "export_to_excel",
     "export_to_json",
