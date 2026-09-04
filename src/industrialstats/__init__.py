@@ -31,7 +31,7 @@ __all__ = [
     "load_manufacturing",
 ]
 
-__version__ = "0.1.0"  # x-release-please-version
+__version__ = "0.1.0"
 
 
 def get_version() -> str:
