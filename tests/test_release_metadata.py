@@ -17,7 +17,9 @@ def test_release_versions_match() -> None:
     package_version = pyproject["tool"]["poetry"]["version"]
 
     citation = (ROOT / "CITATION.cff").read_text(encoding="utf-8")
-    match = re.search(r'^version:\s*["\']?([^"\'\n]+)["\']?\s*$', citation, re.MULTILINE)
+    match = re.search(
+        r'^version:\s*["\']?([^"\'\n]+)["\']?\s*$', citation, re.MULTILINE
+    )
     assert match is not None, "CITATION.cff must contain a version field"
     citation_version = match.group(1).strip()
 
