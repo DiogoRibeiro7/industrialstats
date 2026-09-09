@@ -147,9 +147,7 @@ class SplitPlotDesign(ExperimentalDesign):
             randomized.append(frame)
 
         self.design_matrix = pd.concat(randomized, ignore_index=True)
-        self.design_matrix.insert(
-            0, "RunOrder", range(1, len(self.design_matrix) + 1)
-        )
+        self.design_matrix.insert(0, "RunOrder", range(1, len(self.design_matrix) + 1))
         self.randomized = True
 
     def n_whole_plots(self) -> int:
