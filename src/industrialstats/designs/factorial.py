@@ -169,7 +169,9 @@ class FactorialDesign(_FactorialDesignCore):
         if len(set(names)) != len(names):
             raise ValueError("Factor names must be unique when defining blocks")
         if self.blocks & (self.blocks - 1):
-            raise ValueError("blocks must be a power of two for regular factorial blocking")
+            raise ValueError(
+                "blocks must be a power of two for regular factorial blocking"
+            )
 
         max_blocks = 2 ** len(self.factors)
         if self.blocks > max_blocks:
@@ -179,10 +181,7 @@ class FactorialDesign(_FactorialDesignCore):
             )
 
         n_generators = self.blocks.bit_length() - 1
-        if (
-            n_generators == len(self.factors)
-            and not self.allow_main_effect_confounding
-        ):
+        if n_generators == len(self.factors) and not self.allow_main_effect_confounding:
             raise ValueError(
                 "This block count necessarily confounds main effects; set "
                 "allow_main_effect_confounding=True to request it explicitly"
@@ -210,9 +209,7 @@ class FactorialDesign(_FactorialDesignCore):
         if len(set(parts)) != len(parts):
             raise ValueError(f"Block generator {expression!r} repeats a factor name")
 
-        factor_index = {
-            factor.name: index for index, factor in enumerate(self.factors)
-        }
+        factor_index = {factor.name: index for index, factor in enumerate(self.factors)}
         unknown = [name for name in parts if name not in factor_index]
         if unknown:
             raise ValueError(
@@ -277,9 +274,7 @@ class FactorialDesign(_FactorialDesignCore):
             range(1, 2**n_generators),
             key=lambda value: (-value.bit_count(), value),
         )
-        columns = [
-            patterns[index % len(patterns)] for index in range(n_factors)
-        ]
+        columns = [patterns[index % len(patterns)] for index in range(n_factors)]
 
         masks: list[int] = []
         for bit in range(n_generators):
@@ -296,9 +291,7 @@ class FactorialDesign(_FactorialDesignCore):
             return masks
 
         anchor = 1 << (n_factors - 1)
-        return [
-            (1 << index) | anchor for index in range(n_generators)
-        ]
+        return [(1 << index) | anchor for index in range(n_generators)]
 
     def _resolve_block_masks(self) -> list[int]:
         """Resolve explicit or automatic generators to bit masks."""
@@ -343,9 +336,7 @@ class FactorialDesign(_FactorialDesignCore):
             "generators": [self._mask_to_word(mask) for mask in masks],
             "defining_contrasts": [self._mask_to_word(mask) for mask in defining],
             "confounded_main_effects": [
-                self._mask_to_word(mask)
-                for mask in defining
-                if mask.bit_count() == 1
+                self._mask_to_word(mask) for mask in defining if mask.bit_count() == 1
             ],
             "runs_per_block": int(self.n_factorial_runs() // self.blocks),
         }
@@ -413,9 +404,7 @@ class FactorialDesign(_FactorialDesignCore):
         self.design_matrix = pd.concat(randomized_blocks, ignore_index=True)
         if "RunOrder" in self.design_matrix.columns:
             self.design_matrix = self.design_matrix.drop(columns="RunOrder")
-        self.design_matrix.insert(
-            0, "RunOrder", range(1, len(self.design_matrix) + 1)
-        )
+        self.design_matrix.insert(0, "RunOrder", range(1, len(self.design_matrix) + 1))
         self.randomized = True
 
     def blocking_scheme(self, block_size: int) -> pd.DataFrame:

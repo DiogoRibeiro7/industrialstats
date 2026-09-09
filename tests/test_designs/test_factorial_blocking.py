@@ -30,7 +30,9 @@ def test_two_blocks_use_treatment_contrast_not_row_order() -> None:
         assert np.dot(block_contrast, matrix[factor].to_numpy()) == 0
 
 
-def test_four_blocks_have_independent_generators_without_main_effect_confounding() -> None:
+def test_four_blocks_have_independent_generators_without_main_effect_confounding() -> (
+    None
+):
     design = FactorialDesign(_two_level_factors("ABCD"), blocks=4, randomize=False)
     matrix = design.generate_design()
     structure = design.block_structure()
