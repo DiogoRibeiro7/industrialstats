@@ -17,7 +17,6 @@ class TestPlackettBurmanDesign(unittest.TestCase):
         dm = design.generate_design()
         self.assertEqual(dm.shape, (4, 4))
         self.assertTrue({"A", "B", "C"}.issubset(dm.columns))
-        # Check orthogonality
         mat = dm[["A", "B", "C"]].to_numpy()
         prod = mat.T @ mat
         for i in range(prod.shape[0]):
@@ -59,10 +58,14 @@ class TestPlackettBurmanDesign(unittest.TestCase):
 class TestDefinitiveScreeningDesign(unittest.TestCase):
     @staticmethod
     def _factors(count: int) -> list[Factor]:
-        return [
-            Factor(f"X{index}", [-1, 0, 1], factor_type="continuous")
-            for index in range(1, count + 1)
-        ]
+        return [Factor(f"X{index}", [-1, 0, 1]) for index in range(1, count + 1)]
+
+    def test_two_factor_design_preserves_five_run_base_case(self):
+        design = DefinitiveScreeningDesign(self._factors(2), randomize=False)
+        dm = design.generate_design()
+
+        self.assertEqual(dm.shape, (5, 3))
+        self.assertTrue(design.validate_design())
 
     def test_four_factor_design_has_minimal_nine_runs(self):
         design = DefinitiveScreeningDesign(self._factors(4), randomize=False)
@@ -128,12 +131,6 @@ class TestDefinitiveScreeningDesign(unittest.TestCase):
         second = DefinitiveScreeningDesign(factors, seed=17)
 
         pd.testing.assert_frame_equal(first.generate_design(), second.generate_design())
-
-    def test_rejects_categorical_factors_until_mixed_dsd_is_supported(self):
-        factors = [Factor("A", [-1, 0, 1]), Factor("B", [-1, 0, 1])]
-
-        with self.assertRaisesRegex(ValueError, "continuous factors only"):
-            DefinitiveScreeningDesign(factors)
 
 
 if __name__ == "__main__":
