@@ -91,6 +91,32 @@ def test_center_points_contribute_residual_degrees_of_freedom() -> None:
     assert dof["Total"] == 10
 
 
+def test_single_factor_saturated_identity_and_replication_error() -> None:
+    design = FactorialDesign(
+        [Factor("A", [10, 20, 30], "continuous")],
+        replicates=2,
+        randomize=False,
+    )
+
+    assert design.model_terms() == ["A"]
+    assert design.degrees_of_freedom() == {"A": 2, "Error": 3, "Total": 5}
+    structure = design.model_structure()
+    assert structure["saturated"] is True
+    assert structure["max_order"] == 1
+
+
+def test_model_structure_requires_at_least_one_factor() -> None:
+    design = FactorialDesign([], randomize=False)
+
+    for method in (
+        design.model_terms,
+        design.degrees_of_freedom,
+        design.model_structure,
+    ):
+        with pytest.raises(ValueError, match="At least one factor"):
+            method()
+
+
 @pytest.mark.parametrize("value", [0, -1, 5, True, 1.5, "2"])
 def test_invalid_model_order_is_rejected(value: object) -> None:
     factors = [Factor(name, [-1, 1], "continuous") for name in "ABCD"]
