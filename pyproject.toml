@@ -234,7 +234,7 @@ check_untyped_defs = true
 module = [
     "industrialstats.designs.response_surface",
     "industrialstats.designs.optimal",
-    "industrialstats.designs.factorial",
+    "industrialstats.designs._factorial_core",
     "industrialstats.analysis.power_analysis",
     "industrialstats.analysis.model_fitting",
     "industrialstats.utils.validation",
