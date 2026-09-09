@@ -1,0 +1,58 @@
+digraph IndustrialStatsArchitecture {
+  graph [
+    rankdir=LR,
+    labelloc="t",
+    label="industrialstats: statistical workflow and package responsibilities",
+    fontsize=20,
+    fontname="Helvetica",
+    nodesep=0.45,
+    ranksep=0.8,
+    splines=ortho
+  ];
+  node [shape=box, style="rounded", fontname="Helvetica", fontsize=11, margin="0.16,0.10"];
+  edge [fontname="Helvetica", fontsize=10];
+
+  plan [label="Plan\nPower / sample size\nFactors, responses, constraints"];
+  design [label="Design\nCRD · RCBD · factorial · fractional\nscreening · RSM · optimal · mixture · split-plot"];
+  run [label="Run experiment\nInspectable randomized design matrix\nSeeded where supported"];
+  analyse [label="Analyse\nANOVA · effects · contrasts\nmodel fitting · mixed effects"];
+  diagnose [label="Diagnose\nResiduals · assumptions · leverage\ninfluence · confounding"];
+  optimize [label="Optimize\nResponse surfaces · steepest ascent\nridge / canonical / multiple response"];
+  confirm [label="Confirm\nValidation runs / reference checks\nStatistical property tests"];
+
+  plan -> design -> run -> analyse -> diagnose -> optimize -> confirm;
+  diagnose -> design [label="redesign when assumptions or aliasing fail", style=dashed];
+  confirm -> design [label="iterate", style=dashed];
+
+  subgraph cluster_package {
+    label="industrialstats package responsibilities";
+    style="rounded";
+
+    cli [label="CLI + config\nselected user entry points"];
+    designs [label="industrialstats.designs\nDesign construction and DOE semantics"];
+    analysis [label="industrialstats.analysis\nInference, effects, diagnostics, modelling, power"];
+    viz [label="industrialstats.visualizations\nDesign, effects, diagnostics and response-surface views"];
+    utils [label="industrialstats.utils\nValidation · IO/export · transforms\nefficiency · simulation/performance helpers"];
+    datasets [label="industrialstats.datasets\nsmall bundled examples"];
+  }
+
+  cli -> designs;
+  cli -> analysis;
+  datasets -> designs [style=dashed];
+  datasets -> analysis [style=dashed];
+  utils -> designs [label="validation / helpers"];
+  utils -> analysis [label="validation / helpers"];
+  designs -> viz [label="design objects / matrices"];
+  analysis -> viz [label="effects / models / diagnostics"];
+
+  plan -> analysis [label="power analysis", constraint=false];
+  design -> designs [constraint=false];
+  analyse -> analysis [constraint=false];
+  diagnose -> analysis [constraint=false];
+  optimize -> designs [label="RSM design", constraint=false];
+  optimize -> analysis [label="RSM analysis", constraint=false];
+  confirm -> utils [label="validation / export", constraint=false];
+
+  boundary [shape=note, label="Architecture boundary\nThis is a statistical software package, not a service platform.\nModules are grouped by scientific responsibility, not deployment topology."];
+  boundary -> utils [style=dashed, arrowhead=none];
+}
