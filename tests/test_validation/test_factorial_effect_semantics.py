@@ -63,7 +63,7 @@ def test_design_and_analysis_share_canonical_factorial_effects() -> None:
 
 
 def test_three_factor_interaction_uses_standard_positive_sign() -> None:
-    design, matrix = _three_factor_design()
+    _design, matrix = _three_factor_design()
     response = (5.0 * matrix["A"] * matrix["B"] * matrix["C"]).tolist()
 
     effect = EffectsAnalysis(matrix, response).calculate_interaction_effects(
@@ -119,9 +119,9 @@ def test_generated_level_order_is_preserved_for_effects_analysis() -> None:
 
     assert matrix.attrs["factor_level_orders"] == {"A": [10, -10]}
     assert design.calculate_effects(response)["A"] == pytest.approx(6.0)
-    assert EffectsAnalysis(matrix, response).calculate_main_effects()["A"] == pytest.approx(
-        6.0
-    )
+    assert EffectsAnalysis(matrix, response).calculate_main_effects()[
+        "A"
+    ] == pytest.approx(6.0)
 
 
 def test_raw_dataframe_retains_sorted_level_convention() -> None:
@@ -129,9 +129,9 @@ def test_raw_dataframe_retains_sorted_level_convention() -> None:
     response = [2.0, 8.0]
 
     # With no design metadata, -10 is low and +10 is high.
-    assert EffectsAnalysis(matrix, response).calculate_main_effects()["A"] == pytest.approx(
-        -6.0
-    )
+    assert EffectsAnalysis(matrix, response).calculate_main_effects()[
+        "A"
+    ] == pytest.approx(-6.0)
 
 
 def test_design_metadata_are_not_treated_as_factors() -> None:
