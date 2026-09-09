@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from itertools import product
+from itertools import combinations, product
+from math import prod
 from typing import Any
 
 import numpy as np
@@ -53,12 +54,12 @@ class FactorialDesign(_FactorialDesignCore):
         if not self.validate_design():
             raise ValueError("Invalid design configuration")
 
-        combinations = list(product(*(factor.levels for factor in self.factors)))
+        combinations_list = list(product(*(factor.levels for factor in self.factors)))
         design_data: list[dict[str, Any]] = []
         run_id = 1
 
         for replicate in range(1, self.replicates + 1):
-            for combination in combinations:
+            for combination in combinations_list:
                 row: dict[str, Any] = {
                     "RunID": run_id,
                     "Replicate": replicate,
@@ -108,6 +109,84 @@ class FactorialDesign(_FactorialDesignCore):
         except ValueError:
             return False
         return True
+
+    def _resolve_model_order(self, max_order: int | None) -> int:
+        """Resolve and validate a requested hierarchical interaction order."""
+        if not self.factors:
+            raise ValueError("At least one factor is required")
+        if max_order is None:
+            return len(self.factors)
+        if isinstance(max_order, bool) or not isinstance(max_order, int):
+            raise ValueError("max_order must be an integer or None")
+        if max_order < 1:
+            raise ValueError("max_order must be at least 1")
+        if max_order > len(self.factors):
+            raise ValueError(
+                f"max_order cannot exceed the number of factors ({len(self.factors)})"
+            )
+        return max_order
+
+    def model_terms(self, max_order: int | None = None) -> list[str]:
+        """Return hierarchical factorial terms through ``max_order``.
+
+        Parameters
+        ----------
+        max_order
+            Highest interaction order to include. ``None`` returns the saturated
+            factorial hierarchy through the interaction involving every factor.
+
+        Returns
+        -------
+        list[str]
+            Ordered effect names such as ``A``, ``A*B`` and ``A*B*C``.
+        """
+        order = self._resolve_model_order(max_order)
+        names = [factor.name for factor in self.factors]
+        return [
+            "*".join(term)
+            for interaction_order in range(1, order + 1)
+            for term in combinations(names, interaction_order)
+        ]
+
+    def degrees_of_freedom(self, max_order: int | None = None) -> dict[str, int]:
+        """Calculate factorial degrees of freedom for a hierarchical model.
+
+        For a term involving factors in a set ``S``, the term degrees of freedom
+        are the product ``prod(len(levels_j) - 1 for j in S)``. With
+        ``max_order=None`` the model is saturated over the factorial treatment
+        combinations. A finite ``max_order`` gives a truncated hierarchical model;
+        omitted higher-order treatment variation remains in ``Error`` together
+        with replication and center-point residual degrees of freedom.
+        """
+        order = self._resolve_model_order(max_order)
+        factor_by_name = {factor.name: factor for factor in self.factors}
+        dof: dict[str, int] = {}
+
+        for term_name in self.model_terms(order):
+            term_factors = term_name.split("*")
+            dof[term_name] = prod(
+                len(factor_by_name[name].levels) - 1 for name in term_factors
+            )
+
+        total_runs = int(self.n_runs())
+        model_dof = sum(dof.values())
+        dof["Error"] = total_runs - model_dof - 1
+        dof["Total"] = total_runs - 1
+        return dof
+
+    def model_structure(self, max_order: int | None = None) -> dict[str, Any]:
+        """Describe a saturated or truncated hierarchical factorial model."""
+        order = self._resolve_model_order(max_order)
+        dof = self.degrees_of_freedom(order)
+        terms = self.model_terms(order)
+        return {
+            "max_order": order,
+            "saturated": order == len(self.factors),
+            "terms": terms,
+            "model_degrees_of_freedom": sum(dof[term] for term in terms),
+            "error_degrees_of_freedom": dof["Error"],
+            "total_degrees_of_freedom": dof["Total"],
+        }
 
     def calculate_effects(
         self,
