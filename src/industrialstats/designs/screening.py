@@ -167,26 +167,29 @@ class PlackettBurmanDesign(ExperimentalDesign):
 
 
 class DefinitiveScreeningDesign(ExperimentalDesign):
-    """Conference-matrix definitive screening design for continuous factors.
+    """Conference-matrix definitive screening design for three-level factors.
 
     This implementation follows the conference-matrix construction of Xiao,
-    Lin, and Bai (2012). It uses the smallest odd-prime Paley conference order
-    large enough for the requested number of factors, takes the required
-    columns, appends their foldover, and adds one center run.
+    Lin, and Bai (2012). It uses the smallest Paley conference order large
+    enough for the requested number of factors, takes the required columns,
+    appends their foldover, and adds one center run.
 
-    For ``m`` factors, if ``q`` is the smallest odd prime satisfying
-    ``q + 1 >= m``, the design has ``2 * (q + 1) + 1`` runs. Consequently,
-    designs are minimal ``2m + 1`` constructions when ``m = q + 1`` and may
-    contain additional runs when a larger conference order is required.
+    For ``m`` factors, if ``q`` is the smallest value in ``{1} ∪ {odd primes}``
+    satisfying ``q + 1 >= m``, the design has ``2 * (q + 1) + 1`` runs.
+    Consequently, designs are minimal ``2m + 1`` constructions when
+    ``m = q + 1`` and may contain additional runs when a larger conference
+    order is required.
 
-    The current public implementation supports continuous three-level factors
-    only. Mixed continuous/two-level categorical DSDs are deliberately outside
-    this class until their separate construction is implemented and validated.
+    Factor columns are returned in coded levels ``-1, 0, 1``. Three-level
+    factors are interpreted as quantitative/continuous for the statistical
+    construction even when legacy ``Factor`` metadata leaves ``factor_type``
+    at its default value. Mixed continuous/two-level categorical DSDs are not
+    yet implemented.
 
     Parameters
     ----------
     factors : list of Factor
-        Continuous factors to include; each must have exactly three levels.
+        Factors to include; each must have exactly three levels.
     randomize : bool, optional
         If ``True``, shuffle the run order. Defaults to ``True``.
     seed : int, optional
@@ -214,10 +217,6 @@ class DefinitiveScreeningDesign(ExperimentalDesign):
             raise ValueError("At least two factors are required")
         if not all(len(f.levels) == 3 for f in self.factors):
             raise ValueError("Definitive screening requires 3-level factors")
-        if not all(f.factor_type == "continuous" for f in self.factors):
-            raise ValueError(
-                "Definitive screening currently supports continuous factors only"
-            )
 
     @staticmethod
     def _is_prime(value: int) -> bool:
@@ -235,8 +234,11 @@ class DefinitiveScreeningDesign(ExperimentalDesign):
 
     @classmethod
     def _conference_prime(cls, n_factors: int) -> int:
-        """Return the smallest odd prime whose conference order fits factors."""
-        candidate = max(3, n_factors - 1)
+        """Return the smallest supported Paley parameter fitting the factors."""
+        if n_factors <= 2:
+            return 1
+
+        candidate = n_factors - 1
         if candidate % 2 == 0:
             candidate += 1
         while not cls._is_prime(candidate):
@@ -248,8 +250,12 @@ class DefinitiveScreeningDesign(ExperimentalDesign):
         """Construct a Paley conference matrix of order ``prime + 1``.
 
         The returned matrix ``C`` has zero diagonal, off-diagonal entries in
-        ``{-1, 1}``, and satisfies ``C.T @ C = prime * I``.
+        ``{-1, 1}``, and satisfies ``C.T @ C = prime * I``. ``prime = 1`` is
+        the two-factor base case.
         """
+        if prime == 1:
+            return np.array([[0, 1], [1, 0]], dtype=int)
+
         quadratic_residues = {
             (value * value) % prime for value in range(1, prime)
         }
@@ -299,10 +305,7 @@ class DefinitiveScreeningDesign(ExperimentalDesign):
         """Validate both inputs and defining algebraic DSD properties."""
         if len(self.factors) < 2:
             return False
-        if not all(
-            len(f.levels) == 3 and f.factor_type == "continuous"
-            for f in self.factors
-        ):
+        if not all(len(f.levels) == 3 for f in self.factors):
             return False
 
         coded = self._coded_matrix(len(self.factors)).astype(float)
