@@ -319,7 +319,9 @@ def test_cli_workflow_factorial_anova(tmp_path: Path) -> None:
         ]
     )
     design_df = pd.read_csv(design_file)
-    design_df["y"] = [1, 2, 3, 4]
+    # Avoid a zero-residual-variance fit: statsmodels 0.15 correctly warns that
+    # the resulting constraint covariance is rank deficient.
+    design_df["y"] = [1, 2, 3, 5]
     data_file = tmp_path / "data.csv"
     design_df.to_csv(data_file, index=False)
     output = tmp_path / "anova.csv"

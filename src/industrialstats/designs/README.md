@@ -3,7 +3,7 @@
 The design package contains classes for generating and managing experimental designs.
 
 ## Key Classes
-- `FactorialDesign`: builds full factorial designs with optional center points and randomization.
+- `FactorialDesign`: builds full factorial designs with optional center points, regular treatment blocking, and randomization.
 - `FractionalFactorialDesign`: creates two-level fractional factorials using generator strings.
 - `CompletelyRandomizedDesign`: assigns treatments to experimental units without blocking.
 - `RandomizedCompleteBlockDesign`: implements block designs with seedable randomization.
@@ -31,31 +31,67 @@ crd_multi = CompletelyRandomizedDesign(
 sheet = crd_multi.create_data_collection_sheet()
 ```
 
-### Advanced Example: Alias Matrix and Blocking
+### Advanced Example: Regular Factorial Blocking
+
+For a two-level full factorial, blocks must be defined by treatment contrasts,
+not by splitting rows into arbitrary chunks. In a \(2^3\) experiment divided
+into two blocks, using \(ABC\) as the block generator gives
+
+\[
+I = ABC\,b,
+\]
+
+where \(b\) denotes the block contrast. The three-factor interaction is
+therefore confounded with blocks while all main effects and two-factor
+interactions remain clear of the block effect.
 
 ```python
+from industrialstats.designs.base import Factor
 from industrialstats.designs.factorial import FactorialDesign
-from industrialstats.utils.validation import DesignValidator
 
-factors = [Factor("A", [-1, 1]), Factor("B", [-1, 1]), Factor("C", [-1, 1])]
-design = FactorialDesign(factors, blocks=2, seed=0)
+factors = [
+    Factor("A", [-1, 1]),
+    Factor("B", [-1, 1]),
+    Factor("C", [-1, 1]),
+]
+
+design = FactorialDesign(
+    factors,
+    blocks=2,
+    block_generators=["A*B*C"],
+    seed=0,
+)
 X = design.generate_design()
-
-# Enumerate alias structure via null-space analysis
-aliases = DesignValidator.check_confounding(X)
-
-for effect, aliased in aliases.items():
-    print(effect, "<->", aliased)
+print(design.block_structure())
 ```
 
-Blocking divides the full design into two replicate groups while preserving
-orthogonality. Aliasing is detected by computing a basis for the null space of
-the model matrix :math:`X` and mapping the nonzero coefficients to aliased
-effects. Confounded terms share identical columns in :math:`X` and thus cannot
-be estimated independently.
+If `block_generators` is omitted, `FactorialDesign` chooses a deterministic set
+of independent defining contrasts. `block_structure()` reports both the
+independent generators and the complete defining-contrast subgroup, making the
+treatment effects sacrificed to blocking explicit.
+
+Regular factorial blocking currently has deliberately narrow semantics:
+
+- all treatment factors must have exactly two levels;
+- the number of blocks must be a power of two;
+- center points are not silently assigned to treatment blocks;
+- main-effect confounding is rejected by default;
+- randomization is performed independently inside each block.
+
+For example, four blocks require two independent generators. If the chosen
+generators are `A*B` and `A*C`, their product `B*C` is also in the block
+defining subgroup, so all three two-factor interactions are confounded with
+block degrees of freedom. A generator such as `A` is rejected unless
+`allow_main_effect_confounding=True` is supplied explicitly.
+
+Use `RandomizedCompleteBlockDesign` when the scientific problem is treatment
+comparison across an observed nuisance factor such as day or batch. Regular
+factorial block generators solve the different problem of partitioning a
+\(2^k\) treatment design while knowingly sacrificing selected interactions.
 
 ## Mathematical Background
 - **Factorial designs** exploit the full combination of factor levels, yielding an orthogonal design matrix with information on all main effects and interactions.
+- **Regular factorial blocks** use independent treatment words as block generators. With \(2^p\) blocks, the non-identity products of the \(p\) generators form a subgroup of size \(2^p-1\); those treatment contrasts are confounded with the block degrees of freedom.
 - **CRD vs. RCBD efficiency**: relative efficiency is computed as
   :math:`(\sigma_e^2 + \sigma_b^2)/\sigma_e^2`, where :math:`\sigma_b^2` is block variance.
 - **Screening designs** leverage Hadamard matrices to ensure column orthogonality while minimizing runs.
@@ -63,7 +99,7 @@ be estimated independently.
 - **Alias structure** emerges when columns of the model matrix lie in the null space of the design matrix. If :math:`Xc = 0`
   for some coefficient vector :math:`c`, the effects indicated by the nonzero entries of :math:`c` are perfectly confounded.
 - **Variance decomposition** gauges how much of each factor column's variability is explained by the remaining columns using
-  :math:`R^2 = 1 - \frac{\text{SS}_{\text{res}}}{\text{SS}_{\text{tot}}}`.
+  :math:`R^2 = 1 - \frac{\text{SS}_{\text{res}}}{\text{SS}_{\text{tot}}`.
 
 ### Split-Plot Designs
 With :math:`g` whole-plot factors and :math:`m` sub-plot factors, a split-plot design is constructed by nesting a full
