@@ -1,0 +1,58 @@
+name: Documentation diagrams
+
+on:
+  push:
+    branches:
+      - main
+      - docs/statistical-architecture
+    paths:
+      - "docs/diagrams/**"
+      - ".github/workflows/documentation_diagrams.yml"
+  pull_request:
+    paths:
+      - "docs/diagrams/**"
+      - ".github/workflows/documentation_diagrams.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  render:
+    name: Render statistical architecture
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+
+      - name: Install Graphviz
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes graphviz
+          dot -V
+
+      - name: Render SVGs
+        run: |
+          set -euo pipefail
+          mkdir -p docs/diagrams/rendered
+          for source in docs/diagrams/*.dot; do
+            name="$(basename "${source}" .dot)"
+            dot -Tsvg "${source}" -o "docs/diagrams/rendered/${name}.svg"
+          done
+
+      - name: Commit generated diagram on documentation branch
+        if: github.event_name == 'push' && github.ref_name == 'docs/statistical-architecture'
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- docs/diagrams/rendered; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/diagrams/rendered
+          git commit -m "docs: render statistical architecture"
+          git push
+
+      - name: Verify committed renders are current
+        if: github.event_name != 'push' || github.ref_name != 'docs/statistical-architecture'
+        run: git diff --exit-code -- docs/diagrams/rendered
