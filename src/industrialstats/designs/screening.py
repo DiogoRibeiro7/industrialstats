@@ -174,11 +174,11 @@ class DefinitiveScreeningDesign(ExperimentalDesign):
     enough for the requested number of factors, takes the required columns,
     appends their foldover, and adds one center run.
 
-    For ``m`` factors, if ``q`` is the smallest value in ``{1} ∪ {odd primes}``
-    satisfying ``q + 1 >= m``, the design has ``2 * (q + 1) + 1`` runs.
-    Consequently, designs are minimal ``2m + 1`` constructions when
-    ``m = q + 1`` and may contain additional runs when a larger conference
-    order is required.
+    For ``m`` factors, let ``q`` be the smallest supported value, either 1 or
+    an odd prime, satisfying ``q + 1 >= m``. The design then has
+    ``2 * (q + 1) + 1`` runs. Consequently, designs are minimal ``2m + 1``
+    constructions when ``m = q + 1`` and may contain additional runs when a
+    larger conference order is required.
 
     Factor columns are returned in coded levels ``-1, 0, 1``. Three-level
     factors are interpreted as quantitative/continuous for the statistical
@@ -227,10 +227,7 @@ class DefinitiveScreeningDesign(ExperimentalDesign):
             return True
         if value % 2 == 0:
             return False
-        return all(
-            value % divisor != 0
-            for divisor in range(3, int(value**0.5) + 1, 2)
-        )
+        return all(value % divisor != 0 for divisor in range(3, int(value**0.5) + 1, 2))
 
     @classmethod
     def _conference_prime(cls, n_factors: int) -> int:
@@ -256,9 +253,7 @@ class DefinitiveScreeningDesign(ExperimentalDesign):
         if prime == 1:
             return np.array([[0, 1], [1, 0]], dtype=int)
 
-        quadratic_residues = {
-            (value * value) % prime for value in range(1, prime)
-        }
+        quadratic_residues = {(value * value) % prime for value in range(1, prime)}
         character = np.zeros(prime, dtype=int)
         for value in range(1, prime):
             character[value] = 1 if value in quadratic_residues else -1
@@ -334,7 +329,5 @@ class DefinitiveScreeningDesign(ExperimentalDesign):
             return False
 
         # Intercept + all linear + all pure quadratic terms are estimable.
-        second_order_main_model = np.column_stack(
-            (np.ones(n_runs), coded, quadratics)
-        )
+        second_order_main_model = np.column_stack((np.ones(n_runs), coded, quadratics))
         return np.linalg.matrix_rank(second_order_main_model) == 1 + 2 * n_factors
