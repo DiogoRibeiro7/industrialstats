@@ -32,7 +32,9 @@ class EffectsAnalysis(_EffectsAnalysisCore):
         stored_orders = design_matrix.attrs.get("factor_level_orders")
         super().__init__(design_matrix, response_data)
         self.factor_names = [
-            column for column in design_matrix.columns if column not in _METADATA_COLUMNS
+            column
+            for column in design_matrix.columns
+            if column not in _METADATA_COLUMNS
         ]
         if not self.factor_names:
             raise ValueError("No factor columns found in design matrix")
@@ -101,7 +103,9 @@ class EffectsAnalysis(_EffectsAnalysisCore):
         if all(self.design_matrix[name].nunique(dropna=False) == 2 for name in factors):
             level_orders = None
             if self._factor_level_orders is not None:
-                level_orders = {name: self._factor_level_orders[name] for name in factors}
+                level_orders = {
+                    name: self._factor_level_orders[name] for name in factors
+                }
             effects = calculate_two_level_factorial_effects(
                 self.design_matrix,
                 self.response_data,
