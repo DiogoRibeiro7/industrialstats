@@ -91,7 +91,9 @@ class TestDefinitiveScreeningDesign(unittest.TestCase):
         off_diagonal = cross_product - np.diag(np.diag(cross_product))
         np.testing.assert_allclose(off_diagonal, 0.0)
 
-    def test_main_effects_are_orthogonal_to_quadratics_and_two_factor_interactions(self):
+    def test_main_effects_are_orthogonal_to_quadratics_and_two_factor_interactions(
+        self,
+    ):
         design = DefinitiveScreeningDesign(self._factors(6), randomize=False)
         dm = design.generate_design()
         x = dm[[f"X{i}" for i in range(1, 7)]].to_numpy(dtype=float)
