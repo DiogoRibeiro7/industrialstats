@@ -59,6 +59,19 @@ def test_explicit_generators_expose_complete_defining_contrast_subgroup() -> Non
     assert structure["confounded_main_effects"] == []
 
 
+def test_explicit_generators_infer_block_count() -> None:
+    design = FactorialDesign(
+        _two_level_factors(),
+        block_generators=["A*B*C"],
+        randomize=False,
+    )
+    matrix = design.generate_design()
+
+    assert design.blocks == 2
+    assert matrix["Block"].nunique() == 2
+    assert design.block_structure()["generators"] == ["A*B*C"]
+
+
 def test_main_effect_confounding_requires_explicit_opt_in() -> None:
     with pytest.raises(ValueError, match="confound main effect"):
         FactorialDesign(
@@ -82,6 +95,18 @@ def test_main_effect_confounding_requires_explicit_opt_in() -> None:
 
 
 def test_invalid_regular_blocking_configurations_are_rejected() -> None:
+    with pytest.raises(ValueError, match="boolean"):
+        FactorialDesign(
+            _two_level_factors(),
+            allow_main_effect_confounding=1,  # type: ignore[arg-type]
+        )
+
+    with pytest.raises(ValueError, match="integer or None"):
+        FactorialDesign(_two_level_factors(), blocks=True)
+
+    with pytest.raises(ValueError, match="at least 1"):
+        FactorialDesign(_two_level_factors(), blocks=0)
+
     with pytest.raises(ValueError, match="power of two"):
         FactorialDesign(_two_level_factors(), blocks=3)
 
@@ -103,6 +128,32 @@ def test_invalid_regular_blocking_configurations_are_rejected() -> None:
 
     with pytest.raises(ValueError, match="Center points"):
         FactorialDesign(_two_level_factors(), blocks=2, center_points=1)
+
+    with pytest.raises(ValueError, match="exactly 2 independent"):
+        FactorialDesign(
+            _two_level_factors("ABCD"),
+            blocks=4,
+            block_generators=["A*B*C*D"],
+        )
+
+
+def test_invalid_block_generator_syntax_and_factor_names_are_rejected() -> None:
+    with pytest.raises(ValueError, match="non-empty"):
+        FactorialDesign(_two_level_factors(), blocks=2, block_generators=[""])
+
+    with pytest.raises(ValueError, match="repeats a factor"):
+        FactorialDesign(_two_level_factors(), blocks=2, block_generators=["A*A"])
+
+    with pytest.raises(ValueError, match="Unknown factor"):
+        FactorialDesign(_two_level_factors(), blocks=2, block_generators=["A*Z"])
+
+
+def test_validate_design_reports_mutated_invalid_block_state() -> None:
+    design = FactorialDesign(_two_level_factors(), randomize=False)
+    assert design.validate_design() is True
+
+    design.blocks = 3
+    assert design.validate_design() is False
 
 
 def test_replicates_keep_the_same_treatment_combination_in_the_same_block() -> None:

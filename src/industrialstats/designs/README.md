@@ -89,6 +89,48 @@ comparison across an observed nuisance factor such as day or batch. Regular
 factorial block generators solve the different problem of partitioning a
 \(2^k\) treatment design while knowingly sacrificing selected interactions.
 
+### Saturated and truncated factorial models
+
+`FactorialDesign` generates model terms combinatorially rather than stopping at
+a fixed interaction order. Calling `model_terms()` returns the saturated
+hierarchy through the interaction involving every factor. Supplying
+`max_order=m` returns the hierarchical truncation containing every term of
+orders `1, ..., m`.
+
+```python
+factors = [
+    Factor("A", [-1, 1]),
+    Factor("B", [-1, 1]),
+    Factor("C", [-1, 1]),
+    Factor("D", [-1, 1]),
+]
+design = FactorialDesign(factors, replicates=2, randomize=False)
+
+saturated = design.model_structure()
+second_order = design.model_structure(max_order=2)
+```
+
+For a term involving factors in a set \(S\), the degrees of freedom are
+
+\[
+\nu_S = \prod_{j\in S}(L_j-1),
+\]
+
+where \(L_j\) is the number of levels of factor \(j\). Therefore a saturated
+full factorial satisfies
+
+\[
+\sum_{\varnothing\neq S}\nu_S
+=
+\prod_j L_j - 1.
+\]
+
+`degrees_of_freedom()` uses the saturated hierarchy by default. With a finite
+`max_order`, omitted higher-order treatment variation remains in the returned
+`Error` degrees of freedom together with replication and center-point residual
+degrees of freedom. `model_structure()` reports whether the requested model is
+saturated, its terms, and the model/error/total degree-of-freedom decomposition.
+
 ## Mathematical Background
 - **Factorial designs** exploit the full combination of factor levels, yielding an orthogonal design matrix with information on all main effects and interactions.
 - **Regular factorial blocks** use independent treatment words as block generators. With \(2^p\) blocks, the non-identity products of the \(p\) generators form a subgroup of size \(2^p-1\); those treatment contrasts are confounded with the block degrees of freedom.
