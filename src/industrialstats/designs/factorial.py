@@ -8,17 +8,13 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from ..utils._factorial_contrasts import calculate_two_level_factorial_effects
 from ._factorial_core import FactorialDesign as _FactorialDesignCore
 from .base import Factor
 
 
 class FactorialDesign(_FactorialDesignCore):
-    """Full factorial design with regular blocking for two-level experiments.
-
-    The unblocked API remains compatible with the historical implementation.
-    When ``blocks`` is greater than one, block membership is defined by
-    treatment interaction contrasts rather than by row position.
-    """
+    """Full factorial design with regular blocking for two-level experiments."""
 
     def __init__(
         self,
@@ -31,32 +27,7 @@ class FactorialDesign(_FactorialDesignCore):
         block_generators: list[str] | None = None,
         allow_main_effect_confounding: bool = False,
     ) -> None:
-        """Create a full factorial design.
-
-        Parameters
-        ----------
-        factors
-            Factors included in the experiment.
-        replicates
-            Number of replicates. Defaults to one.
-        center_points
-            Number of center points. Defaults to zero.
-        randomize
-            Whether to randomize run order. Defaults to ``True``.
-        blocks
-            Number of regular treatment blocks. Values greater than one are
-            supported for two-level full factorials and must be powers of two.
-        seed
-            Random seed used for run-order shuffling.
-        block_generators
-            Independent treatment-interaction words defining block contrasts,
-            such as ``["A*B*C"]``. When omitted, deterministic generators are
-            constructed automatically.
-        allow_main_effect_confounding
-            Allow a block defining contrast to sacrifice a main effect. This is
-            rejected by default and should be enabled only deliberately.
-        """
-        # Keep the historical core unblocked; this subclass owns block semantics.
+        """Create a full factorial design."""
         super().__init__(
             factors=factors,
             replicates=replicates,
@@ -123,6 +94,7 @@ class FactorialDesign(_FactorialDesignCore):
             else:
                 self.randomize(self.seed)
 
+        self._store_factor_level_orders()
         return self.design_matrix
 
     def validate_design(self) -> bool:
@@ -136,6 +108,43 @@ class FactorialDesign(_FactorialDesignCore):
         except ValueError:
             return False
         return True
+
+    def calculate_effects(
+        self,
+        response_data: list[float],
+        max_order: int = 2,
+    ) -> dict[str, float]:
+        """Calculate canonical two-level factorial effects.
+
+        Factor levels are coded according to their declared order: the first
+        level is ``-1`` and the second is ``+1``. The returned factorial effect
+        is twice the corresponding coefficient in a regression using these
+        coded columns and their products.
+        """
+        if self.design_matrix is None:
+            raise ValueError("Design matrix not generated")
+        if not self._is_two_level_design():
+            raise ValueError("Effect calculation only supported for 2-level designs")
+        if not (self.design_matrix["DesignPoint"] == "Factorial").all():
+            raise ValueError(
+                "Canonical factorial effects require factorial treatment points only"
+            )
+
+        return calculate_two_level_factorial_effects(
+            self.design_matrix,
+            response_data,
+            [factor.name for factor in self.factors],
+            max_order=max_order,
+            level_orders={factor.name: factor.levels for factor in self.factors},
+        )
+
+    def _store_factor_level_orders(self) -> None:
+        """Attach declared low/high level order for downstream analysis."""
+        if self.design_matrix is None:
+            return
+        self.design_matrix.attrs["factor_level_orders"] = {
+            factor.name: list(factor.levels) for factor in self.factors
+        }
 
     def _blocking_requested(self) -> bool:
         """Return whether regular factorial blocking is requested."""
@@ -408,11 +417,7 @@ class FactorialDesign(_FactorialDesignCore):
         self.randomized = True
 
     def blocking_scheme(self, block_size: int) -> pd.DataFrame:
-        """Reassign an existing design using regular treatment contrasts.
-
-        ``block_size`` is the number of factorial rows per block, including
-        replicate rows. Membership is invariant to the current row order.
-        """
+        """Reassign an existing design using regular treatment contrasts."""
         if self.design_matrix is None:
             raise ValueError("Design matrix not generated")
         if isinstance(block_size, bool) or not isinstance(block_size, int):
@@ -441,4 +446,5 @@ class FactorialDesign(_FactorialDesignCore):
         self._apply_regular_blocking()
         if self.randomize_flag:
             self._randomize_within_blocks()
+        self._store_factor_level_orders()
         return self.design_matrix
