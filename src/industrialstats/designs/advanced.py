@@ -14,11 +14,13 @@ from .base import ExperimentalDesign, Factor
 
 
 class SplitPlotDesign(ExperimentalDesign):
-    """Basic split-plot experimental design.
+    """Split-plot design with explicit whole-plot experimental units.
 
     The design handles hard-to-change *whole-plot* factors and easier-to-change
-    *sub-plot* factors. Randomization is restricted so that sub-plot runs are
-    shuffled only within each whole plot.
+    *sub-plot* factors. Each replicate of a whole-plot treatment combination is
+    a distinct whole-plot experimental unit. Randomization is restricted so
+    whole plots are randomized as units and sub-plots are randomized only
+    within their parent whole plot.
 
     Parameters
     ----------
@@ -27,12 +29,13 @@ class SplitPlotDesign(ExperimentalDesign):
     sub_plot_factors : list[Factor]
         Factors applied within whole plots (easy-to-change factors).
     replicates : int, optional
-        Number of replicates for each whole-plot/sub-plot combination. Defaults
-        to ``1``.
+        Number of independent whole-plot replicates for each whole-plot
+        treatment combination. Defaults to ``1``.
     randomize : bool, optional
-        Whether to randomize run order. Defaults to ``True``.
+        Whether to randomize whole-plot order and sub-plot order within each
+        whole plot. Defaults to ``True``.
     seed : int, optional
-        Random seed for reproducible shuffling.
+        Random seed for reproducible restricted randomization.
 
     Examples
     --------
@@ -45,12 +48,12 @@ class SplitPlotDesign(ExperimentalDesign):
         >>> sp = [Factor("Temperature", [150, 200, 250])]
         >>> design = SplitPlotDesign(wp, sp, seed=123)
         >>> design.generate_design().head()
-           RunOrder  WholePlot  Oven  Temperature
-        0         1          2     2          200
-        1         2          2     2          150
-        2         3          2     2          250
-        3         4          1     1          250
-        4         5          1     1          200
+           RunOrder  StdOrder  Replicate  WholePlot  SubPlot  Oven  Temperature
+        0         1         4          1          2        1     2          150
+        1         2         6          1          2        3     2          250
+        2         3         5          1          2        2     2          200
+        3         4         1          1          1        1     1          150
+        4         5         3          1          1        3     1          250
     """
 
     def __init__(
@@ -66,6 +69,8 @@ class SplitPlotDesign(ExperimentalDesign):
             raise ValueError("At least one whole-plot factor is required")
         if not sub_plot_factors:
             raise ValueError("At least one sub-plot factor is required")
+        if isinstance(replicates, bool) or not isinstance(replicates, int):
+            raise ValueError("replicates must be an integer >= 1")
         if replicates < 1:
             raise ValueError("replicates must be >= 1")
 
@@ -82,59 +87,94 @@ class SplitPlotDesign(ExperimentalDesign):
         Returns
         -------
         pandas.DataFrame
-            Generated design matrix with ``WholePlot`` identifiers.
+            Generated design matrix with explicit ``Replicate``, ``WholePlot``,
+            and ``SubPlot`` identifiers.
         """
         if not self.validate_design():
             raise ValueError("Invalid design configuration")
 
-        design_rows = []
+        design_rows: list[dict[str, Any]] = []
         run_id = 1
         whole_plot_id = 1
-        wp_levels = [f.levels for f in self.whole_plot_factors]
-        sp_levels = [f.levels for f in self.sub_plot_factors]
-        for wp_combo in product(*wp_levels):
-            for _rep in range(self.replicates):
-                for sp_combo in product(*sp_levels):
+        wp_combinations = list(
+            product(*(factor.levels for factor in self.whole_plot_factors))
+        )
+        sp_combinations = list(
+            product(*(factor.levels for factor in self.sub_plot_factors))
+        )
+
+        for replicate in range(1, self.replicates + 1):
+            for wp_combo in wp_combinations:
+                for subplot_id, sp_combo in enumerate(sp_combinations, start=1):
                     row: dict[str, Any] = {
                         "StdOrder": run_id,
+                        "Replicate": replicate,
                         "WholePlot": whole_plot_id,
+                        "SubPlot": subplot_id,
                     }
-                    for i, factor in enumerate(self.whole_plot_factors):
-                        row[factor.name] = wp_combo[i]
-                    for j, factor in enumerate(self.sub_plot_factors):
-                        row[factor.name] = sp_combo[j]
+                    for index, factor in enumerate(self.whole_plot_factors):
+                        row[factor.name] = wp_combo[index]
+                    for index, factor in enumerate(self.sub_plot_factors):
+                        row[factor.name] = sp_combo[index]
                     design_rows.append(row)
                     run_id += 1
-            whole_plot_id += 1
+                whole_plot_id += 1
 
         self.design_matrix = pd.DataFrame(design_rows)
 
         if self.randomize_flag:
-            rng = np.random.default_rng(self.seed)
-            hp_ids = self.design_matrix["WholePlot"].unique().tolist()
-            rng.shuffle(hp_ids)
-            randomized = []
-            for hp in hp_ids:
-                df_hp = self.design_matrix[self.design_matrix["WholePlot"] == hp]
-                df_hp = df_hp.sample(
-                    frac=1,
-                    random_state=int(rng.integers(0, np.iinfo("int32").max)),
-                ).reset_index(drop=True)
-                randomized.append(df_hp)
-            self.design_matrix = pd.concat(randomized, ignore_index=True)
-            self.design_matrix.insert(
-                0, "RunOrder", range(1, len(self.design_matrix) + 1)
-            )
-            self.randomized = True
+            self._randomize_restricted()
 
         return self.design_matrix
+
+    def _randomize_restricted(self) -> None:
+        """Randomize whole plots as units and sub-plots within each whole plot."""
+        if self.design_matrix is None:
+            raise ValueError("Design matrix not generated")
+
+        rng = np.random.default_rng(self.seed)
+        whole_plot_ids = self.design_matrix["WholePlot"].unique().tolist()
+        rng.shuffle(whole_plot_ids)
+
+        randomized: list[pd.DataFrame] = []
+        for whole_plot_id in whole_plot_ids:
+            frame = self.design_matrix[
+                self.design_matrix["WholePlot"] == whole_plot_id
+            ].sample(
+                frac=1,
+                random_state=int(rng.integers(0, np.iinfo("int32").max)),
+            )
+            randomized.append(frame)
+
+        self.design_matrix = pd.concat(randomized, ignore_index=True)
+        self.design_matrix.insert(
+            0, "RunOrder", range(1, len(self.design_matrix) + 1)
+        )
+        self.randomized = True
+
+    def n_whole_plots(self) -> int:
+        """Return the number of independent whole-plot experimental units."""
+        return self.replicates * int(
+            np.prod([len(factor.levels) for factor in self.whole_plot_factors])
+        )
+
+    def n_runs(self) -> int:
+        """Return the total number of sub-plot experimental runs."""
+        n_subplots_per_whole_plot = int(
+            np.prod([len(factor.levels) for factor in self.sub_plot_factors])
+        )
+        return self.n_whole_plots() * n_subplots_per_whole_plot
 
     def validate_design(self) -> bool:
         """Validate split-plot design parameters."""
         return (
             bool(self.whole_plot_factors)
             and bool(self.sub_plot_factors)
+            and isinstance(self.replicates, int)
+            and not isinstance(self.replicates, bool)
             and self.replicates >= 1
+            and all(factor.levels for factor in self.whole_plot_factors)
+            and all(factor.levels for factor in self.sub_plot_factors)
         )
 
 
