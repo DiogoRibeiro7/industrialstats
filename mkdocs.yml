@@ -72,6 +72,7 @@ markdown_extensions:
 nav:
   - Home: index.md
   - Getting started: getting-started.md
+  - Statistical architecture: architecture.md
   - Guides:
       - Choosing a design: guides/choosing-a-design.md
       - Command-line interface: guides/cli.md

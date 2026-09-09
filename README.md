@@ -16,6 +16,18 @@
 
 The project is currently pre-1.0. Its development priority is statistical correctness and validation against established DOE references before expanding the catalogue of design families.
 
+## Statistical architecture
+
+![industrialstats statistical workflow and package responsibilities](docs/diagrams/rendered/statistical_architecture.svg)
+
+The package follows an iterative designed-experiment workflow:
+
+`plan → design → run → analyse → diagnose → optimize → confirm`.
+
+Its main package boundaries are scientific responsibilities rather than deployment services: `industrialstats.designs` owns DOE construction and semantics; `industrialstats.analysis` owns inference, diagnostics, modelling and power; `industrialstats.visualizations` presents statistical results; and `industrialstats.utils` provides validation, IO/export, transformations, efficiency and simulation helpers.
+
+See [`docs/architecture.md`](docs/architecture.md) for the full statistical architecture and validation boundary.
+
 ## Project principles
 
 - **Statistical correctness first**: implementations should be validated against textbook results, trusted reference software, or independently derived properties.
@@ -36,7 +48,7 @@ The project is currently pre-1.0. Its development priority is statistical correc
 | Completely randomized design | Implemented | Treatment randomization, replication, multiple responses, sample-size calculation, summary statistics, and data-collection sheets |
 | Randomized complete block design | Implemented | Within-block randomization, efficiency comparison, missing-plot inspection, and a Latin-square option |
 | Plackett-Burman | Implemented with limited catalogue | Hadamard-based screening designs, reproducible randomization, and foldover |
-| Definitive screening design | Experimental | Public API exists, but the construction is scheduled for statistical correction and stronger property-based validation |
+| Definitive screening design | Implemented for quantitative three-level factors | Conference-matrix construction with foldover and centre run; algebraic tests cover main-effect orthogonality, quadratic/interaction orthogonality and estimability. Mixed continuous/two-level categorical DSDs remain out of scope. |
 | Response surface methodology | Implemented | Central composite and Box-Behnken designs, quadratic response-surface analysis, steepest ascent, ridge analysis, canonical analysis, and multiple-response optimization |
 | Optimal designs | Implemented | Coordinate-exchange search with D-, A-, G-, and I-optimal criteria |
 | Split-plot | Basic implementation | Restricted randomization and whole-plot/subplot layout generation; dedicated error-stratum analysis remains to be completed |
@@ -72,7 +84,7 @@ The long-term standard is stronger: every major design family should have algebr
 
 Before adding many new DOE families, the package is being hardened around several known issues:
 
-1. replace the provisional definitive-screening construction with a genuine DSD algorithm and tests of its defining properties;
+1. clean up factor-role semantics around three-level quantitative factors and future mixed DSD support;
 2. replace index-based factorial blocking with deliberate block generators and explicit confounding rules;
 3. unify factorial-effect semantics around one canonical contrast-based implementation;
 4. generalize factorial degrees of freedom and interaction generation beyond three-way terms;
@@ -248,7 +260,7 @@ Release preparation and the PyPI/Zenodo publication workflow are documented in [
 
 ## Package status
 
-Current package version: `0.1.0`.
+Current package version: `0.2.0`.
 
 The public API is still evolving. Design and analysis objects that are not exported from `industrialstats` directly can currently be imported from their submodules. API cleanup is part of the pre-1.0 roadmap.
 
