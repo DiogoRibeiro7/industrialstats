@@ -202,27 +202,23 @@ class TestFactorialDesign(unittest.TestCase):
         self.assertEqual(dof["Total"], total_runs - 1)
 
     def test_effect_calculation(self):
-        """Test calculation of factorial effects."""
+        """Test calculation of canonical factorial effects."""
         design = FactorialDesign(self.factors_2level, replicates=1, randomize=False)
         design_matrix = design.generate_design()
 
-        # Create mock response data with known effects
-        # A has effect of +10, B has effect of +6, C has effect of +2
-        # A*B interaction has effect of +4
+        # Build a true coded factorial model. For +/-1-coded regressors, a
+        # factorial effect equals twice the corresponding regression coefficient.
         response_data = []
         for _, row in design_matrix.iterrows():
-            response = 50  # baseline
-            response += 5 if row["A"] == 1 else -5  # A effect = 10
-            response += 3 if row["B"] == 1 else -3  # B effect = 6
-            response += 1 if row["C"] == 1 else -1  # C effect = 2
-            response += (
-                2 if (row["A"] == 1 and row["B"] == 1) else -2
-            )  # AB interaction = 4
+            a = 1 if row["A"] == 1 else -1
+            b = 1 if row["B"] == 1 else -1
+            c = 1 if row["C"] == 1 else -1
+            response = 50 + 5 * a + 3 * b + 1 * c + 2 * a * b
             response_data.append(response)
 
         effects = design.calculate_effects(response_data)
 
-        # Check calculated effects
+        # Main effects are 2*beta_A, 2*beta_B, 2*beta_C, and 2*beta_AB.
         self.assertAlmostEqual(effects["A"], 10, places=1)
         self.assertAlmostEqual(effects["B"], 6, places=1)
         self.assertAlmostEqual(effects["C"], 2, places=1)
