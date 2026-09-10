@@ -82,14 +82,12 @@ class TestPlackettBurmanDesign(unittest.TestCase):
 
     def test_invalid_catalogue_arguments_are_rejected(self):
         for value in [True, 3, 3.5, "8"]:
-            with self.subTest(max_runs=value):
-                with self.assertRaises(ValueError):
-                    PlackettBurmanDesign.supported_run_sizes(value)  # type: ignore[arg-type]
+            with self.subTest(max_runs=value), self.assertRaises(ValueError):
+                PlackettBurmanDesign.supported_run_sizes(value)  # type: ignore[arg-type]
 
         for value in [True, 1, 2.5, "3"]:
-            with self.subTest(n_factors=value):
-                with self.assertRaises(ValueError):
-                    PlackettBurmanDesign.run_size_for_factors(value)  # type: ignore[arg-type]
+            with self.subTest(n_factors=value), self.assertRaises(ValueError):
+                PlackettBurmanDesign.run_size_for_factors(value)  # type: ignore[arg-type]
 
     def test_foldover(self):
         factors = [Factor("A", [1, -1]), Factor("B", [1, -1])]
