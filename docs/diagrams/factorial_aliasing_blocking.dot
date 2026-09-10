@@ -1,0 +1,70 @@
+digraph FactorialAliasingBlocking {
+  graph [
+    rankdir=LR,
+    labelloc="t",
+    label="industrialstats: fractional aliasing and factorial blocking",
+    fontsize=20,
+    fontname="Helvetica",
+    nodesep=0.45,
+    ranksep=0.8,
+    splines=ortho,
+    pad=0.2,
+    newrank=true
+  ];
+  node [shape=box, style="rounded", fontname="Helvetica", fontsize=11, margin="0.16,0.10"];
+  edge [fontname="Helvetica", fontsize=9];
+
+  start [label="Two-level factorial treatment space\nAll factors coded −1 / +1\nEffects represented as treatment words"];
+
+  subgraph cluster_fractional {
+    label="Fractional factorial: fewer treatment combinations";
+    style="rounded";
+
+    fraction [label="Choose regular fraction\n1/2 · 1/4 · 1/8 · 1/16"];
+    generators [label="Generator equations\nDerived factors = products of base factors"];
+    relation [label="Defining relation\nIdentity + generated treatment words"];
+    aliases [label="Alias structure\nMultiply each effect by the defining relation"];
+    resolution [label="Resolution / word-length pattern\nShortest defining word controls alias severity"];
+    foldover [label="Foldover / augmentation\nAdd runs to break important aliases"];
+
+    fraction -> generators -> relation -> aliases -> resolution;
+    aliases -> foldover [style=dashed, label="if ambiguity matters"];
+  }
+
+  subgraph cluster_blocking {
+    label="Full factorial blocking: same treatment combinations, restricted groups";
+    style="rounded";
+
+    blocks [label="Choose 2^p blocks\nfor a full two-level factorial"];
+    blockgen [label="p independent block generators\nTreatment words over GF(2)"];
+    subgroup [label="Block defining subgroup\nAll non-identity products of generators"];
+    assignment [label="Block membership\nDetermined by treatment contrasts\nnot by row position"];
+    confounding [label="Intentional treatment–block confounding\nEffects in the subgroup are sacrificed to blocks"];
+    randomize [label="Randomize within blocks\nPreserve the block restriction"];
+
+    blocks -> blockgen -> subgroup -> assignment -> confounding -> randomize;
+  }
+
+  subgraph cluster_examples {
+    label="Canonical examples";
+    style="rounded";
+
+    frac_example [label="Half fraction of 4 factors\nD = A·B·C\nI = A·B·C·D\nResolution IV"];
+    frac_alias [label="Example alias chain\nA ≡ B·C·D\nAB ≡ C·D"];
+
+    block_example [label="2^3 full factorial in 2 blocks\nBlock generator A·B·C"];
+    block_result [label="Main effects and 2-factor interactions clear of blocks\nABC confounded with block"];
+
+    frac_example -> frac_alias;
+    block_example -> block_result;
+  }
+
+  start -> fraction;
+  start -> blocks;
+  resolution -> frac_example [style=dashed, arrowhead=none];
+  confounding -> block_example [style=dashed, arrowhead=none];
+
+  guard [shape=note, label="Interpretation boundary\nFractionation creates treatment-effect aliasing.\nBlocking creates treatment–block confounding.\nThey use related GF(2) algebra but solve different experimental problems."];
+  aliases -> guard [style=dashed, arrowhead=none];
+  confounding -> guard [style=dashed, arrowhead=none];
+}
