@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Source-SHA256: 5d81ef73948879a9c4f66cfc2cca761f2fd852f9354a892f59a54d49b3d65172 -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="820" viewBox="0 0 1800 820" role="img" aria-labelledby="title desc">
+  <title id="title">industrialstats response-surface methodology workflow</title>
+  <desc id="desc">Sequential response-surface methodology from screened factors through steepest ascent, second-order design, canonical and ridge analysis, multiple-response optimisation and confirmation.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#222"/></marker>
+    <style>
+      .box{fill:#fff;stroke:#222;stroke-width:1.5;rx:8;ry:8}.cluster{fill:none;stroke:#222;stroke-width:1.5;rx:12;ry:12}.diamond{fill:#fff;stroke:#222;stroke-width:1.5}.t{font:16px Helvetica,Arial,sans-serif;fill:#111}.h{font:bold 19px Helvetica,Arial,sans-serif;fill:#111}.title{font:bold 26px Helvetica,Arial,sans-serif;fill:#111}.line{stroke:#222;stroke-width:1.6;fill:none;marker-end:url(#arrow)}.dash{stroke-dasharray:6 4}
+    </style>
+  </defs>
+  <text x="900" y="38" text-anchor="middle" class="title">industrialstats: response-surface methodology workflow</text>
+
+  <g class="t" text-anchor="middle">
+    <rect x="40" y="320" width="240" height="90" class="box"/><text x="160" y="350"><tspan x="160" font-weight="bold">Important quantitative factors</tspan><tspan x="160" dy="22">Working region and response</tspan><tspan x="160" dy="22">already defined</tspan></text>
+    <rect x="320" y="320" width="220" height="90" class="box"/><text x="430" y="350"><tspan x="430" font-weight="bold">First-order model</tspan><tspan x="430" dy="22">Estimate local gradient</tspan><tspan x="430" dy="22">and useful interactions</tspan></text>
+    <rect x="580" y="320" width="220" height="90" class="box"/><text x="690" y="350"><tspan x="690" font-weight="bold">Steepest ascent / descent</tspan><tspan x="690" dy="22">Follow gradient toward</tspan><tspan x="690" dy="22">improved response</tspan></text>
+  </g>
+
+  <polygon points="880,365 970,300 1060,365 970,430" class="diamond"/><text x="970" y="352" text-anchor="middle" class="t"><tspan x="970">Curvature evident</tspan><tspan x="970" dy="21">or local optimum</tspan><tspan x="970" dy="21">approached?</tspan></text>
+
+  <rect x="1100" y="85" width="330" height="250" class="cluster"/><text x="1265" y="116" text-anchor="middle" class="h">Second-order design</text>
+  <rect x="1140" y="145" width="250" height="78" class="box"/><text x="1265" y="174" text-anchor="middle" class="t"><tspan x="1265" font-weight="bold">Central composite</tspan><tspan x="1265" dy="21">factorial + axial + centre points</tspan><tspan x="1265" dy="21">sequential augmentation friendly</tspan></text>
+  <rect x="1140" y="245" width="250" height="72" class="box"/><text x="1265" y="273" text-anchor="middle" class="t"><tspan x="1265" font-weight="bold">Box-Behnken</tspan><tspan x="1265" dy="21">quadratic design without corners</tspan><tspan x="1265" dy="21">avoids extreme combinations</tspan></text>
+
+  <rect x="1100" y="385" width="260" height="92" class="box"/><text x="1230" y="416" text-anchor="middle" class="t"><tspan x="1230" font-weight="bold">Quadratic response surface</tspan><tspan x="1230" dy="22">linear + interaction + squared terms</tspan><tspan x="1230" dy="22">estimate local curvature</tspan></text>
+  <rect x="1400" y="385" width="250" height="92" class="box"/><text x="1525" y="416" text-anchor="middle" class="t"><tspan x="1525" font-weight="bold">Model adequacy</tspan><tspan x="1525" dy="22">residuals · lack of fit</tspan><tspan x="1525" dy="22">prediction variance · region</tspan></text>
+
+  <rect x="1100" y="535" width="550" height="185" class="cluster"/><text x="1375" y="567" text-anchor="middle" class="h">Interpret and optimize local geometry</text>
+  <rect x="1135" y="600" width="220" height="82" class="box"/><text x="1245" y="629" text-anchor="middle" class="t"><tspan x="1245" font-weight="bold">Canonical analysis</tspan><tspan x="1245" dy="21">stationary point + eigenstructure</tspan><tspan x="1245" dy="21">min / max / saddle</tspan></text>
+  <rect x="1395" y="600" width="220" height="82" class="box"/><text x="1505" y="629" text-anchor="middle" class="t"><tspan x="1505" font-weight="bold">Ridge analysis</tspan><tspan x="1505" dy="21">optimize on radius constraints</tspan><tspan x="1505" dy="21">when optimum lies outside region</tspan></text>
+
+  <rect x="1680" y="535" width="100" height="185" class="cluster" opacity="0"/>
+  <rect x="1670" y="390" width="115" height="82" class="box"/><text x="1727" y="417" text-anchor="middle" class="t"><tspan x="1727" font-weight="bold">Multiple</tspan><tspan x="1727" dy="20">responses</tspan><tspan x="1727" dy="20">joint objective</tspan></text>
+  <rect x="1670" y="600" width="115" height="82" class="box"/><text x="1727" y="627" text-anchor="middle" class="t"><tspan x="1727" font-weight="bold">Confirm</tspan><tspan x="1727" dy="20">run optimum</tspan><tspan x="1727" dy="20">observed vs predicted</tspan></text>
+
+  <path d="M280 365 H320" class="line"/><path d="M540 365 H580" class="line"/><path d="M800 365 H880" class="line"/>
+  <path d="M1060 345 H1100 V184 H1140" class="line"/><path d="M1060 385 H1100 V281 H1140" class="line"/>
+  <path d="M970 430 V485 H690 V420" class="line"/><text x="815" y="476" text-anchor="middle" class="t">no: continue path</text>
+  <path d="M1265 223 V385" class="line"/><path d="M1265 317 V385" class="line"/><path d="M1360 431 H1400" class="line"/>
+  <path d="M1525 477 V560 H1245 V600" class="line"/><path d="M1525 477 V600" class="line"/>
+  <path d="M1355 641 H1670 V431" class="line"/><path d="M1615 641 H1670 V431" class="line"/>
+  <path d="M1727 472 V600" class="line"/>
+  <path d="M1670 641 H1650 V760 H1230 V477" class="line dash"/><text x="1435" y="748" text-anchor="middle" class="t">poor confirmation: update region/model and iterate</text>
+</svg>
