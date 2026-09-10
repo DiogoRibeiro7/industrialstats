@@ -119,14 +119,13 @@ def test_split_plot_mixed_model_recovers_two_variance_strata() -> None:
         replicates=10,
     )
     rng = np.random.default_rng(20260910)
-    whole_plot_offsets = {
-        whole_plot: offset
-        for whole_plot, offset in zip(
+    whole_plot_offsets = dict(
+        zip(
             sorted(data["WholePlot"].unique()),
             rng.normal(0.0, 2.0, size=data["WholePlot"].nunique()),
             strict=True,
         )
-    }
+    )
     data["y"] = (
         10.0
         + 1.5 * data["A"].astype(float)
@@ -143,5 +142,5 @@ def test_split_plot_mixed_model_recovers_two_variance_strata() -> None:
     assert result["residual_variance"] > 0.01
     assert result["error_strata"]["whole_plot_error_df"] == 18
     assert result["error_strata"]["subplot_error_df"] == 18
-    assert "C(Q(\"A\"))" in result["formula"]
-    assert "C(Q(\"B\"))" in result["formula"]
+    assert 'C(Q("A"))' in result["formula"]
+    assert 'C(Q("B"))' in result["formula"]
