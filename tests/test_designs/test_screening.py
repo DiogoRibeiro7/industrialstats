@@ -116,7 +116,7 @@ class TestPlackettBurmanDesign(unittest.TestCase):
     def test_full_foldover_dealiases_main_effects_from_two_factor_interactions(self):
         for n_runs in PlackettBurmanDesign.supported_run_sizes(40):
             with self.subTest(n_runs=n_runs):
-                factors = self._factors(min(n_runs - 1, 11))
+                factors = self._factors(n_runs - 1)
                 design = PlackettBurmanDesign(factors, randomize=False)
                 original = design.generate_design()
                 design.foldover()
