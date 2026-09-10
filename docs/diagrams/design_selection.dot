@@ -1,0 +1,78 @@
+digraph IndustrialStatsDesignSelection {
+  graph [
+    rankdir=LR,
+    labelloc="t",
+    label="industrialstats: design-family selection map",
+    fontsize=20,
+    fontname="Helvetica",
+    nodesep=0.38,
+    ranksep=0.75,
+    splines=ortho,
+    pad=0.2,
+    newrank=true
+  ];
+  node [shape=box, style="rounded", fontname="Helvetica", fontsize=11, margin="0.16,0.10"];
+  edge [fontname="Helvetica", fontsize=9];
+
+  start [label="Start\nDefine response, factors, run budget\nand experimental-unit constraints"];
+
+  subgraph cluster_constraints {
+    label="1 · Structural constraints first";
+    style="rounded";
+    composition [label="Components must sum to a total\n→ formulation / blend experiment"];
+    hard [label="Some factors are hard to change\n→ restricted randomization"];
+    nuisance [label="Known nuisance source\n→ batch / day / operator"];
+    none [label="No dominant structural constraint\n→ choose primarily by statistical goal"];
+  }
+
+  subgraph cluster_goals {
+    label="2 · Statistical goal";
+    style="rounded";
+    compare [label="Compare treatments\nHomogeneous units"];
+    screen [label="Screen many factors\nSmall run budget"];
+    interactions [label="Estimate interactions\nControl aliasing"];
+    curvature [label="Model curvature / optimize\nFew important quantitative factors"];
+    constrained [label="Irregular candidate region\nor fixed candidate set / run count"];
+  }
+
+  subgraph cluster_families {
+    label="3 · industrialstats design family";
+    style="rounded";
+    mixture [label="Mixture\nSimplex-lattice available\nUse mixture-specific models"];
+    split [label="Split-plot\nWhole-plot + subplot units\nAnalysis must respect both strata"];
+    rcbd [label="RCBD\nBlock the nuisance source\nRandomize within blocks"];
+    crd [label="CRD\nCompletely randomized\ntreatment comparison"];
+    dsd [label="Definitive screening\nThree-level quantitative screening\nMain effects + curvature information"];
+    pb [label="Plackett-Burman\nEconomical main-effect screening\nInterpret interactions cautiously"];
+    fractional [label="Regular fractional factorial\nTrade runs for aliasing\nInspect resolution / alias structure"];
+    full [label="Full factorial\nAll treatment combinations\nDirect interaction estimation"];
+    ccd [label="Central composite\nQuadratic model + axial points\nSequential augmentation friendly"];
+    bbd [label="Box-Behnken\nQuadratic model without corners\nAvoids extreme combinations"];
+    optimal [label="Optimal design\nD / A / G / I criteria\nCandidate-set and run-budget driven"];
+  }
+
+  start -> composition;
+  start -> hard;
+  start -> nuisance;
+  start -> none;
+
+  composition -> mixture;
+  hard -> split;
+  nuisance -> rcbd;
+
+  none -> compare;
+  none -> screen;
+  none -> interactions;
+  none -> curvature;
+  none -> constrained;
+
+  compare -> crd;
+  screen -> dsd;
+  screen -> pb;
+  screen -> fractional;
+  interactions -> full;
+  interactions -> fractional;
+  curvature -> ccd;
+  curvature -> bbd;
+  constrained -> optimal;
+}
