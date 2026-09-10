@@ -191,8 +191,7 @@ class SplitPlotAnalysis:
         whole_plot_response = whole_plot_frame[self.response].to_numpy(dtype=float)
         whole_plot_centered = whole_plot_response - whole_plot_response.mean()
         whole_plot_total_ss = (
-            float(whole_plot_centered @ whole_plot_centered)
-            * strata.subplot_treatments
+            float(whole_plot_centered @ whole_plot_centered) * strata.subplot_treatments
         )
 
         rows: list[dict[str, Any]] = []
@@ -220,7 +219,9 @@ class SplitPlotAnalysis:
         whole_plot_error_ms = whole_plot_error_ss / strata.whole_plot_error_df
 
         response = self.data[self.response].to_numpy(dtype=float)
-        whole_plot_means = grouped[self.response].transform("mean").to_numpy(dtype=float)
+        whole_plot_means = (
+            grouped[self.response].transform("mean").to_numpy(dtype=float)
+        )
         within_response = response - whole_plot_means
         subplot_total_ss = float(within_response @ within_response)
 
@@ -241,7 +242,9 @@ class SplitPlotAnalysis:
                 }
             )
 
-        derived_subplot_error_df = len(self.data) - strata.whole_plots - subplot_model_df
+        derived_subplot_error_df = (
+            len(self.data) - strata.whole_plots - subplot_model_df
+        )
         if derived_subplot_error_df != strata.subplot_error_df:
             raise ValueError(
                 "Subplot error degrees of freedom disagree with the validated "
@@ -296,13 +299,11 @@ class SplitPlotAnalysis:
                 p_value = 0.0 if np.isinf(f_statistic) else np.nan
             else:
                 f_statistic = numerator_ms / denominator_ms
-                p_value = float(
-                    stats.f.sf(f_statistic, int(row["df"]), denominator_df)
-                )
+                p_value = float(stats.f.sf(f_statistic, int(row["df"]), denominator_df))
 
-            table.at[index, "F"] = f_statistic
-            table.at[index, "PR(>F)"] = p_value
-            table.at[index, "Denominator"] = denominator_name
+            table.loc[index, "F"] = f_statistic
+            table.loc[index, "PR(>F)"] = p_value
+            table.loc[index, "Denominator"] = denominator_name
 
         return table
 
