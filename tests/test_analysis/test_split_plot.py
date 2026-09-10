@@ -57,6 +57,47 @@ def test_error_strata_support_multiple_whole_plot_factors() -> None:
     assert strata.subplot_error_df == 4
 
 
+def test_canonical_two_by_two_anova_matches_hand_decomposition() -> None:
+    data = _generated_split_plot(
+        whole_plot_factors=[Factor("A", [-1, 1])],
+        subplot_factors=[Factor("B", [-1, 1])],
+        replicates=3,
+    )
+    replicate_contrast = {1: -1.0, 2: 0.0, 3: 1.0}
+    whole_plot_error = data["Replicate"].map(replicate_contrast).astype(float)
+    subplot_error = whole_plot_error * data["B"].astype(float)
+    data["y"] = (
+        10.0
+        + 2.0 * data["A"].astype(float)
+        + 3.0 * data["B"].astype(float)
+        + data["A"].astype(float) * data["B"].astype(float)
+        + whole_plot_error
+        + subplot_error
+    )
+
+    table = SplitPlotAnalysis(data, "y", ["A"], ["B"]).anova_table()
+    by_source = table.set_index("Source")
+
+    assert by_source.loc["A", "sum_sq"] == pytest.approx(48.0)
+    assert by_source.loc["WholePlot Error", "sum_sq"] == pytest.approx(8.0)
+    assert by_source.loc["B", "sum_sq"] == pytest.approx(108.0)
+    assert by_source.loc["A*B", "sum_sq"] == pytest.approx(12.0)
+    assert by_source.loc["Subplot Error", "sum_sq"] == pytest.approx(8.0)
+
+    assert by_source.loc["A", "df"] == 1
+    assert by_source.loc["WholePlot Error", "df"] == 4
+    assert by_source.loc["B", "df"] == 1
+    assert by_source.loc["A*B", "df"] == 1
+    assert by_source.loc["Subplot Error", "df"] == 4
+
+    assert by_source.loc["A", "F"] == pytest.approx(24.0)
+    assert by_source.loc["B", "F"] == pytest.approx(54.0)
+    assert by_source.loc["A*B", "F"] == pytest.approx(6.0)
+    assert by_source.loc["A", "Denominator"] == "WholePlot Error"
+    assert by_source.loc["B", "Denominator"] == "Subplot Error"
+    assert by_source.loc["A*B", "Denominator"] == "Subplot Error"
+
+
 def test_expected_mean_squares_use_subplot_multiplicity() -> None:
     data = _generated_split_plot(replicates=3)
     data["y"] = 0.0
