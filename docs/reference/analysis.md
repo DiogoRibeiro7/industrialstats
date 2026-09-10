@@ -6,6 +6,10 @@ Statistical analysis of collected experimental results.
 
 ::: industrialstats.analysis.anova
 
+## Split-plot analysis
+
+::: industrialstats.analysis.split_plot
+
 ## Effects
 
 ::: industrialstats.analysis.effects
