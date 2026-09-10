@@ -1,0 +1,58 @@
+digraph ResponseSurfaceWorkflow {
+  graph [
+    rankdir=LR,
+    labelloc="t",
+    label="industrialstats: response-surface methodology workflow",
+    fontsize=20,
+    fontname="Helvetica",
+    nodesep=0.45,
+    ranksep=0.8,
+    splines=ortho,
+    pad=0.2
+  ];
+  node [shape=box, style="rounded", fontname="Helvetica", fontsize=11, margin="0.16,0.10"];
+  edge [fontname="Helvetica", fontsize=9];
+
+  start [label="Screened / important quantitative factors\nWorking region and response defined"];
+  first_order [label="Fit local first-order model\nmain effects + interactions where appropriate"];
+  gradient [label="Steepest ascent / descent\nfollow estimated gradient\ntoward improved response"];
+  curvature [shape=diamond, label="Curvature evident\nor local optimum approached?"];
+
+  subgraph cluster_second_order {
+    label="Second-order design";
+    style="rounded";
+    ccd [label="Central composite design (CCD)\nfactorial + axial + centre points\nsequential augmentation friendly"];
+    bbd [label="Box-Behnken design\nquadratic model without corner points\nuseful when extremes are undesirable"];
+  }
+
+  quadratic [label="Fit quadratic response surface\nlinear + interaction + squared terms"];
+  diagnose [label="Check adequacy\nresiduals · lack of fit · prediction variance\nrespect experimental region"];
+
+  subgraph cluster_interpret {
+    label="Interpret local geometry";
+    style="rounded";
+    canonical [label="Canonical analysis\nstationary point + eigenstructure\nclassify min / max / saddle"];
+    ridge [label="Ridge analysis\noptimize on radius constraints\nwhen stationary point is outside region"];
+  }
+
+  multi [label="Multiple-response optimization\ncombine fitted response surfaces\nthrough desirability / joint objective"];
+  confirm [label="Confirmation experiment\nrun predicted optimum / compromise\ncompare observed vs predicted"];
+  iterate [label="Update region or model\nand iterate if confirmation fails"];
+
+  start -> first_order -> gradient -> curvature;
+  curvature -> gradient [label="no: continue path"];
+  curvature -> ccd [label="yes: build quadratic design"];
+  curvature -> bbd [label="yes, avoid corners"];
+  ccd -> quadratic;
+  bbd -> quadratic;
+  quadratic -> diagnose;
+  diagnose -> canonical;
+  diagnose -> ridge;
+  canonical -> multi;
+  ridge -> multi;
+  multi -> confirm;
+  confirm -> iterate [label="poor confirmation"];
+  confirm -> start [label="new operating region", style=dashed];
+  iterate -> ccd [style=dashed];
+  iterate -> bbd [style=dashed];
+}
