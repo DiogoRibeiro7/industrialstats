@@ -1,13 +1,24 @@
 # Choosing a design
 
 The right design depends on what stage of experimentation you are in, how many
-factors you have, and how many runs you can afford.
+factors you have, what randomization restrictions exist, and how many runs you can
+afford.
+
+![industrialstats design-family selection map](../diagrams/rendered/design_selection.svg)
+
+Source: [`../diagrams/design_selection.dot`](../diagrams/design_selection.dot)
+
+The map starts with structural constraints because they determine the experimental
+unit. A mixture experiment, a split-plot experiment, and a blocked experiment are
+not interchangeable with a completely randomized design even when they have a
+similar run count. Once those constraints are respected, choose the design family
+that matches the statistical goal.
 
 ## By experimental goal
 
 | Goal | Typical situation | Design family |
 | --- | --- | --- |
-| Screen many factors | 6+ factors, few runs, want the vital few | Plackett-Burman, fractional factorial |
+| Screen many factors | 6+ factors, few runs, want the vital few | Plackett-Burman, definitive screening, fractional factorial |
 | Estimate main effects and interactions | 2–5 factors, moderate budget | Full factorial |
 | Compare treatments | One factor, homogeneous units | Completely randomized design |
 | Compare treatments with a nuisance source | Batches, days, operators | Randomized complete block design |
@@ -33,10 +44,12 @@ Plackett-Burman designs estimate main effects in very few runs, but their
 interaction aliasing is complex. Treat the result as a shortlist, not as a
 final model.
 
-!!! warning "Definitive screening designs are experimental"
-    `DefinitiveScreeningDesign` exposes a public API, but its construction is
-    scheduled for statistical correction. Do not rely on it for production
-    experiments until that work lands. See the [roadmap](../roadmap.md).
+`DefinitiveScreeningDesign` is also available for three-level quantitative
+screening when curvature information matters. Its current conference-matrix
+construction is validated for the main-effect orthogonality, main-effect versus
+two-factor-interaction orthogonality, pure-quadratic estimability, foldover symmetry,
+and seeded randomization properties documented by the package. Mixed
+continuous/two-level categorical DSDs remain outside the implemented scope.
 
 ## Factorials and resolution
 
@@ -114,6 +127,11 @@ design = RandomizedCompleteBlockDesign(
 )
 ```
 
+For regular two-level factorials, treatment-defined block generators are a
+different mechanism from RCBD nuisance blocking. The package exposes their defining
+contrasts and confounded effects explicitly rather than assigning blocks by row
+position.
+
 ## Optimal designs
 
 When the design region is constrained, the run budget is fixed, or the model is
@@ -127,8 +145,9 @@ estimating coefficients precisely is the goal.
 
 ## Randomization and reproducibility
 
-Every generator accepts a `seed`. Record it alongside the experiment: it is
-what lets you reconstruct the exact run order later.
+Every generator that exposes a `seed` should be run with that seed recorded
+alongside the experiment. Reproducibility depends on the exact design family and
+its randomization contract rather than on reordering a generated table later.
 
 Where randomization must be restricted — as in split-plot designs, where whole
 plots are hard to change — use the design family that encodes that restriction
