@@ -79,7 +79,7 @@ class SplitPlotAnalysis:
             .nunique()
             .to_numpy()
         )
-        if len(set(int(value) for value in whole_treatment_counts)) != 1:
+        if len({int(value) for value in whole_treatment_counts}) != 1:
             raise ValueError(
                 "Every whole-plot treatment combination must have the same number "
                 "of independent whole-plot replicates"
@@ -90,7 +90,8 @@ class SplitPlotAnalysis:
             self.data[self.whole_plot_factors].drop_duplicates().shape[0]
         )
         subplot_levels = [
-            int(self.data[factor].nunique(dropna=False)) for factor in self.subplot_factors
+            int(self.data[factor].nunique(dropna=False))
+            for factor in self.subplot_factors
         ]
         subplot_treatments = prod(subplot_levels)
         expected_subplot_combinations = int(
@@ -105,7 +106,10 @@ class SplitPlotAnalysis:
             self.whole_plot_column, observed=True, sort=False
         ):
             combinations = frame[self.subplot_factors].drop_duplicates()
-            if len(frame) != subplot_treatments or len(combinations) != subplot_treatments:
+            if (
+                len(frame) != subplot_treatments
+                or len(combinations) != subplot_treatments
+            ):
                 raise ValueError(
                     f"Whole plot {whole_plot_id!r} must contain exactly one complete "
                     "subplot factorial"
@@ -114,7 +118,9 @@ class SplitPlotAnalysis:
         whole_plots = whole_plot_treatments * replicates
         runs = whole_plots * subplot_treatments
         if len(self.data) != runs:
-            raise ValueError("Observed run count is inconsistent with a balanced split-plot")
+            raise ValueError(
+                "Observed run count is inconsistent with a balanced split-plot"
+            )
 
         return SplitPlotErrorStrata(
             whole_plot_treatments=whole_plot_treatments,
@@ -124,9 +130,7 @@ class SplitPlotAnalysis:
             runs=runs,
             whole_plot_error_df=whole_plot_treatments * (replicates - 1),
             subplot_error_df=(
-                whole_plot_treatments
-                * (replicates - 1)
-                * (subplot_treatments - 1)
+                whole_plot_treatments * (replicates - 1) * (subplot_treatments - 1)
             ),
         )
 
@@ -156,7 +160,7 @@ class SplitPlotAnalysis:
         strata = self.error_strata()
         all_factors = [*self.whole_plot_factors, *self.subplot_factors]
         fixed_terms = " * ".join(self._categorical_term(name) for name in all_factors)
-        formula = f'{self._quote(self.response)} ~ {fixed_terms}'
+        formula = f"{self._quote(self.response)} ~ {fixed_terms}"
 
         model = sm.MixedLM.from_formula(
             formula,
