@@ -5,6 +5,7 @@ from .diagnostics import ModelDiagnostics
 from .effects import EffectsAnalysis
 from .model_fitting import ModelFitting
 from .power_analysis import PowerAnalysis
+from .split_plot import SplitPlotAnalysis, SplitPlotErrorStrata
 
 __all__ = [
     "ANOVAAnalysis",
@@ -12,4 +13,6 @@ __all__ = [
     "ModelDiagnostics",
     "ModelFitting",
     "PowerAnalysis",
+    "SplitPlotAnalysis",
+    "SplitPlotErrorStrata",
 ]
