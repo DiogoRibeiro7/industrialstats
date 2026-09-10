@@ -1,0 +1,79 @@
+digraph OptimalDesignWorkflow {
+  graph [
+    rankdir=LR,
+    labelloc="t",
+    label="industrialstats: optimal-design construction and diagnostic workflow",
+    fontsize=20,
+    fontname="Helvetica",
+    nodesep=0.45,
+    ranksep=0.75,
+    splines=ortho,
+    pad=0.2
+  ];
+  node [shape=box, style="rounded", fontname="Helvetica", fontsize=11, margin="0.16,0.10"];
+  edge [fontname="Helvetica", fontsize=9];
+
+  problem [label="Experimental problem\nFactors + admissible region\nRun budget + target model"];
+  candidates [label="Candidate set\nCategorical levels or continuous grid\nEvery admissible design point"];
+  model [label="Model terms\nIntercept · main effects · interactions\nDefine model vector f(x)"];
+  matrix [label="Candidate model matrix\nRows f(x) over candidate set"];
+
+  subgraph cluster_start {
+    label="Multiple initial designs";
+    style="rounded";
+    random [label="Random start\nSample candidate points"];
+    systematic [label="Systematic start\nSpace-filling candidate indices"];
+  }
+
+  info [label="Information matrix\nM = XᵀX\nReject singular designs"];
+
+  subgraph cluster_criteria {
+    label="Choose the statistical objective";
+    style="rounded";
+    d [label="D-optimal\nmaximize log det(M)\ncoefficient-volume precision"];
+    a [label="A-optimal\nminimize tr(M⁻¹)\naverage parameter variance"];
+    g [label="G-optimal\nminimize max f(x)ᵀM⁻¹f(x)\nworst-case prediction variance"];
+    i [label="I-optimal\nminimize mean f(x)ᵀM⁻¹f(x)\naverage prediction variance"];
+  }
+
+  exchange [label="Coordinate exchange\nFor each run, test candidate replacements\nKeep criterion-improving exchanges"];
+  stop [label="Stopping rule\nNo improving exchange or\nimprovement < threshold"];
+  multistart [label="Compare random starts\nRetain best criterion value"];
+  design [label="Selected design\nRunID + factor settings"];
+
+  subgraph cluster_diagnostics {
+    label="Post-selection diagnostics";
+    style="rounded";
+    efficiency [label="Efficiency diagnostics\nD/A efficiency where available\nrelative to a reference design"];
+    variance [label="Prediction-variance map\nInspect variance across the region"];
+    history [label="Exchange history\nIteration · criterion value\ncriterion improvement"];
+  }
+
+  confirm [label="Scientific check\nDoes the chosen criterion match the goal?\nIs the model estimable over the region?"];
+  boundary [shape=note, label="Important boundary\nAn optimal design is model- and region-dependent.\nChanging the candidate set, model terms, criterion,\nor run budget changes the optimization problem."];
+
+  problem -> candidates -> model -> matrix;
+  matrix -> random;
+  matrix -> systematic;
+  random -> info;
+  systematic -> info;
+
+  info -> d;
+  info -> a;
+  info -> g;
+  info -> i;
+
+  d -> exchange;
+  a -> exchange;
+  g -> exchange;
+  i -> exchange;
+  exchange -> stop -> multistart -> design;
+
+  design -> efficiency;
+  design -> variance;
+  design -> history;
+  efficiency -> confirm;
+  variance -> confirm;
+  history -> confirm;
+  confirm -> boundary [style=dashed, arrowhead=none];
+}
