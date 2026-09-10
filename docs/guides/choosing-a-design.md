@@ -146,12 +146,30 @@ position.
 
 When the design region is constrained, the run budget is fixed, or the model is
 non-standard, a coordinate-exchange search over a candidate set is more
-appropriate than a catalogue design. Criteria available are D (parameter
-precision), A (average variance), G (worst-case prediction variance), and I
-(average prediction variance).
+appropriate than a catalogue design.
 
-Choose I or G when prediction across the region is the goal, and D when
-estimating coefficients precisely is the goal.
+![industrialstats optimal-design construction and diagnostic workflow](../diagrams/rendered/optimal_design_workflow.svg)
+
+Source: [`../diagrams/optimal_design_workflow.dot`](../diagrams/optimal_design_workflow.dot)
+
+An optimal design is defined jointly by the candidate region, the target model,
+the run budget, and the criterion. `industrialstats` builds the corresponding model
+matrix, rejects singular information matrices, searches candidate replacements by
+coordinate exchange, compares multiple starting designs, and retains the best
+criterion value. The resulting design should then be checked with efficiency and
+prediction-variance diagnostics rather than treated as optimal independently of the
+model assumptions that created it.
+
+The available criteria answer different statistical questions:
+
+- **D-optimality** maximizes `log det(X.T @ X)` and targets joint coefficient precision.
+- **A-optimality** minimizes the trace of the inverse information matrix and targets average parameter variance.
+- **G-optimality** minimizes the worst prediction variance over the candidate set.
+- **I-optimality** minimizes the mean prediction variance over the candidate set.
+
+Choose G or I when prediction across the region is the primary goal, and D or A
+when coefficient estimation is the priority. Changing the model terms, candidate
+set, criterion, or run budget defines a different optimization problem.
 
 ## Randomization and reproducibility
 
