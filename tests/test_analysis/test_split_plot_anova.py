@@ -93,5 +93,5 @@ def test_anova_requires_replication_for_both_error_strata() -> None:
     frame = _known_two_by_two_split_plot().query("Replicate == 1").copy()
     analysis = SplitPlotAnalysis(frame, "Response", ["A"], ["B"])
 
-    with pytest.raises(ValueError, match="replication.*whole-plot error"):
+    with pytest.raises(ValueError, match=r"replication.*whole-plot error"):
         analysis.anova_table()
