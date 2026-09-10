@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Source-SHA256: 93fa8b49c041396c38052cdf5be47f1b02fb13e1dd8525d5fa8155390e596e18 -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="1120" viewBox="0 0 1500 1120" role="img" aria-labelledby="title desc">
+  <title id="title">industrialstats split-plot randomization and inference structure</title>
+  <desc id="desc">Diagram showing whole-plot and subplot randomization stages, their error strata, classical denominator choices, and complementary mixed-model analysis.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#222"/></marker>
+    <style>
+      .box{fill:#fff;stroke:#222;stroke-width:1.5;rx:8;ry:8}.cluster{fill:none;stroke:#222;stroke-width:1.5;rx:12;ry:12}.t{font:16px Helvetica,Arial,sans-serif;fill:#111}.h{font:bold 20px Helvetica,Arial,sans-serif;fill:#111}.title{font:bold 26px Helvetica,Arial,sans-serif;fill:#111}.line{stroke:#222;stroke-width:1.6;fill:none;marker-end:url(#arrow)}.dash{stroke:#555;stroke-width:1.4;stroke-dasharray:6 5;fill:none}
+    </style>
+  </defs>
+  <text x="750" y="38" text-anchor="middle" class="title">industrialstats: split-plot randomization and inference structure</text>
+
+  <rect x="540" y="75" width="420" height="82" class="box"/>
+  <text x="750" y="108" text-anchor="middle" class="t"><tspan x="750" font-weight="bold">Treatment factors</tspan><tspan x="750" dy="23">Whole-plot factors + subplot factors</tspan></text>
+
+  <rect x="70" y="210" width="650" height="250" class="cluster"/>
+  <text x="395" y="242" text-anchor="middle" class="h">Randomization structure</text>
+  <rect x="115" y="285" width="250" height="105" class="box"/>
+  <text x="240" y="314" text-anchor="middle" class="t"><tspan x="240" font-weight="bold">Stage 1 · Whole-plot</tspan><tspan x="240" dy="22">Hard-to-change combinations</tspan><tspan x="240" dy="22">randomized across WholePlot units</tspan></text>
+  <rect x="425" y="285" width="250" height="105" class="box"/>
+  <text x="550" y="314" text-anchor="middle" class="t"><tspan x="550" font-weight="bold">Stage 2 · Subplot</tspan><tspan x="550" dy="22">Easy-to-change combinations</tspan><tspan x="550" dy="22">randomized within WholePlot</tspan></text>
+
+  <rect x="805" y="210" width="625" height="250" class="cluster"/>
+  <text x="1117" y="242" text-anchor="middle" class="h">Experimental units</text>
+  <rect x="850" y="285" width="245" height="105" class="box"/>
+  <text x="972" y="314" text-anchor="middle" class="t"><tspan x="972" font-weight="bold">WholePlot units</tspan><tspan x="972" dy="22">Replicate × WP treatment</tspan><tspan x="972" dy="22">independent identifiers</tspan></text>
+  <rect x="1140" y="285" width="245" height="105" class="box"/>
+  <text x="1262" y="314" text-anchor="middle" class="t"><tspan x="1262" font-weight="bold">Subplot runs</tspan><tspan x="1262" dy="22">Complete subplot factorial</tspan><tspan x="1262" dy="22">inside each WholePlot</tspan></text>
+
+  <rect x="70" y="515" width="650" height="220" class="cluster"/>
+  <text x="395" y="547" text-anchor="middle" class="h">Two error strata</text>
+  <rect x="115" y="590" width="250" height="90" class="box"/>
+  <text x="240" y="620" text-anchor="middle" class="t"><tspan x="240" font-weight="bold">WholePlot Error</tspan><tspan x="240" dy="22">between independent whole plots</tspan><tspan x="240" dy="22">under the same WP treatment</tspan></text>
+  <rect x="425" y="590" width="250" height="90" class="box"/>
+  <text x="550" y="620" text-anchor="middle" class="t"><tspan x="550" font-weight="bold">Subplot Error</tspan><tspan x="550" dy="22">within-WholePlot</tspan><tspan x="550" dy="22">residual variation</tspan></text>
+
+  <rect x="805" y="515" width="625" height="220" class="cluster"/>
+  <text x="1117" y="547" text-anchor="middle" class="h">Fixed treatment effects</text>
+  <rect x="850" y="590" width="245" height="90" class="box"/>
+  <text x="972" y="620" text-anchor="middle" class="t"><tspan x="972" font-weight="bold">Whole-plot-only terms</tspan><tspan x="972" dy="22">A, C, A×C, …</tspan></text>
+  <rect x="1140" y="590" width="245" height="90" class="box"/>
+  <text x="1262" y="620" text-anchor="middle" class="t"><tspan x="1262" font-weight="bold">Subplot-containing terms</tspan><tspan x="1262" dy="22">B, A×B, B×D, …</tspan></text>
+
+  <rect x="115" y="800" width="360" height="92" class="box"/>
+  <text x="295" y="832" text-anchor="middle" class="t"><tspan x="295" font-weight="bold">Classical F test</tspan><tspan x="295" dy="24">MS(WP term) / MS(WholePlot Error)</tspan></text>
+  <rect x="525" y="800" width="390" height="92" class="box"/>
+  <text x="720" y="832" text-anchor="middle" class="t"><tspan x="720" font-weight="bold">Classical F test</tspan><tspan x="720" dy="24">MS(subplot term) / MS(Subplot Error)</tspan></text>
+  <rect x="965" y="785" width="390" height="122" class="box"/>
+  <text x="1160" y="815" text-anchor="middle" class="t"><tspan x="1160" font-weight="bold">Complementary MixedLM</tspan><tspan x="1160" dy="22">fixed treatment factorial</tspan><tspan x="1160" dy="22">+ random intercept for WholePlot</tspan><tspan x="1160" dy="22">variance-component cross-check</tspan></text>
+
+  <rect x="965" y="945" width="390" height="92" class="box"/>
+  <text x="1160" y="977" text-anchor="middle" class="t"><tspan x="1160" font-weight="bold">Balanced EMS</tspan><tspan x="1160" dy="23">E(MS_WP)=σ²ₑ + bσ²_WP</tspan><tspan x="1160" dy="23">E(MS_SP)=σ²ₑ</tspan></text>
+
+  <path d="M750 157 V240 H240 V285" class="line"/><path d="M750 157 V240 H550 V285" class="line"/>
+  <path d="M365 337 H850" class="line"/><path d="M1095 337 H1140" class="line"/><path d="M675 337 H1140" class="line"/>
+  <path d="M972 390 V515 H240 V590" class="line"/><path d="M1262 390 V515 H550 V590" class="line"/>
+  <path d="M750 157 V500 H972 V590" class="line"/><path d="M750 157 V485 H1262 V590" class="line"/>
+  <path d="M240 680 V800 H295" class="line"/><path d="M972 680 V755 H295 V800" class="line"/>
+  <path d="M550 680 V800 H720" class="line"/><path d="M1262 680 V755 H720 V800" class="line"/>
+  <path d="M972 390 V745 H1160 V785" class="line"/><path d="M1262 390 V745 H1160 V785" class="line"/><path d="M1160 907 V945" class="line"/>
+
+  <rect x="115" y="965" width="760" height="95" class="box"/>
+  <text x="495" y="995" text-anchor="middle" class="t"><tspan x="495" font-weight="bold">Scope boundary</tspan><tspan x="495" dy="22">Balanced complete split-plot inference only.</tspan><tspan x="495" dy="22">Do not replace stratum-specific F tests with generic OLS or mixed-model Wald tests.</tspan></text>
+  <path d="M295 892 V965" class="dash"/><path d="M720 892 V965" class="dash"/><path d="M965 846 H875 V1012" class="dash"/>
+</svg>

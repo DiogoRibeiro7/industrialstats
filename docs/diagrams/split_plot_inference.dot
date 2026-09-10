@@ -1,0 +1,76 @@
+digraph SplitPlotInference {
+  graph [
+    rankdir=TB,
+    labelloc="t",
+    label="industrialstats: split-plot randomization and inference structure",
+    fontsize=20,
+    fontname="Helvetica",
+    nodesep=0.45,
+    ranksep=0.65,
+    splines=ortho,
+    pad=0.2
+  ];
+  node [shape=box, style="rounded", fontname="Helvetica", fontsize=11, margin="0.16,0.10"];
+  edge [fontname="Helvetica", fontsize=9];
+
+  factors [label="Treatment factors\nWhole-plot factors + subplot factors"];
+
+  subgraph cluster_randomization {
+    label="Randomization structure";
+    style="rounded";
+
+    wp_assign [label="Stage 1 · Whole-plot assignment\nHard-to-change treatment combinations\nrandomized across WholePlot units"];
+    sp_assign [label="Stage 2 · Subplot assignment\nEasy-to-change treatment combinations\nrandomized within each WholePlot"];
+  }
+
+  wholeplots [label="WholePlot experimental units\nReplicate × whole-plot treatment combination\nindependent unit identifiers"];
+  subplots [label="Subplot runs within WholePlot\nComplete subplot factorial per parent unit"];
+
+  subgraph cluster_variation {
+    label="Two variation / error strata";
+    style="rounded";
+
+    wp_error [label="WholePlot Error\nvariation among independent whole plots\nunder the same whole-plot treatment"];
+    sp_error [label="Subplot Error\nwithin-WholePlot residual variation"];
+  }
+
+  subgraph cluster_effects {
+    label="Fixed treatment effects";
+    style="rounded";
+
+    wp_terms [label="Whole-plot-only terms\nA, C, A×C, ..."];
+    sp_terms [label="Terms containing subplot factors\nB, A×B, B×D, A×B×C, ..."];
+  }
+
+  wp_test [label="Classical F test\nMS(whole-plot term) / MS(WholePlot Error)"];
+  sp_test [label="Classical F test\nMS(subplot-containing term) / MS(Subplot Error)"];
+
+  mixed [label="Complementary MixedLM\nfixed treatment factorial\n+ random intercept for WholePlot"];
+  ems [label="Balanced random-intercept EMS\nE(MS_WP)=σ²_e + bσ²_WP\nE(MS_SP)=σ²_e"];
+
+  boundary [shape=note, label="Scope boundary\nBalanced complete split-plot inference only.\nDo not replace stratum-specific classical F tests\nwith generic OLS or mixed-model Wald tests."];
+
+  factors -> wp_assign;
+  factors -> sp_assign;
+  wp_assign -> wholeplots;
+  wholeplots -> subplots;
+  sp_assign -> subplots;
+
+  wholeplots -> wp_error;
+  subplots -> sp_error;
+
+  factors -> wp_terms;
+  factors -> sp_terms;
+  wp_terms -> wp_test;
+  wp_error -> wp_test;
+  sp_terms -> sp_test;
+  sp_error -> sp_test;
+
+  wholeplots -> mixed;
+  subplots -> mixed;
+  mixed -> ems;
+
+  wp_test -> boundary [style=dashed, arrowhead=none];
+  sp_test -> boundary [style=dashed, arrowhead=none];
+  mixed -> boundary [style=dashed, arrowhead=none];
+}
