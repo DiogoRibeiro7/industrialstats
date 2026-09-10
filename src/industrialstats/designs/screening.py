@@ -12,6 +12,11 @@ from .base import ExperimentalDesign, Factor
 class PlackettBurmanDesign(ExperimentalDesign):
     """Plackett--Burman screening design for two-level factors.
 
+    The implemented Hadamard catalogue contains Sylvester orders and the
+    standard 12- and 20-run Plackett--Burman base designs together with all
+    powers-of-two doublings of those bases. For ``k`` factors, the constructor
+    selects the smallest supported run size ``N`` satisfying ``N > k``.
+
     Parameters
     ----------
     factors : list of Factor
@@ -22,6 +27,8 @@ class PlackettBurmanDesign(ExperimentalDesign):
         Random seed for deterministic run-order shuffling.
     """
 
+    _BASE_ORDERS = (1, 12, 20)
+
     def __init__(
         self, factors: list[Factor], randomize: bool = True, seed: int | None = None
     ) -> None:
@@ -30,19 +37,72 @@ class PlackettBurmanDesign(ExperimentalDesign):
         self.randomize_flag = randomize
         self.seed = seed
 
+        if len(self.factors) < 2:
+            raise ValueError("At least two factors are required")
         if not all(len(f.levels) == 2 for f in self.factors):
             raise ValueError("Plackett-Burman design requires 2-level factors")
 
+    @staticmethod
+    def _is_power_of_two(value: int) -> bool:
+        """Return whether ``value`` is a positive power of two."""
+        return value > 0 and value & (value - 1) == 0
+
+    @classmethod
+    def is_supported_run_size(cls, n_runs: int) -> bool:
+        """Return whether ``n_runs`` belongs to the implemented PB catalogue."""
+        if isinstance(n_runs, bool) or not isinstance(n_runs, int) or n_runs < 4:
+            return False
+        return any(
+            n_runs % base == 0 and cls._is_power_of_two(n_runs // base)
+            for base in cls._BASE_ORDERS
+        )
+
+    @classmethod
+    def supported_run_sizes(cls, max_runs: int) -> tuple[int, ...]:
+        """Return implemented Plackett--Burman run sizes up to ``max_runs``."""
+        if isinstance(max_runs, bool) or not isinstance(max_runs, int):
+            raise ValueError("max_runs must be an integer >= 4")
+        if max_runs < 4:
+            raise ValueError("max_runs must be >= 4")
+
+        sizes: set[int] = set()
+        for base in cls._BASE_ORDERS:
+            order = base
+            while order < 4:
+                order *= 2
+            while order <= max_runs:
+                sizes.add(order)
+                order *= 2
+        return tuple(sorted(sizes))
+
+    @classmethod
+    def run_size_for_factors(cls, n_factors: int) -> int:
+        """Return the smallest implemented run size able to hold ``n_factors``."""
+        if isinstance(n_factors, bool) or not isinstance(n_factors, int):
+            raise ValueError("n_factors must be an integer >= 2")
+        if n_factors < 2:
+            raise ValueError("n_factors must be >= 2")
+
+        upper = 4
+        while upper <= n_factors:
+            upper *= 2
+        candidates = cls.supported_run_sizes(upper)
+        return min(order for order in candidates if order > n_factors)
+
+    def run_size(self) -> int:
+        """Return the number of runs generated for this factor set."""
+        return self.run_size_for_factors(len(self.factors))
+
     def _pb_matrix(self, n_factors: int) -> np.ndarray:
-        """Generate a Plackett-Burman matrix using a Hadamard construction."""
+        """Generate a Plackett-Burman matrix using the implemented catalogue."""
         keep = int(n_factors)
-        n = 4 * (int(n_factors / 4) + 1)
+        n = self.run_size_for_factors(keep)
         f, e = np.frexp([n, n / 12.0, n / 20.0])
         candidates = [
             idx for idx, val in enumerate(np.logical_and(f == 0.5, e > 0)) if val
         ]
         if not candidates:
-            raise ValueError("n must be a multiple of 4")
+            raise ValueError(f"Run size {n} is not in the implemented PB catalogue")
         k = candidates[0]
         e = e[k] - 1
 
@@ -119,7 +179,7 @@ class PlackettBurmanDesign(ExperimentalDesign):
                 )
             )
         else:
-            raise ValueError("Design not supported for this many factors")
+            raise ValueError(f"Run size {n} is not in the implemented PB catalogue")
 
         for _ in range(e):
             H = np.vstack((np.hstack((H, H)), np.hstack((H, -H))))
@@ -162,8 +222,12 @@ class PlackettBurmanDesign(ExperimentalDesign):
         return fold_df
 
     def validate_design(self) -> bool:
-        """Validate the design parameters."""
-        return len(self.factors) >= 2
+        """Validate the design parameters and main-effect orthogonality."""
+        if len(self.factors) < 2 or not all(len(f.levels) == 2 for f in self.factors):
+            return False
+        matrix = self._pb_matrix(len(self.factors)).astype(float)
+        cross_product = matrix.T @ matrix
+        return np.allclose(cross_product, len(matrix) * np.eye(len(self.factors)))
 
 
 class DefinitiveScreeningDesign(ExperimentalDesign):

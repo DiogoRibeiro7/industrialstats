@@ -31,6 +31,35 @@ crd_multi = CompletelyRandomizedDesign(
 sheet = crd_multi.create_data_collection_sheet()
 ```
 
+### Plackett–Burman run-size catalogue
+
+`PlackettBurmanDesign` selects the smallest implemented Hadamard order `N`
+with `N > k`, where `k` is the number of factors. The implemented catalogue is
+formed from the Sylvester family together with the classical 12- and 20-run
+base constructions and all of their powers-of-two doublings:
+
+\[
+N \in \{2^m,\;12\cdot 2^m,\;20\cdot 2^m\},\qquad N\ge 4.
+\]
+
+For example, the supported orders up to 80 runs are
+
+```text
+4, 8, 12, 16, 20, 24, 32, 40, 48, 64, 80
+```
+
+The public helpers `supported_run_sizes(max_runs)`,
+`run_size_for_factors(k)`, and `run_size()` expose this selection explicitly.
+A factor count that falls between two catalogue orders uses the next supported
+order rather than failing. Thus 24 factors use a 32-run design.
+
+For every generated design with factor matrix `X`, main-effect orthogonality is
+validated by
+
+\[
+X^\mathsf{T}X = NI_k.
+\]
+
 ### Advanced Example: Regular Factorial Blocking
 
 For a two-level full factorial, blocks must be defined by treatment contrasts,
