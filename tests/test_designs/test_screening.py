@@ -11,6 +11,10 @@ from industrialstats.designs.screening import (
 
 
 class TestPlackettBurmanDesign(unittest.TestCase):
+    @staticmethod
+    def _factors(count: int) -> list[Factor]:
+        return [Factor(f"X{index}", [-1, 1]) for index in range(1, count + 1)]
+
     def test_generate_design(self):
         factors = [Factor("A", [1, -1]), Factor("B", [1, -1]), Factor("C", [1, -1])]
         design = PlackettBurmanDesign(factors, randomize=False)
@@ -39,6 +43,53 @@ class TestPlackettBurmanDesign(unittest.TestCase):
                     self.assertEqual(prod[i, j], 8)
                 else:
                     self.assertEqual(prod[i, j], 0)
+
+    def test_supported_run_size_catalogue(self):
+        self.assertEqual(
+            PlackettBurmanDesign.supported_run_sizes(80),
+            (4, 8, 12, 16, 20, 24, 32, 40, 48, 64, 80),
+        )
+
+    def test_every_supported_order_is_pairwise_orthogonal(self):
+        for n_runs in PlackettBurmanDesign.supported_run_sizes(80):
+            with self.subTest(n_runs=n_runs):
+                factors = self._factors(n_runs - 1)
+                design = PlackettBurmanDesign(factors, randomize=False)
+                dm = design.generate_design()
+                matrix = dm[[factor.name for factor in factors]].to_numpy(dtype=float)
+
+                self.assertEqual(design.run_size(), n_runs)
+                self.assertEqual(matrix.shape, (n_runs, n_runs - 1))
+                np.testing.assert_allclose(
+                    matrix.T @ matrix,
+                    n_runs * np.eye(n_runs - 1),
+                )
+                self.assertTrue(design.validate_design())
+
+    def test_factor_count_gap_uses_next_supported_order(self):
+        design = PlackettBurmanDesign(self._factors(24), randomize=False)
+        dm = design.generate_design()
+
+        self.assertEqual(design.run_size(), 32)
+        self.assertEqual(dm.shape, (32, 25))
+
+    def test_run_size_selection_prefers_smaller_pb_base_orders(self):
+        self.assertEqual(PlackettBurmanDesign.run_size_for_factors(11), 12)
+        self.assertEqual(PlackettBurmanDesign.run_size_for_factors(19), 20)
+        self.assertEqual(PlackettBurmanDesign.run_size_for_factors(23), 24)
+        self.assertEqual(PlackettBurmanDesign.run_size_for_factors(24), 32)
+        self.assertEqual(PlackettBurmanDesign.run_size_for_factors(39), 40)
+
+    def test_invalid_catalogue_arguments_are_rejected(self):
+        for value in [True, 3, 3.5, "8"]:
+            with self.subTest(max_runs=value):
+                with self.assertRaises(ValueError):
+                    PlackettBurmanDesign.supported_run_sizes(value)  # type: ignore[arg-type]
+
+        for value in [True, 1, 2.5, "3"]:
+            with self.subTest(n_factors=value):
+                with self.assertRaises(ValueError):
+                    PlackettBurmanDesign.run_size_for_factors(value)  # type: ignore[arg-type]
 
     def test_foldover(self):
         factors = [Factor("A", [1, -1]), Factor("B", [1, -1])]
