@@ -90,6 +90,16 @@ the aliases that matter.
 Once the important factors are known and you expect curvature, move to a
 response surface design.
 
+![industrialstats response-surface methodology workflow](../diagrams/rendered/response_surface_workflow.svg)
+
+Source: [`../diagrams/response_surface_workflow.dot`](../diagrams/response_surface_workflow.dot)
+
+Response-surface methodology is sequential rather than a single design choice. A
+local first-order model can guide steepest ascent or descent. Once curvature becomes
+important, move to a second-order design, fit a quadratic surface, diagnose model
+adequacy, interpret the local geometry with canonical or ridge analysis, optimize one
+or several responses, and confirm the predicted operating point experimentally.
+
 - **Central composite (CCD)** augments a factorial with axial and centre
   points. It estimates a full quadratic model and can be built from an existing
   factorial you have already run.
