@@ -173,19 +173,40 @@ saturated, its terms, and the model/error/total degree-of-freedom decomposition.
   :math:`R^2 = 1 - \frac{\text{SS}_{\text{res}}}{\text{SS}_{\text{tot}}`.
 
 ### Split-Plot Designs
-With :math:`g` whole-plot factors and :math:`m` sub-plot factors, a split-plot design is constructed by nesting a full
-factorial in the sub-plot factors within each combination of whole-plot levels. The expected mean squares for the model
-\(y_{ijk} = \mu + W_i + S_j + (WS)_{ij} + \epsilon_{ijk}\) are
+
+`SplitPlotDesign` represents each replicated whole plot as a distinct experimental unit and randomizes in two stages: whole plots are shuffled as intact units, then subplot runs are shuffled independently within each whole plot.
+
+For a balanced complete split-plot with `a` whole-plot treatment combinations, `b` subplot treatment combinations, and `r` independent whole-plot replicates, `SplitPlotAnalysis` uses the random-intercept model
 
 \[
-\begin{aligned}
-E[MS_W] &= \sigma_e^2 + s r \sigma_W^2,\\
-E[MS_S] &= \sigma_e^2 + r \sigma_S^2,
-\end{aligned}
+y = X\beta + u_{\mathrm{WP}} + \varepsilon,
 \]
 
-where :math:`\sigma_W^2` and :math:`\sigma_S^2` denote whole-plot and sub-plot variances and :math:`r` is the number of
-replicates per sub-plot treatment combination. See also `SplitPlotDesign` in `advanced.py`.
+with
+
+\[
+u_{\mathrm{WP}} \sim N(0,\sigma_{\mathrm{WP}}^2),
+\qquad
+\varepsilon \sim N(0,\sigma_e^2).
+\]
+
+The two residual strata have degrees of freedom
+
+\[
+\nu_{\mathrm{WP}} = a(r-1),
+\qquad
+\nu_{\mathrm{SP}} = a(r-1)(b-1),
+\]
+
+and the corresponding balanced-design expected mean squares are
+
+\[
+E(MS_{\mathrm{WP}})=\sigma_e^2+b\sigma_{\mathrm{WP}}^2,
+\qquad
+E(MS_{\mathrm{SP}})=\sigma_e^2.
+\]
+
+`SplitPlotAnalysis.fit_mixed_model()` fits the complete categorical treatment model with a random intercept grouped by `WholePlot`, after validating that every whole plot contains exactly one replicate, one whole-plot treatment combination, and one complete subplot factorial.
 
 ### Mixture Designs
 For a :math:`q`-component mixture, a simplex-lattice design of degree :math:`m` places points at barycentric coordinates
