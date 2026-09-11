@@ -97,6 +97,51 @@ class TestPlackettBurmanDesign(unittest.TestCase):
         self.assertEqual(len(design.design_matrix), 2 * len(dm))
         self.assertTrue((fold["A"] == -dm["A"]).all())
 
+    def test_foldover_negates_every_factor_and_preserves_run_order(self):
+        factors = self._factors(11)
+        design = PlackettBurmanDesign(factors, randomize=False)
+        original = design.generate_design().copy()
+        fold = design.foldover()
+
+        factor_names = [factor.name for factor in factors]
+        np.testing.assert_array_equal(
+            fold[factor_names].to_numpy(dtype=float),
+            -original[factor_names].to_numpy(dtype=float),
+        )
+        np.testing.assert_array_equal(
+            fold["RunOrder"].to_numpy(),
+            np.arange(len(original) + 1, 2 * len(original) + 1),
+        )
+
+    def test_full_foldover_dealiases_main_effects_from_two_factor_interactions(self):
+        for n_runs in PlackettBurmanDesign.supported_run_sizes(40):
+            with self.subTest(n_runs=n_runs):
+                factors = self._factors(n_runs - 1)
+                design = PlackettBurmanDesign(factors, randomize=False)
+                original = design.generate_design()
+                design.foldover()
+                augmented = design.design_matrix
+                self.assertIsNotNone(augmented)
+
+                factor_names = [factor.name for factor in factors]
+                x = augmented[factor_names].to_numpy(dtype=float)
+                interactions = np.column_stack(
+                    [
+                        x[:, left] * x[:, right]
+                        for left in range(x.shape[1])
+                        for right in range(left + 1, x.shape[1])
+                    ]
+                )
+
+                self.assertEqual(len(augmented), 2 * len(original))
+                np.testing.assert_allclose(x.sum(axis=0), 0.0)
+                np.testing.assert_allclose(
+                    x.T @ x,
+                    2 * n_runs * np.eye(len(factors)),
+                )
+                if interactions.size:
+                    np.testing.assert_allclose(x.T @ interactions, 0.0)
+
     def test_seed_reproducibility(self):
         factors = [Factor("A", [1, -1]), Factor("B", [1, -1])]
         d1 = PlackettBurmanDesign(factors, seed=5)
