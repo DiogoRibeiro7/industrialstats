@@ -107,74 +107,88 @@ The following roadmap assumes this codebase as the starting point.
 
 **Release gate:** no method documented as stable/implemented should knowingly violate its defining DOE properties.
 
+**Status (2026-09-11):** Milestones 1.2–1.6 are complete on `main`. Milestone 1.1 is complete except for explicit Hypothesis/property-based coverage of the DSD construction. The checkboxes below are reconciled against merged implementation, algebraic validation, hand-derived examples, and published-reference tests rather than historical intent alone.
+
 ## 1.1 Definitive Screening Designs
 
 **Priority: critical**
 
-- [ ] Replace the current axial/OAT-style construction with a genuine DSD construction.
-- [ ] Define supported factor counts and run-count rules explicitly.
-- [ ] Verify required main-effect orthogonality properties.
-- [ ] Verify main-effect versus two-factor-interaction alias properties.
-- [ ] Verify quadratic estimability properties where applicable.
-- [ ] Add deterministic randomization.
-- [ ] Add published-reference examples.
-- [ ] Add property-based tests for the design matrix.
-- [ ] Keep the public status labelled experimental until these tests pass.
+Evidence: PR #32 (conference-matrix construction and algebraic guarantees) and PR #53 (Jones–Nachtsheim published six-factor reference design).
+
+- [x] Replace the current axial/OAT-style construction with a genuine DSD construction.
+- [x] Define supported factor counts and run-count rules explicitly.
+- [x] Verify required main-effect orthogonality properties.
+- [x] Verify main-effect versus two-factor-interaction alias properties.
+- [x] Verify quadratic estimability properties where applicable.
+- [x] Add deterministic randomization.
+- [x] Add published-reference examples.
+- [ ] Add explicit Hypothesis/property-based tests for the design matrix.
+- [x] Document the supported quantitative three-level scope and keep mixed continuous/two-level categorical DSDs explicitly out of scope.
 
 ## 1.2 Factorial blocking
 
 **Priority: critical**
 
-- [ ] Remove row-index modulo blocking as the statistical blocking mechanism.
-- [ ] Add explicit defining contrasts / block generators for regular two-level factorials.
-- [ ] Make intended confounding visible in design metadata.
-- [ ] Validate treatment/block orthogonality when appropriate.
-- [ ] Reject impossible or statistically invalid block configurations.
-- [ ] Add textbook examples for blocked 2^k experiments.
-- [ ] Add tests proving blocks are not accidentally confounded with main effects unless explicitly requested.
+Evidence: PR #33.
+
+- [x] Remove row-index modulo blocking as the statistical blocking mechanism.
+- [x] Add explicit defining contrasts / block generators for regular two-level factorials.
+- [x] Make intended confounding visible in design metadata.
+- [x] Validate treatment/block orthogonality when appropriate.
+- [x] Reject impossible or statistically invalid block configurations.
+- [x] Add a canonical blocked `2^k` example with explicit generator/confounding semantics.
+- [x] Add tests proving blocks are not accidentally confounded with main effects unless explicitly requested.
 
 ## 1.3 Canonical factorial effects
 
 **Priority: high**
 
-- [ ] Define one canonical effect convention for two-level factorials using orthogonal contrasts.
-- [ ] Remove semantic disagreement between `FactorialDesign.calculate_effects` and `EffectsAnalysis`.
-- [ ] Centralize effect computation in one implementation.
-- [ ] Validate main effects, two-factor interactions, and higher-order interactions with hand-derived examples.
-- [ ] Add tests with non-zero interactions to distinguish marginal factorial effects from conditional 0/1 regression coefficients.
-- [ ] Document the relationship between coded regression coefficients and factorial effects.
+Evidence: PR #35.
+
+- [x] Define one canonical effect convention for two-level factorials using orthogonal contrasts.
+- [x] Remove semantic disagreement between `FactorialDesign.calculate_effects` and `EffectsAnalysis`.
+- [x] Centralize effect computation in one implementation.
+- [x] Validate main effects, two-factor interactions, and higher-order interactions with hand-derived examples.
+- [x] Add tests with non-zero interactions to distinguish marginal factorial effects from conditional 0/1 regression coefficients.
+- [x] Document the relationship between coded regression coefficients and factorial effects.
 
 ## 1.4 General factorial model structure
 
 **Priority: high**
 
-- [ ] Generate interaction terms combinatorially up to arbitrary requested order.
-- [ ] Generalize degrees-of-freedom decomposition beyond three-way interactions.
-- [ ] Support saturated and truncated hierarchical models explicitly.
-- [ ] Add tests for k >= 4 factors.
-- [ ] Validate total model degrees of freedom against full-factorial identities.
+Evidence: PR #36.
+
+- [x] Generate interaction terms combinatorially up to arbitrary requested order.
+- [x] Generalize degrees-of-freedom decomposition beyond three-way interactions.
+- [x] Support saturated and truncated hierarchical models explicitly.
+- [x] Add tests for k >= 4 factors.
+- [x] Validate total model degrees of freedom against full-factorial identities.
 
 ## 1.5 Split-plot correctness
 
 **Priority: high**
 
-- [ ] Treat replicated whole plots as distinct experimental units.
-- [ ] Preserve restricted randomization within whole plots.
-- [ ] Add explicit whole-plot and subplot identifiers.
-- [ ] Implement whole-plot/subplot error-stratum analysis.
-- [ ] Integrate mixed-effects modelling for correct inference.
-- [ ] Add expected-mean-square tests for canonical examples.
-- [ ] Add tests for multiple replicates and multiple whole-plot factors.
+Evidence: PR #37 (experimental units and restricted randomization), PR #38 (error strata, EMS, mixed-model inference), PR #40 (classical stratum-specific ANOVA), and PR #45 (independently derived canonical ANOVA decomposition).
+
+- [x] Treat replicated whole plots as distinct experimental units.
+- [x] Preserve restricted randomization within whole plots.
+- [x] Add explicit whole-plot and subplot identifiers.
+- [x] Implement whole-plot/subplot error-stratum analysis.
+- [x] Integrate mixed-effects modelling for correct inference.
+- [x] Add expected-mean-square and hand-derived canonical validation cases.
+- [x] Add tests for multiple replicates and multiple whole-plot factors.
 
 ## 1.6 Plackett-Burman catalogue and guarantees
 
 **Priority: medium**
 
-- [ ] Document exactly which run sizes are currently supported.
-- [ ] Expand the supported catalogue or use a general construction where feasible.
-- [ ] Verify pairwise orthogonality for every supported run size.
-- [ ] Add reference tables for selected designs.
-- [ ] Validate foldover properties.
+Evidence: PR #41 (catalogue and orthogonality), PR #48 (foldover guarantees), and PR #51 (NIST/SEMATECH 12-run reference table).
+
+- [x] Document exactly which run sizes are currently supported.
+- [x] Expand the supported catalogue with the implemented base-order/doubling construction.
+- [x] Verify pairwise orthogonality for every supported run size in the advertised validation range.
+- [x] Add an independent reference table for the canonical 12-run design.
+- [x] Validate foldover properties, including main-effect de-aliasing from two-factor interactions.
 
 ---
 
@@ -746,8 +760,6 @@ Remaining:
 - [ ] factorial generation benchmarks;
 - [ ] fractional-generator search benchmarks;
 - [ ] optimal-design exchange benchmarks;
-- [ ] candidate-set scaling benchmarks;
-- [ ] response-surface optimization benchmarks;
 - [ ] mixture constrained-region benchmarks;
 - [ ] space-filling optimization benchmarks;
 - [ ] surrogate/sequential acquisition benchmarks;
