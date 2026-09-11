@@ -1,0 +1,46 @@
+digraph MixtureGeometry {
+  graph [
+    rankdir=LR,
+    labelloc="t",
+    label="industrialstats: mixture-design geometry and current scope",
+    fontsize=20,
+    fontname="Helvetica",
+    nodesep=0.42,
+    ranksep=0.70,
+    splines=ortho,
+    pad=0.2
+  ];
+  node [shape=box, style="rounded", fontname="Helvetica", fontsize=11, margin="0.16,0.10"];
+  edge [fontname="Helvetica", fontsize=9];
+
+  components [label="Mixture components\nq ≥ 3 continuous factors"];
+  simplex [label="Simplex constraint\nx1 + ··· + xq = 1\nxi ≥ 0"];
+  lattice [label="Simplex-lattice order m\ncoordinates in {0,1/m,…,1}\nwith integer counts summing to m"];
+  constraints [label="Optional feasibility constraints\nconstraint(point) → True / False"];
+  feasible [label="Admissible mixture candidate set\nall retained points still satisfy Σxi = 1"];
+  randomize [label="Optional seeded run-order randomization\nmixture coordinates are unchanged"];
+  design [label="Generated MixtureDesign matrix"];
+
+  subgraph cluster_three {
+    label="Three-component geometry";
+    style="rounded";
+    triangle [label="2D simplex / ternary triangle\nvertices = pure components\nedges = binary blends\ninterior = ternary blends"];
+    plot [label="plot_simplex()\nreader-facing geometry check"];
+  }
+
+  subgraph cluster_scope {
+    label="Current package boundary";
+    style="rounded";
+    construction [label="Implemented\nsimplex-lattice construction\nconstraints · randomization · simplex plot"];
+    modelling [shape=note, label="Not yet package-native\nScheffé mixture-model fitting / inference\nmust preserve the simplex constraint"];
+  }
+
+  warning [shape=note, label="Do not treat mixture proportions as\nindependent factorial factors.\nChanging one component forces change in ≥1 other component."];
+
+  components -> simplex -> lattice -> constraints -> feasible -> randomize -> design;
+  feasible -> triangle [label=" q = 3"];
+  triangle -> plot;
+  design -> construction;
+  construction -> modelling [style=dashed];
+  simplex -> warning [style=dashed, arrowhead=none];
+}
