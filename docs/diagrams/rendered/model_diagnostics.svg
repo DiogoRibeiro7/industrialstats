@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Source-SHA256: ddbb58eba01bd4dc482c536fbe53fb12beb3e9d88f3860f31e55550696869cdc -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="1260" viewBox="0 0 1500 1260" role="img" aria-labelledby="title desc">
+  <title id="title">industrialstats model diagnostics and remediation flow</title>
+  <desc id="desc">Decision flow from a fitted model through assumption tests, influence diagnostics, model adequacy, and remediation.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#222"/></marker>
+    <style>
+      .box{fill:#fff;stroke:#222;stroke-width:1.5;rx:8;ry:8}.cluster{fill:none;stroke:#222;stroke-width:1.5;rx:12;ry:12}.t{font:16px Helvetica,Arial,sans-serif;fill:#111}.h{font:bold 20px Helvetica,Arial,sans-serif;fill:#111}.title{font:bold 26px Helvetica,Arial,sans-serif;fill:#111}.line{stroke:#222;stroke-width:1.6;fill:none;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <text x="750" y="40" text-anchor="middle" class="title">industrialstats: model diagnostics and remediation flow</text>
+
+  <rect x="510" y="75" width="480" height="90" class="box"/>
+  <text x="750" y="105" text-anchor="middle" class="t"><tspan x="750" font-weight="bold">Fitted linear model</tspan><tspan x="750" dy="22">model object + residuals + fitted values</tspan><tspan x="750" dy="22">+ original design data</tspan></text>
+
+  <rect x="60" y="220" width="760" height="310" class="cluster"/>
+  <text x="440" y="255" text-anchor="middle" class="h">Classical assumptions</text>
+  <rect x="100" y="300" width="210" height="88" class="box"/><text x="205" y="330" text-anchor="middle" class="t"><tspan x="205" font-weight="bold">Normality</tspan><tspan x="205" dy="22">Shapiro-Wilk</tspan><tspan x="205" dy="22">+ Anderson-Darling</tspan></text>
+  <rect x="335" y="300" width="230" height="108" class="box"/><text x="450" y="330" text-anchor="middle" class="t"><tspan x="450" font-weight="bold">Homoscedasticity</tspan><tspan x="450" dy="22">Levene + Bartlett</tspan><tspan x="450" dy="22">across fitted-value groups</tspan></text>
+  <rect x="590" y="300" width="190" height="108" class="box"/><text x="685" y="330" text-anchor="middle" class="t"><tspan x="685" font-weight="bold">Independence</tspan><tspan x="685" dy="22">Durbin-Watson</tspan><tspan x="685" dy="22">1.5 ≤ DW ≤ 2.5</tspan></text>
+
+  <rect x="865" y="220" width="575" height="310" class="cluster"/>
+  <text x="1152" y="255" text-anchor="middle" class="h">Influence and unusual observations</text>
+  <rect x="915" y="300" width="475" height="100" class="box"/><text x="1152" y="330" text-anchor="middle" class="t"><tspan x="1152" font-weight="bold">Influence analysis</tspan><tspan x="1152" dy="22">studentized residuals · Cook's D · DFFITS</tspan><tspan x="1152" dy="22">leverage · DFBETAS</tspan></text>
+  <rect x="915" y="425" width="475" height="86" class="box"/><text x="1152" y="452" text-anchor="middle" class="t"><tspan x="1152">|studentized residual| &gt; 3 · Cook's D &gt; 4/n</tspan><tspan x="1152" dy="22">|DFBETAS| &gt; 2/√n · leverage &gt; 2p/n</tspan></text>
+
+  <rect x="130" y="575" width="390" height="95" class="box"/><text x="325" y="606" text-anchor="middle" class="t"><tspan x="325" font-weight="bold">Diagnostic plots</tspan><tspan x="325" dy="22">residuals vs fitted · Q-Q plot</tspan><tspan x="325" dy="22">Cook's distance</tspan></text>
+  <rect x="575" y="575" width="350" height="95" class="box"/><text x="750" y="606" text-anchor="middle" class="t"><tspan x="750" font-weight="bold">Model adequacy synthesis</tspan><tspan x="750" dy="22">assumptions + influence + outlier flags</tspan><tspan x="750" dy="22">+ model metrics</tspan></text>
+
+  <polygon points="750,720 915,790 750,860 585,790" class="box"/>
+  <text x="750" y="785" text-anchor="middle" class="t"><tspan x="750" font-weight="bold">Overall adequacy</tspan><tspan x="750" dy="22">passes?</tspan></text>
+
+  <rect x="170" y="900" width="410" height="78" class="box"/><text x="375" y="930" text-anchor="middle" class="t"><tspan x="375" font-weight="bold">Proceed with interpretation / prediction</tspan><tspan x="375" dy="22">within the supported region</tspan></text>
+  <rect x="915" y="900" width="410" height="78" class="box"/><text x="1120" y="930" text-anchor="middle" class="t"><tspan x="1120" font-weight="bold">Investigate before trusting inference</tspan><tspan x="1120" dy="22">use recommendation_system() guidance</tspan></text>
+
+  <rect x="850" y="1025" width="240" height="95" class="box"/><text x="970" y="1054" text-anchor="middle" class="t"><tspan x="970">Review observations</tspan><tspan x="970" dy="22">data entry / execution</tspan></text>
+  <rect x="1110" y="1025" width="240" height="95" class="box"/><text x="1230" y="1054" text-anchor="middle" class="t"><tspan x="1230">Transform / revise</tspan><tspan x="1230" dy="22">variance structure</tspan></text>
+  <rect x="590" y="1025" width="240" height="95" class="box"/><text x="710" y="1054" text-anchor="middle" class="t"><tspan x="710">Robust / alternative model</tspan><tspan x="710" dy="22">or additional runs</tspan></text>
+  <rect x="595" y="1160" width="310" height="70" class="box"/><text x="750" y="1192" text-anchor="middle" class="t"><tspan x="750" font-weight="bold">Refit or revise, then rerun diagnostics</tspan></text>
+
+  <path d="M750 165 V220" class="line"/><path d="M750 165 H1152 V300" class="line"/><path d="M750 165 H205 V300" class="line"/><path d="M750 165 H450 V300" class="line"/><path d="M750 165 H685 V300" class="line"/>
+  <path d="M1152 400 V425" class="line"/>
+  <path d="M205 388 V575 H575" class="line"/><path d="M450 408 V575 H575" class="line"/><path d="M685 408 V575" class="line"/><path d="M1152 511 V575 H925" class="line"/>
+  <path d="M750 165 V575 H520" class="line"/>
+  <path d="M520 622 H575" class="line"/><path d="M750 670 V720" class="line"/>
+  <path d="M585 790 H375 V900" class="line"/><path d="M915 790 H1120 V900" class="line"/>
+  <text x="470" y="782" class="t">yes</text><text x="1010" y="782" class="t">no</text>
+  <path d="M1120 978 V1005 H710 V1025" class="line"/><path d="M1120 978 V1025 H970" class="line"/><path d="M1120 978 V1005 H1230 V1025" class="line"/>
+  <path d="M710 1120 V1160" class="line"/><path d="M970 1120 V1140 H750 V1160" class="line"/><path d="M1230 1120 V1140 H750 V1160" class="line"/>
+  <path d="M750 1160 V1235 H1450 V120 H990" class="line"/>
+</svg>
