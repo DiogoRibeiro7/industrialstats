@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Source-SHA256: f45510911b62c5a057e5059c5e4f87149ddb07da91638883c722db32dca26cff -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1900" height="1050" viewBox="0 0 1900 1050" role="img" aria-labelledby="title desc">
+  <title id="title">industrialstats optimal-design construction and diagnostic workflow</title>
+  <desc id="desc">Workflow from experimental constraints and candidate sets through model matrices, D A G or I optimality, coordinate exchange, diagnostics and scientific validation.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#222"/></marker>
+    <style>
+      .box{fill:#fff;stroke:#222;stroke-width:1.5;rx:8;ry:8}.cluster{fill:none;stroke:#222;stroke-width:1.5;rx:12;ry:12}.t{font:16px Helvetica,Arial,sans-serif;fill:#111}.h{font:bold 19px Helvetica,Arial,sans-serif;fill:#111}.title{font:bold 26px Helvetica,Arial,sans-serif;fill:#111}.line{stroke:#222;stroke-width:1.6;fill:none;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <text x="950" y="38" text-anchor="middle" class="title">industrialstats: optimal-design construction and diagnostic workflow</text>
+
+  <rect x="40" y="120" width="250" height="100" class="box"/>
+  <text x="165" y="150" text-anchor="middle" class="t"><tspan x="165" font-weight="bold">Experimental problem</tspan><tspan x="165" dy="22">Factors + admissible region</tspan><tspan x="165" dy="22">Run budget + target model</tspan></text>
+
+  <rect x="345" y="120" width="260" height="100" class="box"/>
+  <text x="475" y="150" text-anchor="middle" class="t"><tspan x="475" font-weight="bold">Candidate set</tspan><tspan x="475" dy="22">Categorical levels or grid</tspan><tspan x="475" dy="22">All admissible points</tspan></text>
+
+  <rect x="660" y="120" width="260" height="100" class="box"/>
+  <text x="790" y="150" text-anchor="middle" class="t"><tspan x="790" font-weight="bold">Model terms</tspan><tspan x="790" dy="22">Intercept + effects</tspan><tspan x="790" dy="22">Define model vector f(x)</tspan></text>
+
+  <rect x="975" y="120" width="260" height="100" class="box"/>
+  <text x="1105" y="150" text-anchor="middle" class="t"><tspan x="1105" font-weight="bold">Candidate model matrix</tspan><tspan x="1105" dy="22">Rows f(x)</tspan><tspan x="1105" dy="22">over candidate set</tspan></text>
+
+  <rect x="1290" y="90" width="315" height="165" class="cluster"/>
+  <text x="1447" y="118" text-anchor="middle" class="h">Multiple initial designs</text>
+  <rect x="1320" y="140" width="115" height="76" class="box"/><text x="1378" y="169" text-anchor="middle" class="t"><tspan x="1378">Random</tspan><tspan x="1378" dy="21">start</tspan></text>
+  <rect x="1460" y="140" width="115" height="76" class="box"/><text x="1518" y="169" text-anchor="middle" class="t"><tspan x="1518">Systematic</tspan><tspan x="1518" dy="21">start</tspan></text>
+
+  <rect x="1645" y="120" width="210" height="100" class="box"/>
+  <text x="1750" y="150" text-anchor="middle" class="t"><tspan x="1750" font-weight="bold">Information matrix</tspan><tspan x="1750" dy="22">M = XᵀX</tspan><tspan x="1750" dy="22">Reject singular designs</tspan></text>
+
+  <path d="M290 170 H345" class="line"/><path d="M605 170 H660" class="line"/><path d="M920 170 H975" class="line"/><path d="M1235 170 H1290" class="line"/><path d="M1605 170 H1645" class="line"/>
+
+  <rect x="90" y="340" width="1720" height="250" class="cluster"/>
+  <text x="950" y="372" text-anchor="middle" class="h">Choose the statistical objective</text>
+  <rect x="140" y="405" width="340" height="125" class="box"/><text x="310" y="437" text-anchor="middle" class="t"><tspan x="310" font-weight="bold">D-optimal</tspan><tspan x="310" dy="22">maximize log det(M)</tspan><tspan x="310" dy="22">coefficient-volume precision</tspan></text>
+  <rect x="545" y="405" width="340" height="125" class="box"/><text x="715" y="437" text-anchor="middle" class="t"><tspan x="715" font-weight="bold">A-optimal</tspan><tspan x="715" dy="22">minimize tr(M⁻¹)</tspan><tspan x="715" dy="22">average parameter variance</tspan></text>
+  <rect x="950" y="405" width="340" height="125" class="box"/><text x="1120" y="437" text-anchor="middle" class="t"><tspan x="1120" font-weight="bold">G-optimal</tspan><tspan x="1120" dy="22">minimize max f(x)ᵀM⁻¹f(x)</tspan><tspan x="1120" dy="22">worst-case prediction variance</tspan></text>
+  <rect x="1355" y="405" width="340" height="125" class="box"/><text x="1525" y="437" text-anchor="middle" class="t"><tspan x="1525" font-weight="bold">I-optimal</tspan><tspan x="1525" dy="22">minimize mean f(x)ᵀM⁻¹f(x)</tspan><tspan x="1525" dy="22">average prediction variance</tspan></text>
+  <path d="M1750 220 V310 H310 V405" class="line"/><path d="M1750 220 V310 H715 V405" class="line"/><path d="M1750 220 V310 H1120 V405" class="line"/><path d="M1750 220 V310 H1525 V405" class="line"/>
+
+  <rect x="160" y="665" width="310" height="100" class="box"/><text x="315" y="695" text-anchor="middle" class="t"><tspan x="315" font-weight="bold">Coordinate exchange</tspan><tspan x="315" dy="22">Test candidate replacements</tspan><tspan x="315" dy="22">Keep criterion improvements</tspan></text>
+  <rect x="540" y="665" width="260" height="100" class="box"/><text x="670" y="695" text-anchor="middle" class="t"><tspan x="670" font-weight="bold">Stopping rule</tspan><tspan x="670" dy="22">No improvement or</tspan><tspan x="670" dy="22">gain below threshold</tspan></text>
+  <rect x="870" y="665" width="260" height="100" class="box"/><text x="1000" y="695" text-anchor="middle" class="t"><tspan x="1000" font-weight="bold">Compare starts</tspan><tspan x="1000" dy="22">Retain best</tspan><tspan x="1000" dy="22">criterion value</tspan></text>
+  <rect x="1200" y="665" width="240" height="100" class="box"/><text x="1320" y="695" text-anchor="middle" class="t"><tspan x="1320" font-weight="bold">Selected design</tspan><tspan x="1320" dy="22">RunID + factor</tspan><tspan x="1320" dy="22">settings</tspan></text>
+  <path d="M310 530 V665" class="line"/><path d="M715 530 V625 H315 V665" class="line"/><path d="M1120 530 V625 H315 V665" class="line"/><path d="M1525 530 V625 H315 V665" class="line"/><path d="M470 715 H540" class="line"/><path d="M800 715 H870" class="line"/><path d="M1130 715 H1200" class="line"/>
+
+  <rect x="1490" y="630" width="335" height="250" class="cluster"/>
+  <text x="1657" y="662" text-anchor="middle" class="h">Post-selection diagnostics</text>
+  <rect x="1520" y="690" width="275" height="58" class="box"/><text x="1657" y="726" text-anchor="middle" class="t">Efficiency diagnostics</text>
+  <rect x="1520" y="760" width="275" height="58" class="box"/><text x="1657" y="796" text-anchor="middle" class="t">Prediction-variance map</text>
+  <rect x="1520" y="830" width="275" height="58" class="box"/><text x="1657" y="866" text-anchor="middle" class="t">Exchange history</text>
+  <path d="M1440 715 H1490" class="line"/>
+
+  <rect x="530" y="895" width="430" height="95" class="box"/><text x="745" y="925" text-anchor="middle" class="t"><tspan x="745" font-weight="bold">Scientific check</tspan><tspan x="745" dy="22">Does the criterion match the goal?</tspan><tspan x="745" dy="22">Is the model estimable over the region?</tspan></text>
+  <rect x="1040" y="895" width="650" height="95" class="box"/><text x="1365" y="923" text-anchor="middle" class="t"><tspan x="1365" font-weight="bold">Important boundary</tspan><tspan x="1365" dy="22">Optimal designs are model- and region-dependent.</tspan><tspan x="1365" dy="22">Candidate set, model terms, criterion and run budget define the problem.</tspan></text>
+  <path d="M1657 888 V920 H960" class="line"/><path d="M960 942 H1040" class="line"/>
+</svg>
