@@ -171,6 +171,46 @@ Choose G or I when prediction across the region is the primary goal, and D or A
 when coefficient estimation is the priority. Changing the model terms, candidate
 set, criterion, or run budget defines a different optimization problem.
 
+## Mixture designs
+
+Mixture experiments are structurally different from ordinary factorial experiments
+because component proportions are constrained by
+
+\[
+\sum_{i=1}^{q} x_i = 1,
+\qquad x_i \ge 0.
+\]
+
+![industrialstats mixture-design geometry and current scope](../diagrams/rendered/mixture_geometry.svg)
+
+Source: [`../diagrams/mixture_geometry.dot`](../diagrams/mixture_geometry.dot)
+
+For three components, the feasible region is a triangle: vertices are pure
+components, edges are binary blends, and interior points are ternary blends.
+`MixtureDesign` currently generates simplex-lattice points, filters them through
+optional feasibility constraints, can randomize the retained run order with a seed,
+and can plot the three-component simplex.
+
+```python
+from industrialstats.designs.advanced import MixtureDesign
+from industrialstats.designs.base import Factor
+
+components = [
+    Factor("A", [], "continuous"),
+    Factor("B", [], "continuous"),
+    Factor("C", [], "continuous"),
+]
+
+design = MixtureDesign(components, order=2, randomize=True, seed=42)
+mixtures = design.generate_design()
+```
+
+Do not analyse the component proportions as independent factorial factors. If one
+component changes, at least one other component must change to preserve the simplex
+constraint. The current package provides mixture-design construction and
+visualization, but not a package-native Scheffé mixture-model fitting/inference
+layer; any downstream model must respect the compositional constraint explicitly.
+
 ## Randomization and reproducibility
 
 Every generator that exposes a `seed` should be run with that seed recorded
