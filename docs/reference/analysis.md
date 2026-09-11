@@ -28,6 +28,14 @@ The classical stratum-specific F tests and the random-intercept mixed model answ
 
 ## Diagnostics
 
+Model diagnostics are a decision process, not a single goodness-of-fit number. The package combines formal assumption checks, influence diagnostics, explicit outlier thresholds, residual plots, and an adequacy summary before producing remediation guidance.
+
+![industrialstats model diagnostics and remediation flow](../diagrams/rendered/model_diagnostics.svg)
+
+Source: [`../diagrams/model_diagnostics.dot`](../diagrams/model_diagnostics.dot)
+
+Formal assumption tests should be interpreted together with residual plots and influence measures. A model can pass a normality or variance test and still contain observations with enough leverage or Cook's distance to destabilize inference; conversely, a flagged point should be investigated rather than deleted automatically.
+
 ::: industrialstats.analysis.diagnostics
 
 ## Power analysis
