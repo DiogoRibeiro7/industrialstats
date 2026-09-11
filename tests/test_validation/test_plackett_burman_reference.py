@@ -5,7 +5,6 @@ import numpy as np
 from industrialstats.designs.base import Factor
 from industrialstats.designs.screening import PlackettBurmanDesign
 
-
 # NIST/SEMATECH e-Handbook of Statistical Methods, Table 3.18:
 # https://www.itl.nist.gov/div898/handbook/pri/section3/pri335.htm
 _NIST_PB12_PATTERNS = (
