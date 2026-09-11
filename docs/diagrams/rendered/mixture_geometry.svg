@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Source-SHA256: b5df37021927654b44bc4ca0dd52aff573a307fb1b702d9e18e9f0616b8da4c6 -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="860" viewBox="0 0 1500 860" role="img" aria-labelledby="title desc">
+  <title id="title">industrialstats mixture-design geometry and current scope</title>
+  <desc id="desc">Flow from mixture components and the simplex constraint through simplex-lattice construction, feasibility constraints, randomization, visualization, and the current package modelling boundary.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#222"/></marker>
+    <style>.box{fill:#fff;stroke:#222;stroke-width:1.5;rx:8;ry:8}.note{fill:#fff;stroke:#222;stroke-width:1.5;stroke-dasharray:5 4}.t{font:16px Helvetica,Arial,sans-serif;fill:#111}.h{font:bold 21px Helvetica,Arial,sans-serif;fill:#111}.title{font:bold 27px Helvetica,Arial,sans-serif;fill:#111}.line{stroke:#222;stroke-width:1.6;fill:none;marker-end:url(#arrow)}.dash{stroke:#222;stroke-width:1.5;fill:none;stroke-dasharray:6 5;marker-end:url(#arrow)}</style>
+  </defs>
+  <text x="750" y="38" text-anchor="middle" class="title">industrialstats: mixture-design geometry and current scope</text>
+
+  <rect x="40" y="120" width="210" height="82" class="box"/><text x="145" y="151" text-anchor="middle" class="t"><tspan x="145" font-weight="bold">Mixture components</tspan><tspan x="145" dy="23">q ≥ 3 continuous factors</tspan></text>
+  <rect x="295" y="112" width="225" height="98" class="box"/><text x="408" y="143" text-anchor="middle" class="t"><tspan x="408" font-weight="bold">Simplex constraint</tspan><tspan x="408" dy="23">x₁ + ··· + xq = 1</tspan><tspan x="408" dy="23">xᵢ ≥ 0</tspan></text>
+  <rect x="565" y="104" width="245" height="114" class="box"/><text x="688" y="135" text-anchor="middle" class="t"><tspan x="688" font-weight="bold">Simplex-lattice order m</tspan><tspan x="688" dy="23">coordinates in {0,1/m,…,1}</tspan><tspan x="688" dy="23">integer counts sum to m</tspan></text>
+  <rect x="855" y="112" width="235" height="98" class="box"/><text x="973" y="143" text-anchor="middle" class="t"><tspan x="973" font-weight="bold">Feasibility constraints</tspan><tspan x="973" dy="23">constraint(point)</tspan><tspan x="973" dy="23">→ True / False</tspan></text>
+  <rect x="1135" y="112" width="245" height="98" class="box"/><text x="1258" y="143" text-anchor="middle" class="t"><tspan x="1258" font-weight="bold">Admissible mixtures</tspan><tspan x="1258" dy="23">all retained points</tspan><tspan x="1258" dy="23">still satisfy Σxᵢ = 1</tspan></text>
+
+  <path d="M250 161 H295" class="line"/><path d="M520 161 H565" class="line"/><path d="M810 161 H855" class="line"/><path d="M1090 161 H1135" class="line"/>
+
+  <text x="750" y="292" text-anchor="middle" class="h">Three-component geometry</text>
+  <polygon points="585,540 750,320 915,540" fill="none" stroke="#222" stroke-width="2"/>
+  <circle cx="585" cy="540" r="6" fill="#222"/><circle cx="750" cy="320" r="6" fill="#222"/><circle cx="915" cy="540" r="6" fill="#222"/>
+  <circle cx="668" cy="430" r="5" fill="#222"/><circle cx="833" cy="430" r="5" fill="#222"/><circle cx="750" cy="540" r="5" fill="#222"/><circle cx="750" cy="467" r="5" fill="#222"/>
+  <text x="560" y="570" class="t">A = 1</text><text x="722" y="310" class="t">B = 1</text><text x="910" y="570" class="t">C = 1</text>
+  <text x="750" y="600" text-anchor="middle" class="t"><tspan x="750" font-weight="bold">Simplex / ternary triangle</tspan><tspan x="750" dy="23">vertices = pure components · edges = binary blends · interior = ternary blends</tspan></text>
+
+  <rect x="90" y="350" width="310" height="116" class="note"/><text x="245" y="380" text-anchor="middle" class="t"><tspan x="245" font-weight="bold">Do not use factorial intuition</tspan><tspan x="245" dy="23">Changing one proportion forces</tspan><tspan x="245" dy="23">at least one other proportion</tspan><tspan x="245" dy="23">to change.</tspan></text>
+  <path d="M408 210 V300 H245 V350" class="dash"/>
+
+  <rect x="1070" y="335" width="330" height="112" class="box"/><text x="1235" y="365" text-anchor="middle" class="t"><tspan x="1235" font-weight="bold">Implemented</tspan><tspan x="1235" dy="23">simplex-lattice construction</tspan><tspan x="1235" dy="23">constraints · seeded randomization</tspan><tspan x="1235" dy="23">3-component simplex plot</tspan></text>
+  <path d="M1258 210 V335" class="line"/>
+
+  <rect x="1070" y="515" width="330" height="125" class="note"/><text x="1235" y="548" text-anchor="middle" class="t"><tspan x="1235" font-weight="bold">Current package boundary</tspan><tspan x="1235" dy="23">No package-native Scheffé</tspan><tspan x="1235" dy="23">mixture-model fitting / inference yet.</tspan><tspan x="1235" dy="23">Downstream models must respect Σxᵢ = 1.</tspan></text>
+  <path d="M1235 447 V515" class="dash"/>
+
+  <rect x="520" y="690" width="460" height="86" class="box"/><text x="750" y="720" text-anchor="middle" class="t"><tspan x="750" font-weight="bold">Optional run-order randomization</tspan><tspan x="750" dy="23">changes execution order, not mixture coordinates</tspan></text>
+  <path d="M1258 210 V665 H750 V690" class="line"/>
+</svg>
