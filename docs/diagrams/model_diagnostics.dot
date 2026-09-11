@@ -1,0 +1,68 @@
+digraph ModelDiagnostics {
+  graph [
+    rankdir=TB,
+    labelloc="t",
+    label="industrialstats: model diagnostics and remediation flow",
+    fontsize=20,
+    fontname="Helvetica",
+    nodesep=0.45,
+    ranksep=0.6,
+    splines=ortho,
+    pad=0.2
+  ];
+  node [shape=box, style="rounded", fontname="Helvetica", fontsize=11, margin="0.16,0.10"];
+  edge [fontname="Helvetica", fontsize=9];
+
+  fit [label="Fitted linear model\nmodel object + residuals + fitted values\n+ original design data"];
+
+  subgraph cluster_assumptions {
+    label="Classical assumptions";
+    style="rounded";
+    normal [label="Normality\nShapiro-Wilk + Anderson-Darling"];
+    variance [label="Homoscedasticity\nLevene + Bartlett\nacross fitted-value groups"];
+    independence [label="Independence\nDurbin-Watson\npass if 1.5 ≤ DW ≤ 2.5"];
+  }
+
+  subgraph cluster_influence {
+    label="Influence and unusual observations";
+    style="rounded";
+    influence [label="Influence analysis\nstudentized residuals · Cook's D\nDFFITS · leverage · DFBETAS"];
+    thresholds [label="Current flagging thresholds\n|studentized residual| > 3\nCook's D > 4/n\n|DFBETAS| > 2/√n\nleverage > 2p/n"];
+  }
+
+  plots [label="Diagnostic plots\nresiduals vs fitted · Q-Q plot\nCook's distance"];
+  adequacy [label="Model adequacy synthesis\nassumptions + influence + outlier flags\n+ model metrics"];
+
+  pass [shape=diamond, label="Overall adequacy passes?"];
+  accept [label="Proceed with interpretation / prediction\nwithin the fitted model's supported region"];
+  remediate [label="Investigate before trusting inference\nUse recommendation_system() guidance"];
+  data_review [label="Possible actions\nreview suspect observations / data entry\ncheck experimental execution"];
+  variance_fix [label="Possible actions\nvariance-stabilising transformation\nor model variance structure"];
+  robust [label="Possible actions\nrobust regression / alternative model\nor redesign / additional runs"];
+  refit [label="Refit or revise model\nthen rerun diagnostics"];
+
+  fit -> normal;
+  fit -> variance;
+  fit -> independence;
+  fit -> influence;
+
+  influence -> thresholds;
+  normal -> adequacy;
+  variance -> adequacy;
+  independence -> adequacy;
+  thresholds -> adequacy;
+  fit -> plots;
+  plots -> adequacy;
+
+  adequacy -> pass;
+  pass -> accept [label="yes"];
+  pass -> remediate [label="no"];
+
+  remediate -> data_review;
+  remediate -> variance_fix;
+  remediate -> robust;
+  data_review -> refit;
+  variance_fix -> refit;
+  robust -> refit;
+  refit -> fit;
+}
