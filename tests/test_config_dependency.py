@@ -1,12 +1,14 @@
 """Dependency-boundary tests for configuration loading."""
 
+import importlib
 from pathlib import Path
 
 import pytest
 from dataexcept import DependencyError
 
-import industrialstats.config as config_module
 from industrialstats.config import load_config
+
+config_module = importlib.import_module("industrialstats.config")
 
 
 def test_yaml_without_pyyaml_uses_structured_dependency_error(
