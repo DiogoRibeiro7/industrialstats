@@ -17,7 +17,7 @@ from typing import Any
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
-from dataexcept import ConfigurationError
+from dataexcept import ConfigurationError, FileReadError, ParsingError
 
 try:  # pragma: no cover - optional dependency
     import yaml
@@ -73,6 +73,13 @@ class Config:
 config = Config()
 
 
+def _read_config_text(path: Path) -> str:
+    try:
+        return path.read_text()
+    except OSError as exc:
+        raise FileReadError(str(path), exc) from exc
+
+
 def load_config(path: str | Path) -> None:
     """Load configuration from a JSON or YAML file.
 
@@ -85,20 +92,39 @@ def load_config(path: str | Path) -> None:
     ------
     ConfigurationError
         If the configuration file format is unsupported.
+    FileReadError
+        If the configuration file cannot be read.
+    ParsingError
+        If JSON or YAML content cannot be parsed.
     ValueError
         If PyYAML is required but not installed.
     """
     path = Path(path)
-    if path.suffix.lower() == ".json":
-        data: dict[str, Any] = json.loads(path.read_text())
-    elif path.suffix.lower() in {".yml", ".yaml"}:
-        if yaml is None:  # pragma: no cover - handled above
-            raise ValueError("PyYAML is required for YAML configuration files")
-        data = yaml.safe_load(path.read_text())
-    else:  # pragma: no cover - defensive
+    suffix = path.suffix.lower()
+
+    if suffix not in {".json", ".yml", ".yaml"}:
         raise ConfigurationError(
             str(path),
             f"Unsupported configuration file format: {path.suffix or '<none>'}",
         )
+
+    text = _read_config_text(path)
+
+    if suffix == ".json":
+        try:
+            data: dict[str, Any] = json.loads(text)
+        except json.JSONDecodeError as exc:
+            raise ParsingError(
+                str(path), f"Failed to parse JSON configuration: {exc.msg}"
+            ) from exc
+    else:
+        if yaml is None:  # pragma: no cover - handled above
+            raise ValueError("PyYAML is required for YAML configuration files")
+        try:
+            data = yaml.safe_load(text)
+        except yaml.YAMLError as exc:
+            raise ParsingError(
+                str(path), f"Failed to parse YAML configuration: {exc}"
+            ) from exc
 
     config.update(**data)
