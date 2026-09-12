@@ -28,7 +28,9 @@ def test_load_csv_wraps_missing_file(tmp_path: Path) -> None:
     assert error.__cause__ is error.original
 
 
-def test_load_csv_raises_missing_column_error_for_required_schema(tmp_path: Path) -> None:
+def test_load_csv_raises_missing_column_error_for_required_schema(
+    tmp_path: Path,
+) -> None:
     path = tmp_path / "input.csv"
     pd.DataFrame({"x": [1, 2]}).to_csv(path, index=False)
 
