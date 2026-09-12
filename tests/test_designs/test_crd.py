@@ -1,6 +1,6 @@
 import pandas as pd
 import pytest
-from dataexcept import DtypeMismatchError, MissingColumnError
+from dataexcept import DtypeMismatchError, MissingColumnError, MissingDataError
 
 from industrialstats.designs.crd import CompletelyRandomizedDesign
 
@@ -57,3 +57,16 @@ def test_crd_non_numeric_response_uses_structured_dtype_error():
     assert error.column == "Response"
     assert error.expected == ["numeric"]
     assert error.found == str(data["Response"].dtype)
+
+
+def test_crd_missing_values_use_structured_missing_data_error():
+    design = CompletelyRandomizedDesign(["A", "B"], replicates=2, seed=0)
+    data = design.generate_design()
+    data["Response"] = [1.0, None, 3.0, 4.0]
+
+    with pytest.raises(MissingDataError) as exc_info:
+        design.summary_statistics(data, ["Response"])
+
+    error = exc_info.value
+    assert error.feature == "Response"
+    assert "Missing values detected" in str(error)
