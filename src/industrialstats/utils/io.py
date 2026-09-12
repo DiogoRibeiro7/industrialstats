@@ -100,20 +100,24 @@ def load_csv(
                 raise MissingColumnError(column, dataframe=str(path))
 
     if exact_columns is not None:
-        expected = list(exact_columns)
-        found = list(frame.columns)
-        if found != expected:
+        expected_columns = list(exact_columns)
+        found_columns = list(frame.columns)
+        if found_columns != expected_columns:
             raise SchemaMismatchError(
-                expected=f"columns={expected!r}",
-                found=f"columns={found!r}",
+                expected=f"columns={expected_columns!r}",
+                found=f"columns={found_columns!r}",
             )
 
     if expected_dtypes is not None:
         for column, allowed in expected_dtypes.items():
             if column not in frame.columns:
                 raise MissingColumnError(column, dataframe=str(path))
-            found = str(frame[column].dtype)
-            if found not in allowed:
-                raise DtypeMismatchError(column, expected=allowed, found=found)
+            found_dtype = str(frame[column].dtype)
+            if found_dtype not in allowed:
+                raise DtypeMismatchError(
+                    column,
+                    expected=allowed,
+                    found=found_dtype,
+                )
 
     return frame
