@@ -1,4 +1,6 @@
 import pandas as pd
+import pytest
+from dataexcept import MissingColumnError
 
 from industrialstats.designs.crd import CompletelyRandomizedDesign
 
@@ -29,3 +31,15 @@ def test_crd_multi_response_summary():
     stats = design.summary_statistics(data, ["y1", "y2"])
     assert set(stats.keys()) == {"y1", "y2"}
     assert "mean" in stats["y1"].columns
+
+
+def test_crd_missing_response_uses_structured_schema_error():
+    design = CompletelyRandomizedDesign(["A", "B"], replicates=2, seed=0)
+    data = design.generate_design()
+
+    with pytest.raises(MissingColumnError) as exc_info:
+        design.summary_statistics(data, ["Response"])
+
+    error = exc_info.value
+    assert error.column == "Response"
+    assert error.dataframe == "response_data"
