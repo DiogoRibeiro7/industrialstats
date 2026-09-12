@@ -17,6 +17,7 @@ from typing import Any
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
+from dataexcept import ConfigurationError
 
 try:  # pragma: no cover - optional dependency
     import yaml
@@ -82,9 +83,10 @@ def load_config(path: str | Path) -> None:
 
     Raises
     ------
+    ConfigurationError
+        If the configuration file format is unsupported.
     ValueError
-        If the file format is unsupported or PyYAML is required but not
-        installed.
+        If PyYAML is required but not installed.
     """
     path = Path(path)
     if path.suffix.lower() == ".json":
@@ -94,6 +96,9 @@ def load_config(path: str | Path) -> None:
             raise ValueError("PyYAML is required for YAML configuration files")
         data = yaml.safe_load(path.read_text())
     else:  # pragma: no cover - defensive
-        raise ValueError("Unsupported configuration file format")
+        raise ConfigurationError(
+            str(path),
+            f"Unsupported configuration file format: {path.suffix or '<none>'}",
+        )
 
     config.update(**data)
