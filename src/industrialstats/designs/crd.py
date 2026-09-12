@@ -2,7 +2,7 @@
 
 import numpy as np
 import pandas as pd
-from dataexcept import MissingColumnError
+from dataexcept import DtypeMismatchError, MissingColumnError
 
 from .base import ExperimentalDesign, Factor
 
@@ -230,7 +230,7 @@ class CompletelyRandomizedDesign(ExperimentalDesign):
             If a required response column is missing from the input DataFrame.
         ValueError
             If a response column contains NaNs.
-        TypeError
+        DtypeMismatchError
             If a response column is non-numeric.
         """
         for col in response_columns:
@@ -239,7 +239,11 @@ class CompletelyRandomizedDesign(ExperimentalDesign):
             if data[col].isna().any():
                 raise ValueError(f"Missing values detected in column '{col}'")
             if not pd.api.types.is_numeric_dtype(data[col]):
-                raise TypeError(f"Response column '{col}' must be numeric")
+                raise DtypeMismatchError(
+                    col,
+                    expected=["numeric"],
+                    found=str(data[col].dtype),
+                )
 
     def summary_statistics(
         self, data: pd.DataFrame, response_columns: list[str]
