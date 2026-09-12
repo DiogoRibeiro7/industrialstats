@@ -2,7 +2,12 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
-from dataexcept import DataLoadingError, DtypeMismatchError, MissingColumnError
+from dataexcept import (
+    DataLoadingError,
+    DtypeMismatchError,
+    MissingColumnError,
+    SchemaMismatchError,
+)
 
 from industrialstats.utils.io import load_csv
 
@@ -51,6 +56,52 @@ def test_load_csv_rejects_invalid_required_columns_contract(tmp_path: Path) -> N
 
     with pytest.raises(TypeError, match="contain only strings"):
         load_csv(path, required_columns=["x", 1])  # type: ignore[list-item]
+
+
+def test_load_csv_accepts_exact_schema(tmp_path: Path) -> None:
+    path = tmp_path / "input.csv"
+    pd.DataFrame({"x": [1, 2], "y": [3, 4]}).to_csv(path, index=False)
+
+    loaded = load_csv(path, exact_columns=["x", "y"])
+
+    assert list(loaded.columns) == ["x", "y"]
+
+
+@pytest.mark.parametrize(
+    "exact_columns",
+    [
+        ["x"],
+        ["x", "y", "z"],
+        ["y", "x"],
+    ],
+)
+def test_load_csv_raises_schema_mismatch_for_non_exact_columns(
+    tmp_path: Path,
+    exact_columns: list[str],
+) -> None:
+    path = tmp_path / "input.csv"
+    pd.DataFrame({"x": [1, 2], "y": [3, 4]}).to_csv(path, index=False)
+
+    with pytest.raises(SchemaMismatchError) as exc_info:
+        load_csv(path, exact_columns=exact_columns)
+
+    error = exc_info.value
+    assert error.expected == f"columns={exact_columns!r}"
+    assert error.found == "columns=['x', 'y']"
+
+
+def test_load_csv_rejects_invalid_exact_columns_contract(tmp_path: Path) -> None:
+    path = tmp_path / "input.csv"
+    pd.DataFrame({"x": [1, 2]}).to_csv(path, index=False)
+
+    with pytest.raises(TypeError, match="sequence of strings"):
+        load_csv(path, exact_columns="x")
+
+    with pytest.raises(TypeError, match="contain only strings"):
+        load_csv(path, exact_columns=["x", 1])  # type: ignore[list-item]
+
+    with pytest.raises(TypeError, match="must not contain duplicates"):
+        load_csv(path, exact_columns=["x", "x"])
 
 
 def test_load_csv_accepts_allowed_dtype_contract(tmp_path: Path) -> None:
