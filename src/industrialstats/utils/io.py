@@ -43,7 +43,9 @@ def load_csv(
         If ``required_columns`` is not a sequence of strings.
     """
     if required_columns is not None:
-        if isinstance(required_columns, str) or not isinstance(required_columns, Sequence):
+        if isinstance(required_columns, str) or not isinstance(
+            required_columns, Sequence
+        ):
             raise TypeError("required_columns must be a sequence of strings or None")
         if not all(isinstance(column, str) for column in required_columns):
             raise TypeError("required_columns must contain only strings")
