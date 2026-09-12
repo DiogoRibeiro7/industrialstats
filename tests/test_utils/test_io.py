@@ -59,7 +59,7 @@ def test_load_csv_accepts_allowed_dtype_contract(tmp_path: Path) -> None:
 
     loaded = load_csv(
         path,
-        expected_dtypes={"x": ["int64"], "label": ["object", "string"]},
+        expected_dtypes={"x": ["int64"], "label": ["object", "string", "str"]},
     )
 
     assert str(loaded["x"].dtype) == "int64"
