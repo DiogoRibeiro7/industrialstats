@@ -2,6 +2,7 @@
 
 import numpy as np
 import pandas as pd
+from dataexcept import MissingColumnError
 
 from .base import ExperimentalDesign, Factor
 
@@ -225,14 +226,16 @@ class CompletelyRandomizedDesign(ExperimentalDesign):
 
         Raises
         ------
+        MissingColumnError
+            If a required response column is missing from the input DataFrame.
         ValueError
-            If a response column is missing or contains NaNs.
+            If a response column contains NaNs.
         TypeError
             If a response column is non-numeric.
         """
         for col in response_columns:
             if col not in data.columns:
-                raise ValueError(f"Response column '{col}' not found in data")
+                raise MissingColumnError(col, dataframe="response_data")
             if data[col].isna().any():
                 raise ValueError(f"Missing values detected in column '{col}'")
             if not pd.api.types.is_numeric_dtype(data[col]):
