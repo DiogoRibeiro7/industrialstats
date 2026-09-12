@@ -17,7 +17,12 @@ from typing import Any
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
-from dataexcept import ConfigurationError, FileReadError, ParsingError
+from dataexcept import (
+    ConfigurationError,
+    DependencyError,
+    FileReadError,
+    ParsingError,
+)
 
 try:  # pragma: no cover - optional dependency
     import yaml
@@ -96,8 +101,8 @@ def load_config(path: str | Path) -> None:
         If the configuration file cannot be read.
     ParsingError
         If JSON or YAML content cannot be parsed.
-    ValueError
-        If PyYAML is required but not installed.
+    DependencyError
+        If YAML is requested but PyYAML is unavailable.
     """
     path = Path(path)
     suffix = path.suffix.lower()
@@ -118,8 +123,11 @@ def load_config(path: str | Path) -> None:
                 str(path), f"Failed to parse JSON configuration: {exc.msg}"
             ) from exc
     else:
-        if yaml is None:  # pragma: no cover - handled above
-            raise ValueError("PyYAML is required for YAML configuration files")
+        if yaml is None:  # pragma: no cover - exercised through monkeypatch
+            raise DependencyError(
+                "PyYAML",
+                "PyYAML is required for YAML configuration files",
+            )
         try:
             data = yaml.safe_load(text)
         except yaml.YAMLError as exc:
