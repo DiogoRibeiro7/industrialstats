@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 
 import pandas as pd
+from dataexcept import DataExceptError
 
 from .analysis.anova import ANOVAAnalysis
 from .analysis.model_fitting import ModelFitting
@@ -406,7 +407,10 @@ def main(argv: list[str] | None = None) -> None:
     """
     parser = build_parser()
     args = parser.parse_args(argv)
-    args.func(args)
+    try:
+        args.func(args)
+    except DataExceptError as exc:
+        parser.error(str(exc))
 
 
 if __name__ == "__main__":
