@@ -1,6 +1,7 @@
 import unittest
 
 import pandas as pd
+from dataexcept import FeaturePreprocessingError, MissingColumnError
 
 from industrialstats.utils.transforms import center, log_transform, standardize
 
@@ -24,6 +25,34 @@ class TestTransforms(unittest.TestCase):
                 transformed["A"]
                 == self.df["A"].apply(lambda x: __import__("math").log(x))
             )
+        )
+
+    def test_log_transform_raises_missing_column_error(self):
+        with self.assertRaises(MissingColumnError) as ctx:
+            log_transform(self.df, ["missing"])
+
+        self.assertEqual(ctx.exception.column, "missing")
+        self.assertEqual(ctx.exception.dataframe, "log_transform input")
+
+    def test_log_transform_rejects_non_numeric_column(self):
+        frame = pd.DataFrame({"label": ["a", "b"]})
+
+        with self.assertRaises(FeaturePreprocessingError) as ctx:
+            log_transform(frame, ["label"])
+
+        self.assertEqual(ctx.exception.feature, "label")
+        self.assertEqual(ctx.exception.reason, "log transform requires a numeric column")
+
+    def test_log_transform_rejects_non_positive_values(self):
+        frame = pd.DataFrame({"A": [1.0, 0.0, -1.0]})
+
+        with self.assertRaises(FeaturePreprocessingError) as ctx:
+            log_transform(frame, ["A"])
+
+        self.assertEqual(ctx.exception.feature, "A")
+        self.assertEqual(
+            ctx.exception.reason,
+            "log transform requires strictly positive values",
         )
 
 
