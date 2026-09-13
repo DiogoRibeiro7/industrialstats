@@ -41,7 +41,9 @@ class TestTransforms(unittest.TestCase):
             log_transform(frame, ["label"])
 
         self.assertEqual(ctx.exception.feature, "label")
-        self.assertEqual(ctx.exception.reason, "log transform requires a numeric column")
+        self.assertEqual(
+            ctx.exception.reason, "log transform requires a numeric column"
+        )
 
     def test_log_transform_rejects_non_positive_values(self):
         frame = pd.DataFrame({"A": [1.0, 0.0, -1.0]})
