@@ -7,13 +7,19 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
-from dataexcept import DataLoadingError, DtypeMismatchError, MissingColumnError
+from dataexcept import (
+    DataLoadingError,
+    DtypeMismatchError,
+    MissingColumnError,
+    SchemaMismatchError,
+)
 
 
 def load_csv(
     path: str | Path,
     *,
     required_columns: Sequence[str] | None = None,
+    exact_columns: Sequence[str] | None = None,
     expected_dtypes: Mapping[str, Sequence[str]] | None = None,
     **kwargs: Any,
 ) -> pd.DataFrame:
@@ -26,6 +32,9 @@ def load_csv(
     required_columns : sequence of str, optional
         Columns that must be present in the loaded table. Missing columns raise
         :class:`dataexcept.MissingColumnError` with the CSV source as context.
+    exact_columns : sequence of str, optional
+        Exact ordered column schema expected after loading. Any missing, extra,
+        or reordered columns raise :class:`dataexcept.SchemaMismatchError`.
     expected_dtypes : mapping of str to sequence of str, optional
         Allowed pandas dtype names for selected columns. Missing columns raise
         :class:`dataexcept.MissingColumnError`; mismatches raise
@@ -44,10 +53,12 @@ def load_csv(
         If pandas or the filesystem cannot load the CSV source.
     MissingColumnError
         If a required or dtype-constrained column is absent from the loaded table.
+    SchemaMismatchError
+        If the exact ordered schema does not match ``exact_columns``.
     DtypeMismatchError
         If a dtype-constrained column does not have an allowed dtype.
     TypeError
-        If ``required_columns`` or ``expected_dtypes`` violates its API contract.
+        If a schema or dtype declaration violates its API contract.
     """
     if required_columns is not None:
         if isinstance(required_columns, str) or not isinstance(
@@ -56,6 +67,14 @@ def load_csv(
             raise TypeError("required_columns must be a sequence of strings or None")
         if not all(isinstance(column, str) for column in required_columns):
             raise TypeError("required_columns must contain only strings")
+
+    if exact_columns is not None:
+        if isinstance(exact_columns, str) or not isinstance(exact_columns, Sequence):
+            raise TypeError("exact_columns must be a sequence of strings or None")
+        if not all(isinstance(column, str) for column in exact_columns):
+            raise TypeError("exact_columns must contain only strings")
+        if len(set(exact_columns)) != len(exact_columns):
+            raise TypeError("exact_columns must not contain duplicates")
 
     if expected_dtypes is not None:
         if not isinstance(expected_dtypes, Mapping):
@@ -80,12 +99,25 @@ def load_csv(
             if column not in frame.columns:
                 raise MissingColumnError(column, dataframe=str(path))
 
+    if exact_columns is not None:
+        expected_columns = list(exact_columns)
+        found_columns = list(frame.columns)
+        if found_columns != expected_columns:
+            raise SchemaMismatchError(
+                expected=f"columns={expected_columns!r}",
+                found=f"columns={found_columns!r}",
+            )
+
     if expected_dtypes is not None:
         for column, allowed in expected_dtypes.items():
             if column not in frame.columns:
                 raise MissingColumnError(column, dataframe=str(path))
-            found = str(frame[column].dtype)
-            if found not in allowed:
-                raise DtypeMismatchError(column, expected=allowed, found=found)
+            found_dtype = str(frame[column].dtype)
+            if found_dtype not in allowed:
+                raise DtypeMismatchError(
+                    column,
+                    expected=allowed,
+                    found=found_dtype,
+                )
 
     return frame
