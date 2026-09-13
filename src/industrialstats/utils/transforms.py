@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+from dataexcept import FeaturePreprocessingError, MissingColumnError
 
 
 def center(df: pd.DataFrame) -> pd.DataFrame:
@@ -47,7 +48,7 @@ def standardize(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def log_transform(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
-    """Apply natural logarithm to specified columns.
+    """Apply the natural logarithm to specified positive numeric columns.
 
     Parameters
     ----------
@@ -60,8 +61,27 @@ def log_transform(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
     -------
     pandas.DataFrame
         DataFrame with transformed columns.
+
+    Raises
+    ------
+    MissingColumnError
+        If a requested transform column is absent.
+    FeaturePreprocessingError
+        If a requested column is non-numeric or contains non-positive values.
     """
     transformed = df.copy()
     for col in columns:
+        if col not in transformed.columns:
+            raise MissingColumnError(col, dataframe="log_transform input")
+        if not pd.api.types.is_numeric_dtype(transformed[col].dtype):
+            raise FeaturePreprocessingError(
+                col,
+                reason="log transform requires a numeric column",
+            )
+        if (transformed[col] <= 0).any():
+            raise FeaturePreprocessingError(
+                col,
+                reason="log transform requires strictly positive values",
+            )
         transformed[col] = np.log(transformed[col])
     return transformed
