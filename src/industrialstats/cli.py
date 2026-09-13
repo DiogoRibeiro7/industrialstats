@@ -407,6 +407,9 @@ def main(argv: list[str] | None = None) -> None:
     """
     parser = build_parser()
     args = parser.parse_args(argv)
+    if argv is not None:
+        args.func(args)
+        return
     try:
         args.func(args)
     except DataExceptError as exc:
