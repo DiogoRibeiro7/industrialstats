@@ -60,18 +60,35 @@ Configuration loading now distinguishes operational failure classes:
 
 All preserve the underlying exception through chaining.
 
+## CLI boundary
+
+The CLI now has separate behavior for console use and programmatic invocation.
+
+When `main()` is called as the real console entry point, structured `DataExceptError` failures from subcommands are rendered through argparse's normal user-facing error path and exit with status 2 rather than exposing a Python traceback.
+
+When `main(argv=...)` is called programmatically, the structured DataExcept exception is preserved unchanged. This keeps source, original exception, and chaining information available to Python callers while still giving terminal users a conventional CLI experience.
+
+Unexpected programmer or mathematical exceptions are not caught by this boundary.
+
+## Validation-utility boundary
+
+`DesignValidator.estimate_power()` now treats an empty design matrix as an input-validation failure and raises `DataValidationError` with structured `field`, `value`, and message context.
+
+The downstream power calculation itself is unchanged. Numerical or mathematical failures outside that explicit input boundary remain native.
+
 ## Boundaries intentionally left native
 
 The package should continue to preserve native/domain errors for mathematical and statistical preconditions, numerical failures, and programmer-contract violations. Examples include invalid DOE factor structures, negative variance components, singular numerical problems, and invalid API argument types.
 
 ## Remaining Milestone 2 work
 
-The genuinely open work is narrower than the current roadmap suggests:
+The genuinely open work is now narrow:
 
 1. Audit response-data ingestion in larger analysis classes such as `ANOVAAnalysis`, `ModelFitting`, and `SplitPlotAnalysis`, migrating only true schema/data boundaries rather than every `ValueError`.
-2. Audit validation utilities to distinguish operational schema failures from mathematical design checks.
-3. Confirm CLI behavior preserves structured exceptions from shared loaders without unnecessarily flattening them into generic errors.
-4. Audit any future network/database-backed dataset loaders when such boundaries are introduced.
-5. Reconcile `ROADMAP.md` checkboxes and evidence against the merged implementation and this audit.
+2. Continue the validation-utility audit only where a failure is genuinely operational/input-data related; mathematical design checks should remain native.
+3. Audit any future network/database-backed dataset loaders when such boundaries are introduced.
+4. Reconcile `ROADMAP.md` checkboxes and evidence against the merged implementation and this audit.
+
+The CLI boundary is complete for the current commands, shared CSV/Excel/JSON export paths are complete, current `datasets/` has no external operational source to migrate, and the canonical CSV/config/transformation boundaries are already structured.
 
 The key policy remains: use DataExcept at external or data-operation boundaries, but do not mechanically wrap mathematically meaningful failures.
