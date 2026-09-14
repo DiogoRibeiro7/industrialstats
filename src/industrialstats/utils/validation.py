@@ -7,6 +7,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+from dataexcept import DataValidationError
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 from statsmodels.tools.sm_exceptions import ModelWarning
 
@@ -184,14 +185,18 @@ class DesignValidator:
 
         Raises
         ------
-        ValueError
+        DataValidationError
             If the design matrix is empty.
         """
         from scipy.stats import f, ncf
 
         n = len(design_matrix)
         if n == 0:
-            raise ValueError("Design matrix is empty")
+            raise DataValidationError(
+                "design_matrix",
+                design_matrix.shape,
+                "Design matrix must contain at least one row",
+            )
         df_model = design_matrix.shape[1] - 1
         df_error = n - df_model - 1
         lambda_nc = effect_size**2 * n / 2
