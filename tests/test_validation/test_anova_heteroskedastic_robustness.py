@@ -20,10 +20,7 @@ def test_anova_type_i_error_is_stable_under_mild_variance_heterogeneity() -> Non
             {
                 "group": np.repeat(["A", "B", "C"], group_size),
                 "response": np.concatenate(
-                    [
-                        rng.normal(0.0, sd, size=group_size)
-                        for sd in standard_deviations
-                    ]
+                    [rng.normal(0.0, sd, size=group_size) for sd in standard_deviations]
                 ),
             }
         )
