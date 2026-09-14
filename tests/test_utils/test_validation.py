@@ -1,6 +1,7 @@
 import unittest
 
 import pandas as pd
+from dataexcept import DataValidationError
 
 from industrialstats.designs.base import Factor
 from industrialstats.utils.validation import DesignValidator
@@ -32,6 +33,14 @@ class TestDesignValidator(unittest.TestCase):
         power = DesignValidator.estimate_power(df, 1.0)
         self.assertGreater(power, 0)
         self.assertLess(power, 1)
+
+    def test_estimate_power_rejects_empty_design_with_dataexcept(self):
+        with self.assertRaises(DataValidationError) as ctx:
+            DesignValidator.estimate_power(pd.DataFrame(columns=["A", "B"]), 1.0)
+
+        self.assertEqual(ctx.exception.field, "design_matrix")
+        self.assertEqual(ctx.exception.value, (0, 2))
+        self.assertIn("at least one row", str(ctx.exception))
 
 
 if __name__ == "__main__":
