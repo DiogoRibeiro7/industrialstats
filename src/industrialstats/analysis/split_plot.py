@@ -10,6 +10,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
+from dataexcept import MissingColumnError, MissingDataError
 from scipy import stats
 from scipy.linalg import helmert
 
@@ -60,11 +61,14 @@ class SplitPlotAnalysis:
         }
         missing = sorted(required - set(data.columns))
         if missing:
-            raise ValueError("Missing required column(s): " + ", ".join(missing))
+            raise MissingColumnError(missing[0], dataframe="split_plot_input")
 
         self.data = data.dropna(subset=[response_column]).copy()
         if self.data.empty:
-            raise ValueError("No valid data rows after removing missing responses")
+            raise MissingDataError(
+                response_column,
+                "No valid data rows after removing missing responses",
+            )
 
         self.response = response_column
         self.whole_plot_factors = list(whole_plot_factors)
