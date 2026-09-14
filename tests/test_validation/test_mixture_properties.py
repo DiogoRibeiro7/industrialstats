@@ -20,9 +20,7 @@ def test_simplex_lattice_preserves_mixture_invariants(
     order: int,
 ) -> None:
     """Generated simplex-lattice points satisfy the defining mixture identities."""
-    factors = [
-        Factor(f"x{i + 1}", [], "continuous") for i in range(n_components)
-    ]
+    factors = [Factor(f"x{i + 1}", [], "continuous") for i in range(n_components)]
     design = MixtureDesign(factors, order=order)
     frame = design.generate_design()
     values = frame.to_numpy(dtype=float)
