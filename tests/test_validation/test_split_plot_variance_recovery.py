@@ -55,11 +55,7 @@ def test_split_plot_error_strata_recover_variance_components() -> None:
         ms_subplot = float(by_source.loc["Subplot Error", "mean_sq"])
 
         residual_estimates.append(ms_subplot)
-        whole_plot_estimates.append(
-            (ms_whole_plot - ms_subplot) / subplot_treatments
-        )
+        whole_plot_estimates.append((ms_whole_plot - ms_subplot) / subplot_treatments)
 
     assert np.mean(residual_estimates) == pytest.approx(residual_variance, abs=0.05)
-    assert np.mean(whole_plot_estimates) == pytest.approx(
-        whole_plot_variance, abs=0.15
-    )
+    assert np.mean(whole_plot_estimates) == pytest.approx(whole_plot_variance, abs=0.15)
