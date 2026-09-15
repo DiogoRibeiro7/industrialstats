@@ -9,6 +9,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Nothing yet.
 
+## [0.3.0] - 2026-09-16
+
+### Added
+
+- Genuine definitive screening designs backed by conference-matrix construction,
+  algebraic property tests, and a published Jones-Nachtsheim reference case.
+- Regular two-level factorial blocking with explicit block generators, visible
+  confounding semantics, treatment-based block assignment, and canonical
+  published blocked-design validation.
+- Canonical two-level factorial effect estimation shared across design and
+  analysis APIs, including higher-order interaction support.
+- General factorial model-term generation with hierarchical saturated or
+  truncated interaction structure and correct mixed-level degrees of freedom.
+- Split-plot experimental-unit semantics, restricted randomization, classical
+  whole-plot/subplot error strata, mixed-model inference, and expected-mean-
+  square validation.
+- Expanded Plackett-Burman catalogue support with NIST reference validation and
+  foldover guarantees that separate main effects from two-factor interactions.
+- Property-based validation for definitive-screening and simplex-lattice
+  mixture designs.
+- Published Cornell/NIST three-component simplex-lattice mixture reference case.
+- Monte Carlo validation for factorial-effect recovery, ANOVA Type I error,
+  response-surface coefficient recovery, split-plot variance components, and
+  balanced ANOVA under mild heteroskedasticity.
+- Independent `statsmodels` reference checks for two-sample t-test and one-way
+  ANOVA power calculations.
+- Structured DataExcept coverage for additional configuration, CLI, transform,
+  CRD, and split-plot response-data boundaries.
+- Milestone 2 and Milestone 3 validation audits documenting the package's
+  current evidence base and remaining independent-reference gaps.
+
+### Changed
+
+- Factorial blocking now derives block membership from defining treatment
+  contrasts rather than row position.
+- Split-plot analysis now treats replicated whole plots as distinct
+  experimental units and preserves the intended two-stratum error structure.
+- The package's validation policy now emphasizes hand-derived identities,
+  published references, property tests, and repeated-sampling studies rather
+  than shape/run-count checks alone.
+- Data-loading and transformation boundaries expose more structured exception
+  metadata while preserving native mathematical errors where appropriate.
+
+### Fixed
+
+- Corrected definitive-screening semantics that previously did not implement a
+  genuine DSD construction.
+- Removed factorial-effect sign/scale inconsistencies between design and
+  analysis paths.
+- Prevented split-plot and blocking logic from depending on row order where
+  treatment or experimental-unit structure should determine the result.
+- Hardened configuration parsing and optional-dependency failures with explicit
+  structured exception types and preserved causes.
+
 ## [0.2.0] - 2026-09-04
 
 ### Added
