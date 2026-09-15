@@ -41,6 +41,10 @@ Similarly, visualization is downstream of designs and analyses. Plots should exp
 
 ## Validation architecture
 
+![industrialstats statistical validation evidence flow](diagrams/rendered/validation_architecture.svg)
+
+Source: [`diagrams/validation_architecture.dot`](diagrams/validation_architecture.dot)
+
 The repository treats statistical validation as part of the architecture, not merely test coverage. Important methods should be checked through one or more of:
 
 - algebraic invariants of the design matrix;
@@ -51,8 +55,10 @@ The repository treats statistical validation as part of the architecture, not me
 
 Shape and run-count tests alone are insufficient evidence for a DOE algorithm. The definitive-screening correction is an example of this policy: the implementation is now tested for orthogonality, estimability and foldover properties rather than only matrix dimensions.
 
+The validation diagram also makes scope explicit: evidence supports only the design family, assumptions, parameter region and numerical regime that were actually tested. A validated result should therefore become a permanent regression contract rather than an excuse to generalize beyond its evidence.
+
 ## Diagram maintenance
 
-The editable source is `docs/diagrams/statistical_architecture.dot`. The rendered SVG is committed under `docs/diagrams/rendered/` so GitHub and documentation-site readers do not need Graphviz installed.
+The editable sources live under `docs/diagrams/`. Rendered SVGs are committed under `docs/diagrams/rendered/` so GitHub and documentation-site readers do not need Graphviz installed.
 
-The `Documentation diagrams` workflow regenerates the SVG and fails when the committed render drifts from the DOT source.
+The `Documentation diagrams` workflow regenerates every DOT source and fails when a committed render drifts from its source hash.
