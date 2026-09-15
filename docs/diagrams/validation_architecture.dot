@@ -1,0 +1,58 @@
+digraph IndustrialStatsValidationArchitecture {
+  graph [
+    rankdir=LR,
+    labelloc="t",
+    label="industrialstats: statistical validation architecture",
+    fontsize=20,
+    fontname="Helvetica",
+    nodesep=0.45,
+    ranksep=0.85,
+    splines=polyline
+  ];
+  node [shape=box, style="rounded", fontname="Helvetica", fontsize=11, margin="0.18,0.11"];
+  edge [fontname="Helvetica", fontsize=10];
+
+  { rank=min; claim; }
+  claim [label="Candidate statistical claim\nDesign, estimator, inference, or diagnostic\nbehaves as documented"];
+
+  subgraph cluster_evidence {
+    label="Evidence channels";
+    style="rounded";
+
+    algebra [label="Algebraic invariants\nOrthogonality · balance · aliasing\nrank / estimability · sum-to-one"];
+    reference [label="Independent reference values\nTextbook examples · published cases\nhand-derived calculations"];
+    external [label="Trusted external software\nstatsmodels · SciPy · R packages\nwhen semantics are equivalent"];
+    property [label="Property-based tests\nBroad admissible input families\nstructural invariants"];
+    simulation [label="Simulation recovery\nBias · Type I error · power\nvariance / coefficient recovery"];
+  }
+
+  weak [shape=note, label="Weak evidence alone\nShape · dtype · run count · no exception\nUseful smoke checks, not proof of correctness"];
+
+  bundle [label="Evidence bundle\nUse the strongest applicable checks\nfor the claim being made"];
+  gate [shape=diamond, label="Evidence supports\nthe documented claim?"];
+  accept [label="Accept claim\nas validated for its stated scope"];
+  revise [label="Revise implementation, scope,\ndocumentation, or experimental design"];
+  regression [label="Permanent regression contract\nKeep the validated property or reference\nin the test suite"];
+
+  claim -> algebra;
+  claim -> reference;
+  claim -> external;
+  claim -> property;
+  claim -> simulation;
+
+  algebra -> bundle;
+  reference -> bundle;
+  external -> bundle;
+  property -> bundle;
+  simulation -> bundle;
+
+  weak -> bundle [style=dashed, label="supplement only"];
+  bundle -> gate;
+  gate -> accept [label="yes"];
+  gate -> revise [label="no"];
+  revise -> claim [style=dashed, label="iterate", constraint=false];
+  accept -> regression;
+
+  scope [shape=note, label="Scope discipline\nValidation is conditional on the tested design family,\nmodel assumptions, parameter region, and numerical regime.\nDo not generalize beyond the evidence."];
+  scope -> gate [style=dashed, arrowhead=none, constraint=false];
+}
