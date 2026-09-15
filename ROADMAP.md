@@ -1,10 +1,13 @@
-# industrialstats Roadmap
+# industrialstats Roadmap to 1.0
 
-This roadmap describes the path from the current pre-1.0 package to a statistically trustworthy, broad, and maintainable industrial Design of Experiments library for Python.
+This roadmap defines the release path from the shipped `0.3.0` line to a
+statistically trustworthy and API-stable `1.0.0` release.
 
-The package is no longer a greenfield DOE implementation. It already contains substantial classical design generation, statistical analysis, diagnostics, power calculations, optimization, visualizations, and operational tooling. The roadmap is therefore organized by **technical priority, statistical release gate, and product scope**, not by elapsed calendar time.
+The package is already a substantial industrial Design of Experiments library.
+The remaining pre-1.0 work is therefore organized by **release contract** rather
+than by an ever-growing catalogue of possible methods.
 
-The strategic objective is not to become a collection of unrelated design-matrix generators. `industrialstats` should provide a coherent experimental workflow:
+The strategic workflow remains:
 
 \[
 \text{plan}
@@ -19,27 +22,44 @@ The strategic objective is not to become a collection of unrelated design-matrix
 \rightarrow
 \text{optimize}
 \rightarrow
-\text{confirm}
+\text{confirm}.
 \]
 
-That end-to-end industrial workflow is the package's primary differentiator.
+The goal for `1.0.0` is not to implement every DOE method. It is to make the
+supported industrial DOE workflow stable, explicit, reproducible, validated,
+and maintainable.
 
 ---
 
-# Positioning and scope
+# Release policy
 
-`industrialstats` should aim to be the most coherent Python package for **industrial DOE plus statistical analysis**, while interoperating with specialist scientific libraries where they are already stronger numerical foundations.
+`industrialstats` follows semantic versioning.
 
-The intended positioning is:
+- **Patch releases (`0.x.y`)** ship small coherent fixes, reference validations,
+  operational hardening, and documentation improvements.
+- **Minor releases (`0.x.0`)** introduce or stabilize one coherent capability
+  layer.
+- **`1.0.0`** freezes the first stable statistical and API contract.
 
-- **classical and industrial DOE:** first-class package responsibility;
-- **analysis, diagnostics, power, optimization, and confirmation:** first-class package responsibility;
-- **space-filling and quasi-Monte Carlo sequences:** expose DOE-oriented APIs while reusing trusted numerical backends such as `scipy.stats.qmc` where appropriate;
-- **surrogate modelling and computer experiments:** support as a distinct subsystem, without turning the package into a general uncertainty-quantification framework;
-- **nonlinear/model-based optimal experimental design:** support as a specialist layer after the classical optimal-design foundation is validated;
-- **general-purpose UQ, reliability, and stochastic-process modelling:** remain outside the core scope unless directly required by DOE workflows.
+Prefer frequent small releases over large accumulated batches. A validated
+slice should not wait for an unrelated milestone before it can ship.
 
-Breadth is useful only when semantics and validation remain explicit.
+A release is prepared by updating:
+
+- `pyproject.toml`;
+- `src/industrialstats/__init__.py`;
+- `CITATION.cff`;
+- `CHANGELOG.md`.
+
+After the preparation PR merges, the preferred release command is:
+
+```bash
+gh workflow run release.yml --ref main -f version=X.Y.Z
+```
+
+The release workflow validates metadata and changelog state, builds wheel and
+sdist, creates or verifies the GitHub Release, attaches distributions, and
+publishes to PyPI using OIDC Trusted Publishing.
 
 ---
 
@@ -47,872 +67,525 @@ Breadth is useful only when semantics and validation remain explicit.
 
 1. **Correctness before breadth**
    - A statistically mislabelled method is worse than a missing one.
-   - Mathematical properties must be tested directly where possible.
+   - Mathematical defining properties should be tested directly.
 
 2. **Independent validation**
-   - Major methods should be checked against published examples, hand calculations, or trusted external implementations.
-   - Shape/run-count tests are necessary but not sufficient.
+   - Stable statistical claims require published examples, hand calculations,
+     trusted reference software, or independently computed quantities.
+   - Shape, run-count, and no-exception checks are smoke tests, not statistical
+     evidence by themselves.
 
-3. **Transparent semantics**
-   - DOE terminology such as effect, resolution, alias, block, whole plot, estimability, and optimality criterion must map to standard statistical definitions.
+3. **Transparent experimental-unit semantics**
+   - Blocks, whole plots, subplots, replicates, centre points, and repeated
+     measurements must be explicit.
+   - Row order must never silently define experimental structure.
 
-4. **Experimental-unit semantics matter**
-   - Randomization restrictions, blocks, whole plots, subplots, replicates, and repeated measurements must be represented explicitly rather than inferred from row order.
+4. **Narrow public claims**
+   - Documentation must distinguish stable, experimental, partial, and planned
+     capabilities.
 
 5. **Structured operational exceptions**
-   - DataExcept is the preferred exception framework for data-loading, schema, transformation, import/export, and other external operational boundaries.
-   - Mathematical precondition failures should not be wrapped mechanically when a native numerical or domain-specific error is clearer.
+   - DataExcept is used at external operational/data boundaries.
+   - Mathematical and numerical failures retain domain-appropriate exceptions
+     when those are clearer.
 
 6. **Reproducibility**
-   - All randomized algorithms should provide deterministic seeded execution.
-   - Tests should exercise reproducibility guarantees.
+   - Randomized algorithms require deterministic seeded execution.
+   - Reproducibility contracts are part of the statistical API.
 
-7. **Composable statistical objects**
-   - Designs, model terms, fitted models, diagnostics, and optimization results should expose inspectable structured objects rather than opaque arrays or ad-hoc dictionaries.
+7. **Strong numerical foundations**
+   - Prefer NumPy, SciPy, statsmodels, scikit-learn, and other trusted numerical
+     foundations over reimplementing generic numerical primitives.
 
-8. **Narrow public claims**
-   - Documentation must distinguish implemented, experimental, partial, and planned capabilities.
-
-9. **Use strong numerical foundations instead of duplicating them**
-   - Reuse SciPy, NumPy, statsmodels, and other established numerical libraries where doing so improves reliability.
-   - `industrialstats` should add DOE semantics, validation, workflow, and diagnostics rather than reimplement numerical primitives without reason.
+8. **Composable statistical objects**
+   - Designs, model terms, fitted models, diagnostics, optimization results, and
+     experiment provenance should be inspectable structured objects.
 
 ---
 
-# Current baseline — v0.2.0
+# Shipped baseline — v0.3.0
 
-The package already includes substantial functionality:
+`0.3.0` is the first correctness-and-validation release after the original
+package foundation.
 
-- full factorial designs;
-- regular two-level fractional factorial designs with generator parsing, resolution, alias structures, minimum-aberration search, and foldover options;
-- CRD and RCBD;
-- Plackett-Burman screening designs;
-- a provisional DefinitiveScreeningDesign implementation;
-- central composite and Box-Behnken response-surface designs;
-- steepest ascent, ridge analysis, canonical analysis, and multiple-response response-surface optimization;
-- D-, A-, G-, and I-optimal coordinate-exchange designs;
-- basic split-plot generation;
-- simplex-lattice mixture designs;
-- ANOVA, mixed-effects modelling, contrasts, multiple comparisons, diagnostics, effects analysis, and power analysis;
-- plotting and export utilities;
-- DataExcept-backed operational boundaries for selected loading/export workflows;
-- statistical validation tests against statsmodels, hand calculations, Monte Carlo recovery, and the R FrF2 catalogue;
-- Python 3.11-3.14 support, Ruff, mypy, pytest, Hypothesis, pre-commit, and PEP 561 typing metadata.
+It includes:
 
-The following roadmap assumes this codebase as the starting point.
+- genuine definitive screening designs based on conference-matrix structure;
+- regular two-level factorial blocking defined by treatment generators;
+- unified canonical two-level factorial effect semantics;
+- generalized hierarchical factorial model terms and degrees of freedom;
+- split-plot experimental-unit semantics, restricted randomization, classical
+  error strata, EMS validation, and mixed-model inference;
+- expanded Plackett-Burman catalogue support with published-reference and
+  foldover validation;
+- simplex-lattice mixture property validation and a Cornell/NIST reference case;
+- Monte Carlo validation for effect recovery, ANOVA Type I error, RSM
+  coefficient recovery, split-plot variance recovery, and mild balanced
+  heteroskedasticity;
+- independent power checks against statsmodels;
+- substantially expanded DataExcept coverage;
+- statistical-validation architecture and evidence audits;
+- Python 3.11–3.14 CI on Linux, Windows, and macOS;
+- package build, coverage, typing, docs, and security gates;
+- automated PyPI/GitHub/Zenodo release infrastructure.
 
----
-
-# Milestone 1 — Statistical correctness hardening
-
-**Release gate:** no method documented as stable/implemented should knowingly violate its defining DOE properties.
-
-**Status (2026-09-11):** Milestones 1.2–1.6 are complete on `main`. Milestone 1.1 is complete except for explicit Hypothesis/property-based coverage of the DSD construction. The checkboxes below are reconciled against merged implementation, algebraic validation, hand-derived examples, and published-reference tests rather than historical intent alone.
-
-## 1.1 Definitive Screening Designs
-
-**Priority: critical**
-
-Evidence: PR #32 (conference-matrix construction and algebraic guarantees) and PR #53 (Jones–Nachtsheim published six-factor reference design).
-
-- [x] Replace the current axial/OAT-style construction with a genuine DSD construction.
-- [x] Define supported factor counts and run-count rules explicitly.
-- [x] Verify required main-effect orthogonality properties.
-- [x] Verify main-effect versus two-factor-interaction alias properties.
-- [x] Verify quadratic estimability properties where applicable.
-- [x] Add deterministic randomization.
-- [x] Add published-reference examples.
-- [ ] Add explicit Hypothesis/property-based tests for the design matrix.
-- [x] Document the supported quantitative three-level scope and keep mixed continuous/two-level categorical DSDs explicitly out of scope.
-
-## 1.2 Factorial blocking
-
-**Priority: critical**
-
-Evidence: PR #33.
-
-- [x] Remove row-index modulo blocking as the statistical blocking mechanism.
-- [x] Add explicit defining contrasts / block generators for regular two-level factorials.
-- [x] Make intended confounding visible in design metadata.
-- [x] Validate treatment/block orthogonality when appropriate.
-- [x] Reject impossible or statistically invalid block configurations.
-- [x] Add a canonical blocked `2^k` example with explicit generator/confounding semantics.
-- [x] Add tests proving blocks are not accidentally confounded with main effects unless explicitly requested.
-
-## 1.3 Canonical factorial effects
-
-**Priority: high**
-
-Evidence: PR #35.
-
-- [x] Define one canonical effect convention for two-level factorials using orthogonal contrasts.
-- [x] Remove semantic disagreement between `FactorialDesign.calculate_effects` and `EffectsAnalysis`.
-- [x] Centralize effect computation in one implementation.
-- [x] Validate main effects, two-factor interactions, and higher-order interactions with hand-derived examples.
-- [x] Add tests with non-zero interactions to distinguish marginal factorial effects from conditional 0/1 regression coefficients.
-- [x] Document the relationship between coded regression coefficients and factorial effects.
-
-## 1.4 General factorial model structure
-
-**Priority: high**
-
-Evidence: PR #36.
-
-- [x] Generate interaction terms combinatorially up to arbitrary requested order.
-- [x] Generalize degrees-of-freedom decomposition beyond three-way interactions.
-- [x] Support saturated and truncated hierarchical models explicitly.
-- [x] Add tests for k >= 4 factors.
-- [x] Validate total model degrees of freedom against full-factorial identities.
-
-## 1.5 Split-plot correctness
-
-**Priority: high**
-
-Evidence: PR #37 (experimental units and restricted randomization), PR #38 (error strata, EMS, mixed-model inference), PR #40 (classical stratum-specific ANOVA), and PR #45 (independently derived canonical ANOVA decomposition).
-
-- [x] Treat replicated whole plots as distinct experimental units.
-- [x] Preserve restricted randomization within whole plots.
-- [x] Add explicit whole-plot and subplot identifiers.
-- [x] Implement whole-plot/subplot error-stratum analysis.
-- [x] Integrate mixed-effects modelling for correct inference.
-- [x] Add expected-mean-square and hand-derived canonical validation cases.
-- [x] Add tests for multiple replicates and multiple whole-plot factors.
-
-## 1.6 Plackett-Burman catalogue and guarantees
-
-**Priority: medium**
-
-Evidence: PR #41 (catalogue and orthogonality), PR #48 (foldover guarantees), and PR #51 (NIST/SEMATECH 12-run reference table).
-
-- [x] Document exactly which run sizes are currently supported.
-- [x] Expand the supported catalogue with the implemented base-order/doubling construction.
-- [x] Verify pairwise orthogonality for every supported run size in the advertised validation range.
-- [x] Add an independent reference table for the canonical 12-run design.
-- [x] Validate foldover properties, including main-effect de-aliasing from two-factor interactions.
+`0.3.x` is the current maintenance line.
 
 ---
 
-# Milestone 2 — Operational boundaries and DataExcept completion
+# v0.3.x — Finish the validation foundation
 
-**Release gate:** operational data failures expose structured exceptions with useful context while statistical/numerical failures preserve mathematically meaningful semantics.
+**Goal:** close the remaining validation gaps for functionality that already
+exists and is intended to remain part of the stable package.
 
-DataExcept is already a runtime dependency and is used at selected external boundaries. This milestone completes and normalizes that integration.
+This line should consist mostly of small patch releases.
 
-## 2.1 Dependency and compatibility
+## Independent reference validation
 
-- [x] Add DataExcept as a runtime dependency.
-- [x] Document a compatible minimum/current dependency range in package metadata.
-- [ ] Verify DataExcept compatibility on every supported Python version in CI.
-- [ ] Add a compatibility test covering package import and representative boundary exceptions.
+- [ ] Merge the R `rsm` canonical-analysis reference regression for the
+  published `codata` example.
+- [ ] Add an independently computed information-matrix validation for existing
+  D-, A-, G-, and I-optimality criteria.
+- [ ] Extend FrF2/reference coverage for regular fractional factorials.
+- [ ] Add targeted R `DoE.base` comparisons where they validate semantics not
+  already locked algebraically.
+- [ ] Expand mixed-model reference comparisons against statsmodels where the
+  package exposes a stable claim.
 
-## 2.2 Exception policy
+## Textbook regression catalogue
 
-### Use DataExcept for
+Maintain a small permanent catalogue with minimal reference data from:
 
-- [x] selected dataset/file loading failures;
-- [x] shared CSV/Excel/JSON export failures;
-- [ ] missing required columns;
-- [ ] dtype mismatches;
-- [ ] malformed tabular schemas;
-- [ ] data transformation failures;
-- [ ] additional import/export boundaries;
-- [ ] wrapped lower-level data-operation failures;
-- [ ] optional future network/database-backed dataset boundaries.
+- [x] Jones & Nachtsheim for DSDs;
+- [x] Cornell/NIST for mixture simplex-lattice geometry;
+- [x] Montgomery/NIST-style ANOVA and blocking examples already present;
+- [ ] Box, Hunter & Hunter RSM example;
+- [ ] Wu & Hamada fractional-factorial example;
+- [ ] Goos & Jones optimal-design example.
 
-### Preserve native/domain errors for
+## Property and repeated-sampling contracts
 
-- [x] mathematical parameter-domain failures where `ValueError` remains precise;
-- [x] linear-algebra failures where `LinAlgError` or a DOE-specific error is clearer;
-- [x] programmer errors such as `TypeError` caused by violating the function contract.
+Already established for core families:
 
-## 2.3 Boundary migration
+- [x] DSD orthogonality and estimability;
+- [x] factorial/blocking invariants;
+- [x] foldover guarantees;
+- [x] mixture simplex constraints;
+- [x] effect-estimator recovery;
+- [x] one-way ANOVA Type I error;
+- [x] RSM coefficient recovery;
+- [x] split-plot variance recovery;
+- [x] balanced mild-heteroskedastic ANOVA robustness;
+- [x] power-reference checks.
 
-- [ ] Complete audit of `datasets/`.
-- [ ] Complete audit of CSV/Excel/JSON export paths.
-- [ ] Audit validation utilities.
-- [ ] Audit CLI input boundaries.
-- [ ] Audit response-data ingestion paths.
-- [ ] Preserve original exceptions through exception chaining/context.
-- [ ] Add focused tests for structured exception attributes, not only message text.
+Remaining before `0.4.0`:
 
----
+- [ ] prediction-variance identities for RSM;
+- [ ] information-matrix nonsingularity contracts for optimal designs;
+- [ ] one cross-family randomization/reproducibility contract suite.
 
-# Milestone 3 — Statistical validation framework
+## DataExcept completion
 
-**Release gate:** every core design family has algebraic/property tests and at least one independent reference check.
+- [x] runtime dependency and representative compatibility contract;
+- [x] CRD missing-column, dtype, and missing-data failures;
+- [x] configuration read/parse/format/dependency failures;
+- [x] CLI loading boundaries;
+- [x] structured transform failures;
+- [x] split-plot response-data failures;
+- [x] exception chaining/context on migrated boundaries.
 
-## 3.1 Reference implementations
+Remaining:
 
-- [ ] Extend FrF2 comparison coverage for regular fractional factorials.
-- [ ] Cross-check full and fractional designs with R `DoE.base` where appropriate.
-- [ ] Cross-check response-surface designs and canonical quantities with R `rsm`.
-- [ ] Compare ANOVA/mixed-model results with statsmodels reference fits.
-- [ ] Validate optimal-design criteria against independently computed information matrices.
-- [ ] Validate mixture designs against published Cornell examples.
-- [ ] Validate space-filling metrics against SciPy/reference implementations when that subsystem lands.
-- [ ] Validate model-based OED against published examples before exposing it as stable.
+- [ ] final audit of dataset import paths;
+- [ ] final audit of export boundaries;
+- [ ] final audit of validation utilities;
+- [ ] ensure tests assert structured exception attributes, not only messages.
 
-## 3.2 Textbook regression suite
+### Exit criterion for the 0.3.x line
 
-Build a small permanent catalogue from:
-
-- [ ] Montgomery, *Design and Analysis of Experiments*;
-- [ ] Box, Hunter & Hunter, *Statistics for Experimenters*;
-- [ ] Wu & Hamada, *Experiments: Planning, Analysis, and Optimization*;
-- [ ] Goos & Jones, *Optimal Design of Experiments*;
-- [ ] Cornell, *Experiments with Mixtures*;
-- [ ] Jones & Nachtsheim DSD examples.
-
-For each reference example, store only the minimal data and expected statistical results required for verification.
-
-## 3.3 Property-based testing
-
-Use Hypothesis or deterministic algebraic checks for:
-
-- [ ] orthogonality;
-- [ ] balance;
-- [ ] alias equivalence;
-- [ ] resolution;
-- [ ] estimability;
-- [ ] foldover transformations;
-- [ ] mixture sum-to-one constraints;
-- [ ] block assignment invariants;
-- [ ] randomization reproducibility;
-- [ ] information-matrix nonsingularity where required;
-- [ ] prediction-variance identities;
-- [ ] space-filling bounds and discrepancy invariants where appropriate.
-
-## 3.4 Monte Carlo validation
-
-- [ ] effect-estimator unbiasedness under known factorial models;
-- [ ] empirical Type I error checks for selected ANOVA workflows;
-- [ ] power-calculation verification;
-- [ ] response-surface coefficient recovery;
-- [ ] split-plot inference under known variance components;
-- [ ] model-based OED parameter-recovery studies;
-- [ ] robustness checks under mild non-normality / variance heterogeneity where documented.
+No stable method already exposed by the package should lack either a defining
+algebraic/property contract or an independent reference appropriate to its
+claim.
 
 ---
 
-# Milestone 4 — API and architecture cleanup
+# v0.4.0 — Stable public API and shared statistical architecture
 
-**Release gate:** a coherent public API exists and internal duplication is removed.
+**Theme:** make the package internally coherent before adding another large
+method family.
 
-## 4.1 Public exports
+## Public API
 
-- [ ] Export CRD from the documented public design namespace.
-- [ ] Export ResponseSurfaceDesign.
-- [ ] Export OptimalDesign.
-- [ ] Export SplitPlotDesign.
-- [ ] Export MixtureDesign.
-- [ ] Decide whether top-level `industrialstats` should expose all major design classes or only stable ones.
-- [ ] Mark experimental methods clearly in API and docs.
+- [ ] Define the stable public design namespace.
+- [ ] Export stable CRD, RCBD, factorial, fractional-factorial, screening, RSM,
+  split-plot, optimal, and mixture classes consistently.
+- [ ] Decide which classes are exported at top-level `industrialstats`.
+- [ ] Mark experimental methods explicitly in API docs.
+- [ ] Introduce deprecation machinery before removing or renaming public APIs.
 
-## 4.2 Shared model-matrix layer
+## Shared model-term layer
 
-- [ ] Introduce a reusable model-term representation.
-- [ ] Support main effects, interactions, polynomial terms, mixture terms, and hierarchical model construction.
-- [ ] Reuse the layer across factorial analysis, RSM, mixtures, and optimal-design algorithms.
-- [ ] Centralize coding rules for continuous and categorical factors.
-- [ ] Expose estimability/rank information from the model-matrix layer.
+- [ ] Introduce reusable model-term objects for main effects, interactions,
+  polynomial terms, and mixture terms.
+- [ ] Centralize hierarchy rules.
+- [ ] Centralize continuous/categorical coding rules.
+- [ ] Reuse the layer across factorial analysis, RSM, mixtures, and optimal
+  design.
+- [ ] Expose model-matrix rank and estimability diagnostics.
 
-## 4.3 Shared design metadata
+## Shared design metadata
 
-- [ ] Standardize factor metadata: name, type, units, coded levels, natural levels, bounds, and role.
-- [ ] Standardize experimental-unit identifiers.
-- [ ] Represent blocks, whole plots, subplots, replicates, centre points, and augmentation provenance explicitly.
-- [ ] Attach randomization seed and construction metadata to generated designs.
+- [ ] Standardize factor name, type, units, coded levels, natural levels,
+  bounds, and role.
+- [ ] Standardize block, whole-plot, subplot, replicate, centre-point, and
+  augmentation metadata.
+- [ ] Preserve standard order and randomized run order separately.
+- [ ] Attach construction metadata and RNG seed to randomized designs.
 
-## 4.4 Reproducible RNG policy
+## RNG contract
 
 - [ ] Use `numpy.random.Generator` consistently.
-- [ ] Avoid hidden global RNG state.
-- [ ] Standardize `seed` / `random_state` conventions.
-- [ ] Add reproducibility contract tests.
+- [ ] Remove hidden global RNG dependence.
+- [ ] Standardize `seed` / `random_state` semantics.
+- [ ] Add cross-family reproducibility tests.
+
+### Exit criterion
+
+The stable public API and metadata model are coherent enough that later feature
+families can be added without creating parallel incompatible abstractions.
 
 ---
 
-# Milestone 5 — Classical optimal-design expansion
+# v0.5.0 — Classical optimal design made trustworthy
 
-**Release gate:** optimality criteria have mathematically verified definitions, reproducible search, and independent reference tests.
+**Theme:** turn the existing optimal-design subsystem from a useful beta feature
+into a validated classical design layer.
 
-## 5.1 Search algorithms
+## Existing criteria
+
+- [ ] Independently validate D-optimality.
+- [ ] Independently validate A-optimality.
+- [ ] Independently validate G-optimality.
+- [ ] Independently validate I-optimality.
+- [ ] Verify criterion scaling and normalization conventions explicitly.
+
+## Search algorithms
 
 - [ ] Add Fedorov exchange.
-- [ ] Add modified Fedorov where justified.
-- [ ] Add DETMAX-style search.
-- [ ] Consider KL/exchange variants after the first three are validated.
+- [ ] Add a DETMAX-style search.
 - [ ] Add deterministic initialization options.
-- [ ] Add seeded multi-start handling.
+- [ ] Add seeded multi-start execution.
 - [ ] Expose convergence history and stopping reason.
-- [ ] Consider genetic search only after deterministic algorithms are validated.
+- [ ] Keep genetic/evolutionary search deferred until deterministic algorithms
+  are validated.
 
-## 5.2 Exact and approximate design semantics
+## Exact and approximate design semantics
 
 - [ ] Distinguish exact n-run designs from approximate weighted designs.
 - [ ] Support replicated candidate points explicitly.
 - [ ] Add design weights where mathematically appropriate.
-- [ ] Provide rounding/augmentation strategies from approximate to exact designs.
+- [ ] Add rounding/augmentation from approximate to exact designs.
 
-## 5.3 Model and candidate-region support
+## Criteria and diagnostics
 
-- [ ] General polynomial model terms.
-- [ ] Quadratic response-surface models.
-- [ ] Categorical-factor coding beyond binary 0/1 handling.
-- [ ] Mixed categorical/continuous candidate sets.
-- [ ] Constrained candidate regions.
-- [ ] User-supplied model matrices with validation.
+- [ ] Add C-optimality.
+- [ ] Add E-optimality.
+- [ ] Add V/average-prediction-variance criteria where appropriate.
+- [ ] Add D-, A-, G-, and I/V-efficiency diagnostics.
+- [ ] Add sensitivity-function diagnostics.
+- [ ] Add Kiefer-Wolfowitz equivalence diagnostics where applicable.
+- [ ] Add robustness diagnostics for candidate deletion/missing runs.
 
-## 5.4 Criteria
+### Exit criterion
 
-Existing criteria:
-
-- [ ] fully validate D-optimality;
-- [ ] fully validate A-optimality;
-- [ ] fully validate G-optimality;
-- [ ] fully validate I-optimality.
-
-Expansion:
-
-- [ ] C-optimality for specified contrasts/linear combinations;
-- [ ] E-optimality;
-- [ ] V-optimality / average prediction variance on a finite region;
-- [ ] consider T-optimality for discrimination between rival models;
-- [ ] add a custom-criterion interface only after built-in semantics are stable.
-
-## 5.5 Efficiency and equivalence diagnostics
-
-- [ ] standard D-efficiency;
-- [ ] standard A-efficiency;
-- [ ] G-efficiency / maximum prediction-variance diagnostics;
-- [ ] I/V-efficiency diagnostics;
-- [ ] sensitivity-function plots;
-- [ ] Kiefer-Wolfowitz equivalence-theorem diagnostics where applicable;
-- [ ] robustness diagnostics for candidate-point deletion/missing runs.
+Every advertised optimality criterion has a mathematically explicit definition,
+reproducible search behavior, and independent numerical validation.
 
 ---
 
-# Milestone 6 — Mixture DOE
+# v0.6.0 — Complete mixture DOE
 
-Move from simplex-lattice generation to a complete mixture-design and analysis subsystem.
+**Theme:** move from simplex-lattice generation to a useful mixture design and
+analysis subsystem.
 
-## 6.1 Designs
+## Designs
 
-- [ ] validate and stabilize simplex-lattice;
-- [ ] simplex-centroid;
-- [ ] augmented simplex-centroid;
-- [ ] axial/check-blend points;
-- [ ] extreme-vertices designs;
-- [ ] lower/upper-bound constrained mixtures;
-- [ ] general linear-constraint mixtures;
-- [ ] mixture-process variable designs;
-- [ ] optimal mixture designs on constrained regions.
+- [x] Simplex-lattice generation and validation.
+- [x] Published Cornell/NIST reference geometry.
+- [ ] Simplex-centroid designs.
+- [ ] Augmented simplex-centroid designs.
+- [ ] Axial/check-blend points.
+- [ ] Extreme-vertices designs.
+- [ ] Lower/upper-bound constrained mixtures.
+- [ ] General linear-constraint mixtures.
+- [ ] Mixture-process variable designs.
+- [ ] Optimal mixture designs on constrained regions.
 
-## 6.2 Models
+## Models
 
-- [ ] Scheffé linear model;
-- [ ] Scheffé quadratic model;
-- [ ] special cubic model;
-- [ ] full cubic where justified;
-- [ ] mixture-process interaction models;
-- [ ] lack-of-fit handling;
-- [ ] prediction on the simplex/feasible region.
+- [ ] Scheffé linear model.
+- [ ] Scheffé quadratic model.
+- [ ] Special cubic model.
+- [ ] Mixture-process interaction models.
+- [ ] Lack-of-fit handling and pure-error semantics.
+- [ ] Prediction over the simplex/feasible region.
 
-## 6.3 Diagnostics, optimization, and visualization
+## Diagnostics and optimization
 
-- [ ] mixture-model ANOVA/diagnostics;
-- [ ] constrained desirability optimization;
-- [ ] ternary contours;
-- [ ] response surfaces over the simplex;
-- [ ] feasible-region visualization;
-- [ ] prediction-variance visualization;
-- [ ] confirmation blends.
+- [ ] Mixture-model ANOVA and diagnostics.
+- [ ] Constrained desirability optimization.
+- [ ] Ternary contours.
+- [ ] Feasible-region visualization.
+- [ ] Prediction-variance visualization.
+- [ ] Confirmation blends.
 
----
+### Exit criterion
 
-# Milestone 7 — Additional classical and industrial designs
-
-Add only after correctness and validation infrastructure is mature.
-
-## 7.1 Blocking and restricted randomization
-
-- [ ] Latin-square design as a first-class class rather than an RCBD helper;
-- [ ] Graeco-Latin squares;
-- [ ] balanced incomplete block designs;
-- [ ] partially balanced incomplete block designs where justified;
-- [ ] resolvable block designs where useful;
-- [ ] strip-plot designs;
-- [ ] split-split-plot designs;
-- [ ] nested designs;
-- [ ] repeated-measures experimental layouts where DOE semantics are clear.
-
-## 7.2 Response-surface breadth
-
-- [ ] blocked central-composite designs;
-- [ ] small composite designs;
-- [ ] Doehlert designs;
-- [ ] rotatability diagnostics;
-- [ ] orthogonality diagnostics;
-- [ ] lack-of-fit design augmentation;
-- [ ] sequential first-order to second-order RSM workflow.
-
-## 7.3 Robust parameter design
-
-- [ ] Taguchi orthogonal-array catalogue;
-- [ ] validate supported OA run/factor-level structures;
-- [ ] control/noise-factor separation;
-- [ ] inner/outer arrays;
-- [ ] signal-to-noise ratios with explicit conventions;
-- [ ] robust parameter optimization;
-- [ ] confirmation runs;
-- [ ] explicit documentation distinguishing Taguchi methods from classical factorial/RSM approaches.
+A user can design, fit, diagnose, optimize, and confirm a standard industrial
+mixture experiment without leaving the package.
 
 ---
 
-# Milestone 8 — Computer experiments and space-filling designs
+# v0.7.0 — Industrial experiment workflow
 
-**Release gate:** computer-experiment design APIs expose clear geometric criteria and reproducible numerical backends, without duplicating trusted QMC implementations unnecessarily.
+**Theme:** make the package more than a collection of design generators.
 
-## 8.1 Latin-hypercube designs
+## Experiment specification
 
-- [ ] standard Latin hypercube sampling;
-- [ ] orthogonal-array LHS where supported;
-- [ ] maximin Latin hypercubes;
-- [ ] correlation-reduced Latin hypercubes;
-- [ ] centered/optimized LHS variants;
-- [ ] maximum-projection criteria where justified;
-- [ ] scaling from the unit hypercube to factor bounds.
+- [ ] Structured experiment specification object.
+- [ ] Factor names, units, natural/coded ranges, constraints, and roles.
+- [ ] Response definitions and units.
+- [ ] Replicate, centre-point, block, and randomization policies.
+- [ ] Design objective and intended model recorded as metadata.
 
-Where practical, use `scipy.stats.qmc` as the numerical backend and add `industrialstats` factor semantics, reproducibility contracts, diagnostics, and design metadata.
+## Run planning and execution
 
-## 8.2 Low-discrepancy and geometric designs
+- [ ] Reproducible randomized run order.
+- [ ] Preserve standard order and run order separately.
+- [ ] Block/whole-plot execution sheets.
+- [ ] Data-collection sheets.
+- [ ] Operator, batch, and instrument metadata hooks.
+- [ ] Mark failed, skipped, repeated, and invalid runs without silently mutating
+  the original design.
+- [ ] Export/import round-trip tests.
 
-- [ ] Sobol sequences;
-- [ ] Halton sequences;
-- [ ] optional additional low-discrepancy sequences only when a clear use case exists;
-- [ ] maximin distance designs;
-- [ ] minimax/fill-distance designs;
-- [ ] projection-quality diagnostics;
-- [ ] constrained-region sampling.
+## Pre-execution diagnostics
 
-## 8.3 Space-filling diagnostics
+- [ ] Rank and estimability report.
+- [ ] Alias/confounding report.
+- [ ] Resolution/aberration summary.
+- [ ] Leverage and prediction-variance summary.
+- [ ] Optimality-efficiency diagnostics where applicable.
+- [ ] Detectable-effect/power summary.
+- [ ] Missing-run robustness diagnostics.
 
-- [ ] centered discrepancy;
-- [ ] wrap-around discrepancy where useful;
-- [ ] separation distance;
-- [ ] fill distance;
-- [ ] pairwise-correlation diagnostics;
-- [ ] one- and two-dimensional projection diagnostics;
-- [ ] pairwise-distance distributions;
-- [ ] compare competing designs on common criteria.
+## Post-execution analysis
 
-## 8.4 Design augmentation
+- [ ] Attach responses without losing design provenance.
+- [ ] Record deviations from the planned model.
+- [ ] Residual and influence diagnostics.
+- [ ] Hierarchy and lack-of-fit checks.
+- [ ] Correct split-plot/mixed-model inference from stored design metadata.
+- [ ] Multiple-response optimization and trade-off summaries.
 
-- [ ] augment an existing LHS without silently destroying stratification where supported;
-- [ ] nested/sliced designs where justified;
-- [ ] batch space-filling augmentation;
-- [ ] constrained augmentation around unavailable/failed runs.
+## Confirmation
 
----
+- [ ] Confirmation-run planning.
+- [ ] Predicted versus observed confirmation results.
+- [ ] Reproducible experiment bundle containing design, seed, responses, fitted
+  model, diagnostics, and confirmation results.
+- [ ] Machine-readable JSON audit/replay representation.
+- [ ] Human-readable Markdown/HTML summary generated from the structured bundle.
 
-# Milestone 9 — Surrogate modelling and sequential computer experiments
+### Exit criterion
 
-Keep this subsystem distinct from classical DOE internally, even if the user-facing API shares factor and design abstractions.
-
-## 9.1 Gaussian-process / kriging layer
-
-- [ ] Gaussian-process response surfaces;
-- [ ] configurable covariance kernels appropriate for DOE use;
-- [ ] trend/mean-function handling;
-- [ ] kriging diagnostics;
-- [ ] cross-validation;
-- [ ] prediction uncertainty;
-- [ ] numerical conditioning diagnostics;
-- [ ] explicit separation between deterministic-simulator nugget and observational noise.
-
-## 9.2 Sequential acquisition criteria
-
-- [ ] expected improvement;
-- [ ] probability of improvement where justified;
-- [ ] uncertainty sampling / maximum posterior variance;
-- [ ] integrated variance reduction / IMSE-style criteria;
-- [ ] batch acquisition;
-- [ ] constrained sequential design;
-- [ ] multi-response sequential design only after single-response behaviour is validated.
-
-## 9.3 Surrogate-aware validation
-
-- [ ] benchmark functions with known optima;
-- [ ] coverage/calibration of predictive intervals;
-- [ ] sequential-regret studies where appropriate;
-- [ ] sensitivity to kernel and hyperparameter fitting;
-- [ ] deterministic reproducibility of acquisition optimization.
+The package can carry one experiment from planning through confirmation while
+preserving all statistical and execution provenance.
 
 ---
 
-# Milestone 10 — Nonlinear and model-based optimal experimental design
+# v0.8.0 — Bounded computer-experiment support
 
-This is a specialist layer and should not block the classical DOE roadmap.
+**Theme:** add useful computer-experiment design without turning the pre-1.0
+roadmap into a general surrogate/UQ project.
 
-## 10.1 Information-matrix abstraction
+## Space-filling designs
 
-For models of the form
+- [ ] Standard Latin hypercube sampling.
+- [ ] Optimized/maximin LHS using trusted SciPy QMC backends where practical.
+- [ ] Sobol sequence wrapper.
+- [ ] Halton sequence wrapper.
+- [ ] Scaling to factor bounds and constrained regions.
+- [ ] Reproducible seeds and metadata.
 
-\[
-y = f(x, \theta) + \varepsilon,
-\]
+## Diagnostics
 
-support design construction from parameter sensitivities rather than only fixed polynomial model matrices.
+- [ ] Centered discrepancy.
+- [ ] Separation distance.
+- [ ] Fill distance.
+- [ ] Pairwise-correlation diagnostics.
+- [ ] Projection-quality diagnostics.
+- [ ] Compare competing designs on common criteria.
+- [ ] Independent validation against `scipy.stats.qmc` metrics.
 
-- [ ] Fisher-information abstraction;
-- [ ] analytic Jacobian/sensitivity interface;
-- [ ] finite-difference sensitivity fallback;
-- [ ] optional automatic-differentiation integration only if dependency policy remains reasonable;
-- [ ] prior information matrices;
-- [ ] parameter scaling/identifiability diagnostics.
+## Augmentation
 
-## 10.2 Local and robust criteria
+- [ ] Batch space-filling augmentation.
+- [ ] Preserve stratification where the backend supports it.
+- [ ] Constrained augmentation around unavailable runs.
 
-- [ ] local D-optimality;
-- [ ] local A-optimality;
-- [ ] local E-optimality;
-- [ ] local V/I-style prediction criteria where defined;
-- [ ] parameter-subset / Ds-style criteria where useful;
-- [ ] robust design across parameter scenarios;
-- [ ] Bayesian/pseudo-Bayesian expected-criterion designs.
+### Explicit pre-1.0 boundary
 
-## 10.3 Dynamic models
-
-- [ ] ODE-model experimental design interface;
-- [ ] time-point selection;
-- [ ] input/control-profile candidate design where tractable;
-- [ ] repeated/sampling-time constraints;
-- [ ] parameter-estimation validation studies.
-
-DAE/PDE-specific OED should remain deferred until ODE support is statistically and computationally mature.
+Gaussian-process surrogate modelling and sequential acquisition are **not
+required for 1.0**. They are candidates for post-1.0 specialist releases once
+the classical/industrial workflow is stable.
 
 ---
 
-# Milestone 11 — Sequential and adaptive physical experimentation
+# v0.9.0 — API freeze and release candidate line
 
-## 11.1 General design augmentation
+**Theme:** stop adding large features and harden the complete pre-1.0 contract.
 
-- [ ] augmentation API shared across classical designs;
-- [ ] foldover as a general augmentation operation;
-- [ ] centre/star-point augmentation with provenance;
-- [ ] D/A/I-optimal augmentation of an existing design;
-- [ ] augmentation under unavailable candidate combinations;
-- [ ] replacement strategy for failed/missing runs.
+## API freeze
 
-## 11.2 Screening-to-optimization workflows
+- [ ] Freeze stable public namespaces and signatures.
+- [ ] Mark all remaining experimental APIs explicitly.
+- [ ] Add API compatibility checks.
+- [ ] Require deprecation periods for post-0.9 breaking changes.
+- [ ] Audit return types for structured typed results versus ad-hoc dictionaries.
 
-- [ ] screening design -> active-factor selection;
-- [ ] foldover/augmentation when aliasing remains consequential;
-- [ ] first-order RSM / steepest ascent;
-- [ ] second-order RSM around the operating region;
-- [ ] confirmation experiments at the predicted optimum.
+## Type and code-quality debt
 
-The package should expose this workflow without automatically hiding the statistical decisions from the user.
+- [ ] Remove remaining `mypy` `ignore_errors = true` overrides where feasible.
+- [ ] Document any justified residual typing exclusions.
+- [ ] Maintain the enforced coverage floor.
+- [ ] Keep package build, docs, lint, typing, coverage, and security gates green.
 
-## 11.3 Sequential inference
+## Cross-platform release qualification
 
-- [ ] simulation-based power recalculation for augmentation;
-- [ ] adaptive design rules with documented assumptions;
-- [ ] interim-analysis/sequential-testing support only with explicit control of error rates;
-- [ ] avoid optional-stopping APIs that imply ordinary fixed-design p-values remain valid.
+- [ ] Python 3.11–3.14 release matrix remains green.
+- [ ] Linux, Windows, and macOS release qualification.
+- [ ] Built-wheel smoke test.
+- [ ] Statistical-reference subset as a dedicated release gate.
+- [ ] Monte Carlo validation as a scheduled/release qualification job.
+- [ ] Benchmark regressions as non-default CI.
 
----
+## Documentation
 
-# Milestone 12 — Industrial experiment workflow and decision support
+- [ ] Stable API reference.
+- [ ] Mathematical background pages for stable design families.
+- [ ] Design-selection guide.
+- [ ] Assumptions and limitations for every stable method.
+- [ ] Reproducibility guide.
+- [ ] DataExcept exception guide.
+- [ ] DOE terminology glossary.
+- [ ] End-to-end industrial experiment tutorial.
 
-This milestone is strategically important: it is where `industrialstats` should differ most clearly from pure design-generator libraries.
+## Performance qualification
 
-## 12.1 Experiment specification
+- [ ] Factorial/fractional generation benchmarks.
+- [ ] Optimal-design search benchmarks.
+- [ ] Mixture constrained-region benchmarks.
+- [ ] Space-filling optimization benchmarks.
+- [ ] Memory checks for large candidate sets.
 
-- [ ] structured experiment specification object;
-- [ ] factor names, units, natural ranges, coded ranges, and constraints;
-- [ ] factor roles: control, noise, mixture, process, block, whole-plot, subplot;
-- [ ] response definitions and units;
-- [ ] replicate, centre-point, and randomization policy;
-- [ ] design objective and model intent recorded as metadata.
+### Exit criterion
 
-## 12.2 Run planning and execution
-
-- [ ] randomized run order with reproducible seed;
-- [ ] standard order versus run order preserved separately;
-- [ ] block/whole-plot execution sheets;
-- [ ] data-collection sheets;
-- [ ] operator/batch/instrument metadata hooks;
-- [ ] mark failed, skipped, repeated, and invalid runs without mutating the original design silently;
-- [ ] export/import round-trip tests for experiment sheets.
-
-## 12.3 Design diagnostics before execution
-
-- [ ] rank and estimability report;
-- [ ] alias/confounding report;
-- [ ] resolution/aberration summary;
-- [ ] leverage and prediction-variance summary;
-- [ ] D/A/G/I efficiency where applicable;
-- [ ] term-level standard errors for an assumed variance;
-- [ ] detectable-effect / power summary from the proposed design;
-- [ ] robustness-to-missing-run diagnostics.
-
-## 12.4 Analysis after execution
-
-- [ ] attach observed responses to a design without losing provenance;
-- [ ] fit the intended model and record deviations from the planned model;
-- [ ] residual and influence diagnostics;
-- [ ] term/effect summaries;
-- [ ] model hierarchy checks;
-- [ ] lack-of-fit checks where pure error exists;
-- [ ] split-plot/mixed-model analysis using the correct error structure;
-- [ ] multiple-response desirability and trade-off summaries.
-
-## 12.5 Confirmation and reproducibility
-
-- [ ] confirmation-run planning;
-- [ ] predicted versus observed confirmation results;
-- [ ] reproducible experiment bundle containing design metadata, seed, responses, fitted model, and diagnostics;
-- [ ] machine-readable JSON export for audit/replay;
-- [ ] human-readable Markdown/HTML summary only after the underlying structured result is complete.
+No known correctness issue or undocumented breaking API change remains between
+`0.9.x` and `1.0.0`.
 
 ---
 
-# Milestone 13 — Documentation and user experience
+# v1.0.0 — Stable statistical contract
 
-## 13.1 Documentation architecture
+`1.0.0` means more than semantic-versioning API stability.
 
-- [ ] API reference generated from the stable public API;
-- [ ] mathematical background pages;
-- [ ] design-selection guide;
-- [ ] assumptions and limitations for every design family;
-- [ ] design-comparison guide explaining classical versus optimal versus space-filling approaches;
-- [ ] DataExcept exception guide;
-- [ ] reproducibility guide;
-- [ ] glossary of DOE terminology used by the package.
+All of the following must hold:
 
-## 13.2 Tutorials
+- [ ] Every documented stable design family has independent statistical
+  validation appropriate to its claim.
+- [ ] Every stable design family has defining algebraic/property contracts.
+- [ ] Known statistical limitations are documented explicitly.
+- [ ] Core public APIs are stable and typed.
+- [ ] Design metadata preserves factor coding, experimental-unit structure,
+  randomization, blocks, replicates, and provenance.
+- [ ] Operational boundaries use structured exceptions consistently.
+- [ ] Randomized algorithms have deterministic reproducibility contracts.
+- [ ] Supported Python versions and release artifacts are tested in CI.
+- [ ] Documentation includes design-selection, assumptions, limitations, and
+  reproducibility guidance.
+- [ ] The industrial plan-to-confirm workflow is reproducible end-to-end.
+- [ ] No experimental method is presented as statistically validated without
+  evidence.
+- [ ] No known critical statistical-correctness defect remains open.
 
-Planned notebook sequence:
-
-1. introduction to DOE;
-2. full factorials and interactions;
-3. fractional factorials, aliasing, and foldover;
-4. blocking and RCBD;
-5. screening designs;
-6. response-surface methodology;
-7. split-plot experiments;
-8. optimal designs;
-9. mixture experiments;
-10. robust parameter design;
-11. computer experiments and LHS/QMC;
-12. Gaussian-process sequential design;
-13. model-based optimal design;
-14. complete industrial experiment from planning to confirmation.
-
-## 13.3 Domain examples
-
-- [ ] manufacturing process optimization;
-- [ ] pharmaceutical formulation/process development;
-- [ ] agricultural blocked experiments;
-- [ ] quality engineering / robust parameter design;
-- [ ] chemical/process mixture experiments;
-- [ ] simulation/computer experiments;
-- [ ] parameter-estimation experiment design.
+Once these conditions are satisfied, `industrialstats 1.0.0` can claim a stable
+industrial DOE contract.
 
 ---
 
-# Milestone 14 — Quality engineering and release readiness
+# Explicitly post-1.0 candidates
 
-## 14.1 Tooling
+The following remain strategically interesting but do **not** block `1.0.0`:
 
-Already established:
+## Surrogate modelling and sequential computer experiments
 
-- [x] Ruff-based lint/format policy;
-- [x] mypy checking with a documented debt ratchet;
-- [x] pytest;
-- [x] Hypothesis/property-based testing support;
-- [x] pre-commit;
-- [x] PEP 561 `py.typed` marker.
+- Gaussian-process/kriging response surfaces;
+- kernel and trend configuration;
+- prediction uncertainty/calibration;
+- expected improvement and probability of improvement;
+- integrated variance reduction;
+- batch and constrained acquisition;
+- sequential-regret and benchmark-function studies.
 
-Remaining:
+## Nonlinear/model-based optimal experimental design
 
-- [ ] remove remaining `ignore_errors = true` module overrides incrementally;
-- [ ] define and enforce a coverage floor based on meaningful tested code;
-- [ ] package build verification in CI;
-- [ ] dependency/security scanning;
-- [ ] API compatibility checks before 1.0.
+- Fisher-information abstraction for nonlinear models;
+- analytic/finite-difference parameter sensitivities;
+- local D/A/E/Ds criteria;
+- robust and pseudo-Bayesian OED;
+- ODE-model time-point and input-profile design;
+- dynamic parameter-estimation studies.
 
-## 14.2 CI matrix
+## Advanced adaptive experimentation
 
-- [ ] enforce all supported Python versions;
-- [ ] Linux;
-- [ ] Windows;
-- [ ] macOS where practical;
-- [ ] documentation build;
-- [ ] package install test from built wheel;
-- [ ] statistical-reference test subset;
-- [ ] slower Monte Carlo validation as a separate scheduled/release job;
-- [ ] benchmark regressions as a non-default job.
+- formal adaptive physical-design rules;
+- sequential inference with explicit error-rate control;
+- general interim-analysis support;
+- specialized nested/sliced computer-experiment designs.
 
-## 14.3 Performance
-
-- [ ] factorial generation benchmarks;
-- [ ] fractional-generator search benchmarks;
-- [ ] optimal-design exchange benchmarks;
-- [ ] mixture constrained-region benchmarks;
-- [ ] space-filling optimization benchmarks;
-- [ ] surrogate/sequential acquisition benchmarks;
-- [ ] memory checks for large candidate sets.
+These areas should be introduced only after the classical `1.0` contract has
+proven stable in real use.
 
 ---
 
-# Milestone 15 — Release path
+# Validation matrix for the 1.0 path
 
-## v0.2.0 — Shipped foundation
-
-The 0.2.0 line establishes the current baseline rather than serving as a future correctness gate. It includes the present classical DOE/analysis stack, current validation infrastructure, DataExcept dependency, and modern Python tooling.
-
-Known correctness debt remains explicitly tracked in Milestone 1 and is not retroactively claimed as complete.
-
-## v0.3 — Correctness and validation release
-
-Target:
-
-- genuine DSD construction;
-- corrected factorial blocking;
-- unified effects semantics;
-- generalized factorial model structure;
-- split-plot replication/error-stratum correction;
-- completed first-pass DataExcept boundary policy;
-- expanded independent statistical validation.
-
-## v0.4 — Architecture, optimal design, and mixtures
-
-Target:
-
-- coherent public API;
-- shared model-matrix/design-metadata layer;
-- Fedorov/DETMAX-family optimal search;
-- C/E/V criterion expansion;
-- equivalence/efficiency diagnostics;
-- simplex-centroid and constrained/extreme-vertex mixture designs;
-- Scheffé mixture modelling.
-
-## v0.5 — Industrial DOE breadth and workflow
-
-Target:
-
-- additional blocking/restricted-randomization designs;
-- expanded RSM catalogue;
-- robust/Taguchi design family;
-- design diagnostics before execution;
-- run sheets, response attachment, missing-run handling, and confirmation workflow.
-
-## v0.6 — Computer experiments
-
-Target:
-
-- LHS and optimized/space-filling designs;
-- Sobol/Halton DOE wrappers backed by trusted QMC implementations;
-- discrepancy/distance/projection diagnostics;
-- Gaussian-process surrogate modelling;
-- sequential computer-experiment criteria.
-
-## v0.7 — Model-based and adaptive DOE
-
-Target:
-
-- Fisher-information/sensitivity abstraction;
-- nonlinear local optimal design;
-- robust/pseudo-Bayesian optimal design;
-- initial ODE-model design support;
-- general design augmentation and adaptive physical-experiment workflows.
-
-## v1.0 — Stable statistical contract
-
-`1.0` should mean more than API stability. The following conditions should hold:
-
-- [ ] every documented stable design family has independent statistical validation;
-- [ ] known statistical limitations are documented explicitly;
-- [ ] core APIs are stable and typed;
-- [ ] design metadata preserves experimental-unit and randomization semantics;
-- [ ] operational boundaries use structured exceptions consistently;
-- [ ] supported Python versions and release artifacts are tested in CI;
-- [ ] documentation includes design-selection and assumptions guidance;
-- [ ] the industrial plan-to-confirm workflow is reproducible;
-- [ ] no experimental method is presented as statistically validated without evidence.
+| Area | Algebra/property | Independent reference | Repeated sampling | 1.0 target |
+| --- | --- | --- | --- | --- |
+| Full factorial | Yes | Textbook/R | Yes | Stable |
+| Fractional factorial | Yes | FrF2/DoE.base | Targeted | Stable |
+| CRD/RCBD | Yes | Textbook/statsmodels | Targeted | Stable |
+| Plackett-Burman | Yes | NIST | Optional | Stable |
+| Definitive screening | Yes | Jones-Nachtsheim | Optional | Stable |
+| RSM | Yes | R `rsm`/textbook | Yes | Stable |
+| Split-plot | Yes | Hand-derived/mixed-model | Yes | Stable |
+| Optimal design | Required | Independent criteria | Optional | Stable by 0.5 |
+| Mixture | Required | Cornell/reference | Targeted | Stable by 0.6 |
+| Space-filling | Required | SciPy QMC | Optional | Stable by 0.8 |
+| Industrial workflow/provenance | Invariants | Round-trip scenarios | Optional | Stable by 0.9 |
 
 ---
 
-# Validation matrix
+# Version summary
 
-The following matrix should be maintained as functionality matures.
-
-| Area | Unit tests | Algebra/property tests | Independent reference | Monte Carlo | Status target |
-| --- | --- | --- | --- | --- | --- |
-| Full factorial | Yes | Expand | Add textbook/R | Yes | Stable |
-| Fractional factorial | Yes | Yes | FrF2 | Add | Stable |
-| CRD | Yes | Expand | statsmodels/textbook | Add | Stable |
-| RCBD | Yes | Expand | textbook | Add | Stable |
-| Plackett-Burman | Yes | Orthogonality | Add catalogue reference | Optional | Stable |
-| Definitive screening | Minimal | Required | Required | Optional | Experimental until complete |
-| RSM | Yes | Expand | R rsm/textbook | Add | Stable |
-| Optimal design | Basic | Required | Independent criterion calculations | Optional | Beta |
-| Split-plot | Basic | Required | Mixed-model/textbook | Add | Beta |
-| Mixture | Basic | Sum-to-one + estimability | Cornell/reference software | Add | Beta |
-| Robust/Taguchi | Planned | Required | Published OA/reference software | Optional | Planned |
-| Space-filling | Planned | Required | SciPy/reference metrics | Optional | Planned |
-| GP/sequential computer DOE | Planned | Required | Benchmark functions/reference implementations | Yes | Planned |
-| Nonlinear/model-based OED | Planned | Required | Published OED examples | Yes | Planned |
-| Industrial workflow/provenance | Partial | Invariants required | Round-trip/reference scenarios | Optional | Beta before 1.0 |
-
----
-
-# Competitive completeness checklist
-
-This checklist is not a mandate to copy other packages feature-for-feature. It highlights capability gaps that matter to the intended scope.
-
-## Design-generation breadth
-
-- [ ] classical factorial/fractional parity is validated, not merely implemented;
-- [ ] expanded screening catalogue;
-- [ ] expanded RSM catalogue;
-- [ ] mixture centroid/extreme-vertex designs;
-- [ ] Fedorov/DETMAX optimal search;
-- [ ] C/E/V optimality;
-- [ ] Taguchi orthogonal arrays;
-- [ ] LHS and optimized LHS;
-- [ ] Sobol/Halton and geometric space-filling designs.
-
-## Analysis/workflow differentiation
-
-- [ ] coherent design-to-analysis object model;
-- [ ] term-level estimability and alias diagnostics;
-- [ ] pre-execution power/detectability diagnostics;
-- [ ] correct restricted-randomization inference;
-- [ ] multiple-response optimization;
-- [ ] missing-run robustness and augmentation;
-- [ ] confirmation experiments;
-- [ ] reproducible experiment provenance.
-
-The second list is strategically more important than achieving the largest raw catalogue of design generators.
-
----
-
-# Deferred ideas
-
-These are valid future directions but should not displace the statistical roadmap above:
-
-- dashboard/web UI;
-- plugin architecture;
-- Bayesian model averaging unrelated to DOE design criteria;
-- generic genetic algorithms for design search;
-- animation-heavy visualization;
-- cloud execution;
-- automatic narrative report generation;
-- domain-specific wrappers;
-- broad reliability/UQ framework functionality already served by specialist libraries;
-- DAE/PDE optimal-design support before nonlinear ODE OED is mature.
-
-They can be revisited once the statistical core is trustworthy, the public API is coherent, and the major design families have independent validation.
+| Version | Primary contract |
+| --- | --- |
+| `0.3.x` | Finish validation and DataExcept completeness for existing features |
+| `0.4.0` | Stable public API, model-term layer, metadata, RNG contract |
+| `0.5.0` | Validated classical optimal design |
+| `0.6.0` | Complete mixture DOE workflow |
+| `0.7.0` | End-to-end industrial experiment workflow |
+| `0.8.0` | Bounded space-filling/computer-experiment design support |
+| `0.9.0` | API freeze, documentation, typing, performance, release qualification |
+| `1.0.0` | Stable validated statistical and industrial DOE contract |
