@@ -35,6 +35,10 @@ The diagram does **not** imply that these subpackages are independent services. 
 
 ## Statistical boundary versus operational boundary
 
+![industrialstats statistical versus operational failure boundary](diagrams/rendered/statistical_operational_boundary.svg)
+
+Source: [`diagrams/statistical_operational_boundary.dot`](diagrams/statistical_operational_boundary.dot)
+
 Mathematical precondition failures belong to the statistical code and should remain explicit. File loading, export and other operational failures use the package's DataExcept boundary where that adds useful semantics. This distinction prevents infrastructure exception handling from obscuring statistical errors.
 
 Similarly, visualization is downstream of designs and analyses. Plots should expose a design or statistical result; they are not an independent source of statistical truth.
