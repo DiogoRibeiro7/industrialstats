@@ -3,10 +3,20 @@ name: Release
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release without the leading v, for example 0.3.1"
+        required: true
+        type: string
 
 permissions:
   contents: write
   id-token: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
   publish:
@@ -18,15 +28,57 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || 'main' }}
           fetch-depth: 0
 
-      - name: Verify release commit is on main
+      - name: Resolve release metadata
+        id: release
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          INPUT_VERSION: ${{ inputs.version }}
         run: |
+          set -euo pipefail
+
+          if [[ "$EVENT_NAME" == "release" ]]; then
+            tag="$RELEASE_TAG"
+          else
+            if [[ -z "$INPUT_VERSION" ]]; then
+              echo "A version is required for a manual release"
+              exit 1
+            fi
+            if [[ "$INPUT_VERSION" == v* ]]; then
+              echo "Enter the version without the leading v"
+              exit 1
+            fi
+            tag="v$INPUT_VERSION"
+          fi
+
+          if [[ "$tag" != v* ]]; then
+            echo "Release tag $tag must start with v"
+            exit 1
+          fi
+
+          version="${tag#v}"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Verify release commit is on main
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
           git fetch origin main:refs/remotes/origin/main
-          tag_commit="$(git rev-parse HEAD)"
-          if ! git merge-base --is-ancestor "$tag_commit" origin/main; then
-            echo "Release tag does not point to a commit contained in main"
+          release_commit="$(git rev-parse HEAD)"
+          main_commit="$(git rev-parse origin/main)"
+
+          if [[ "$EVENT_NAME" == "workflow_dispatch" && "$release_commit" != "$main_commit" ]]; then
+            echo "Manual releases must use the current main commit"
+            exit 1
+          fi
+
+          if ! git merge-base --is-ancestor "$release_commit" origin/main; then
+            echo "Release commit is not contained in main"
             exit 1
           fi
 
@@ -36,7 +88,7 @@ jobs:
 
       - name: Verify release versions
         env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
         run: |
           python - <<'PY'
           import os
@@ -88,6 +140,16 @@ jobs:
                   f"Release tag {tag!r} expects version {expected!r}, "
                   f"but found mismatches: {mismatches}"
               )
+
+          changelog = Path("CHANGELOG.md").read_text()
+          release_heading = re.compile(
+              rf"^## \[{re.escape(expected)}\] - \d{{4}}-\d{{2}}-\d{{2}}$",
+              re.MULTILINE,
+          )
+          if release_heading.search(changelog) is None:
+              raise SystemExit(
+                  f"CHANGELOG.md has no dated section for version {expected!r}"
+              )
           PY
 
       - name: Build distributions
@@ -97,10 +159,46 @@ jobs:
           python -m build
           python -m twine check dist/*
 
+      - name: Create or verify GitHub Release
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          set -euo pipefail
+          target_commit="$(git rev-parse HEAD)"
+
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            git fetch origin "refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG" || true
+            tag_commit="$(git rev-list -n 1 "$RELEASE_TAG" 2>/dev/null || true)"
+            if [[ "$tag_commit" != "$target_commit" ]]; then
+              echo "Existing release $RELEASE_TAG does not point to the current main commit"
+              exit 1
+            fi
+            echo "Reusing existing release $RELEASE_TAG"
+          elif git show-ref --verify --quiet "refs/tags/$RELEASE_TAG"; then
+            tag_commit="$(git rev-list -n 1 "$RELEASE_TAG")"
+            if [[ "$tag_commit" != "$target_commit" ]]; then
+              echo "Existing tag $RELEASE_TAG does not point to the current main commit"
+              exit 1
+            fi
+            gh release create "$RELEASE_TAG" \
+              --verify-tag \
+              --title "$RELEASE_TAG" \
+              --generate-notes \
+              --latest
+          else
+            gh release create "$RELEASE_TAG" \
+              --target "$target_commit" \
+              --title "$RELEASE_TAG" \
+              --generate-notes \
+              --latest
+          fi
+
       - name: Attach distributions to GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
         run: gh release upload "$RELEASE_TAG" dist/* --clobber
 
       - name: Publish to PyPI
