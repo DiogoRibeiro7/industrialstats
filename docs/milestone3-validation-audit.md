@@ -7,7 +7,8 @@ work that still requires an independent reference implementation, textbook
 case, or additional statistical study.
 
 The audit was refreshed after the mixture simplex property tests merged in
-PR #82.
+PR #82 and now also incorporates the power-reference and mild-heteroskedasticity
+validation merged in PRs #83 and #84.
 
 ## Status vocabulary
 
@@ -69,31 +70,30 @@ by deterministic algebraic tests or Hypothesis suites.
 
 ## 3.4 Monte Carlo validation
 
-The current codebase now contains repeated-sampling validation for four of the
-roadmap items.
+The current codebase now contains repeated-sampling and independent-reference
+validation for the implemented Milestone 3.4 targets.
 
 | Monte Carlo target | Status | Evidence |
 | --- | --- | --- |
 | Effect-estimator unbiasedness under known factorial models | Complete | PR #72 validates all seven effects in a noisy `2^3` model over 1,000 fixed-seed realizations. |
 | Empirical Type I error for selected ANOVA workflows | Complete for one-way balanced ANOVA | PR #73 validates the package-reported one-way ANOVA p-value at nominal `alpha = 0.05` over 500 null experiments. |
-| Power-calculation verification | Partial | `tests/test_validation/test_statistical_accuracy.py` cross-checks ANOVA power against statsmodels exactly, but this is an analytic/reference comparison rather than a repeated-sampling empirical-power study. |
+| Power-calculation verification | Complete for implemented two-sample t-test and one-way ANOVA paths | PR #83 independently cross-checks fixed-sample power against `statsmodels.stats.power.TTestIndPower` and `FTestAnovaPower`; existing factorial power tests additionally lock the package's noncentral-F semantics. |
 | Response-surface coefficient recovery | Complete | PR #74 validates repeated-sampling recovery of all coefficients of a known quadratic CCD response surface. |
 | Split-plot inference under known variance components | Complete for balanced classical error-stratum ANOVA | PR #81 validates recovery of whole-plot and residual variance components from the package ANOVA mean squares over 300 simulated experiments. |
 | Model-based OED parameter recovery | Not applicable yet | Keep open until model-based OED exists as a stable subsystem. |
-| Mild non-normality / variance-heterogeneity robustness | Open | No explicit robustness study is yet part of the permanent validation suite. |
+| Mild non-normality / variance-heterogeneity robustness | Complete for the tested balanced mild-heteroskedastic regime | PR #84 runs 1,000 balanced null ANOVA experiments with group standard deviations `1.0`, `1.25`, and `1.5`; empirical Type I error remains within `0.03` of nominal `0.05`. This is deliberately not a claim of general heteroskedastic robustness. |
 
 ## Recommended next validation work
 
 The highest-value remaining Milestone 3 work is no longer another generic
-property test. The next additions should be independent references:
+property test or another internal Monte Carlo check. The next additions should
+be independent references:
 
 1. add one published Cornell mixture example;
 2. add an R `rsm` cross-check for a small CCD/canonical-analysis case;
 3. add an independently computed information-matrix check for D/A/G/I criteria;
 4. extend automated FrF2 catalogue comparison beyond the current algebraic and
-   example-level evidence;
-5. add one documented mild heteroscedastic/non-normal robustness experiment only
-   where the package documentation makes a robustness claim.
+   example-level evidence.
 
 This ordering preserves the project rule that shape/run-count checks alone are
 not enough evidence for statistical correctness.
