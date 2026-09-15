@@ -1,0 +1,69 @@
+digraph IndustrialStatsFailureBoundary {
+  graph [
+    rankdir=TB,
+    labelloc="t",
+    label="industrialstats: statistical vs operational failure boundary",
+    fontsize=20,
+    fontname="Helvetica",
+    nodesep=0.45,
+    ranksep=0.65,
+    splines=polyline,
+    pad=0.2,
+    newrank=true
+  ];
+  node [shape=box, style="rounded", fontname="Helvetica", fontsize=11, margin="0.18,0.11"];
+  edge [fontname="Helvetica", fontsize=9];
+
+  start [label="A failure occurs\nwhile preparing, running, or analysing an experiment"];
+  classify [shape=diamond, label="What kind of contract\nwas violated?"];
+  start -> classify;
+
+  subgraph cluster_statistical {
+    label="Statistical / programmer contract";
+    style="rounded";
+    math [label="Mathematical precondition\ninvalid dimensions · rank failure\nnon-estimable model · invalid parameter domain"];
+    doe [label="DOE semantics\ninvalid factor roles · aliasing requirement\nunbalanced/incomplete design where forbidden"];
+    programmer [label="Programmer/API misuse\nwrong argument type · inconsistent lengths\nunsupported mathematical option"];
+    native [label="Keep native exception semantics\nValueError · TypeError · LinAlgError\nor a domain-specific statistical error"];
+
+    math -> native;
+    doe -> native;
+    programmer -> native;
+  }
+
+  subgraph cluster_operational {
+    label="Operational / external-data boundary";
+    style="rounded";
+    io [label="External IO failure\nfile read/write · config parse\nmissing optional dependency"];
+    tabular [label="Tabular/schema failure\nmissing column · dtype mismatch\nmissing response data · schema mismatch"];
+    transform [label="Operational transformation failure\ninvalid data for a requested transform\nwith useful field/context metadata"];
+    dataexcept [label="Use DataExcept structured error\nPreserve field / column / path context\nand chain original operational cause"];
+
+    io -> dataexcept;
+    tabular -> dataexcept;
+    transform -> dataexcept;
+  }
+
+  { rank=same; math; io; }
+  { rank=same; doe; tabular; }
+  { rank=same; programmer; transform; }
+  { rank=same; native; dataexcept; }
+
+  classify -> math [label="mathematics"];
+  classify -> doe [label="DOE semantics"];
+  classify -> programmer [label="API/programmer"];
+  classify -> io [label="external IO"];
+  classify -> tabular [label="data/schema"];
+  classify -> transform [label="operational transform"];
+
+  caller [label="Programmatic caller\nReceives the structured/native exception\nwithout lossy translation"];
+  cli [label="Console boundary\nKnown DataExceptError → concise user-facing exit\nUnexpected/programmer exceptions still propagate"];
+
+  native -> caller;
+  dataexcept -> caller;
+  dataexcept -> cli [label="console invocation only"];
+  { rank=same; caller; cli; }
+
+  rule [shape=note, label="Architecture rule\nDo not wrap statistical mistakes as infrastructure failures.\nDo not reduce operational failures to generic ValueError when\nstructured context materially helps recovery or diagnostics."];
+  rule -> classify [style=dashed, arrowhead=none, constraint=false];
+}

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Source-SHA256: bc4f66a712ef080f91c7a31d5743efdf8ee305da4077db96a6c8f1ae3987d85f -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="900" viewBox="0 0 1500 900" role="img" aria-labelledby="title desc">
+  <title id="title">industrialstats statistical versus operational failure boundary</title>
+  <desc id="desc">Decision diagram separating mathematical, DOE, and programmer errors from operational IO, schema, and transformation failures, with DataExcept used only at operational boundaries.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#222"/></marker>
+    <style>
+      .box{fill:#fff;stroke:#222;stroke-width:1.5;rx:8;ry:8}.cluster{fill:none;stroke:#222;stroke-width:1.5;rx:12;ry:12}.note{fill:#fff;stroke:#222;stroke-width:1.3}.t{font:15px Helvetica,Arial,sans-serif;fill:#111}.small{font:13px Helvetica,Arial,sans-serif;fill:#111}.h{font:bold 20px Helvetica,Arial,sans-serif;fill:#111}.title{font:bold 26px Helvetica,Arial,sans-serif;fill:#111}.line{stroke:#222;stroke-width:1.6;fill:none;marker-end:url(#arrow)}.dash{stroke:#222;stroke-width:1.4;stroke-dasharray:6 5;fill:none}
+    </style>
+  </defs>
+  <text x="750" y="40" text-anchor="middle" class="title">industrialstats: statistical vs operational failure boundary</text>
+
+  <rect x="520" y="70" width="460" height="72" class="box"/>
+  <text x="750" y="98" text-anchor="middle" class="t"><tspan x="750" font-weight="bold">A failure occurs</tspan><tspan x="750" dy="22">while preparing, running, or analysing an experiment</tspan></text>
+  <polygon points="750,175 900,225 750,275 600,225" fill="#fff" stroke="#222" stroke-width="1.5"/>
+  <text x="750" y="220" text-anchor="middle" class="t"><tspan x="750">What kind of contract</tspan><tspan x="750" dy="20">was violated?</tspan></text>
+  <path d="M750 142 L750 172" class="line"/>
+
+  <rect x="40" y="320" width="680" height="390" class="cluster"/>
+  <text x="380" y="350" text-anchor="middle" class="h">Statistical / programmer contract</text>
+  <rect x="70" y="385" width="190" height="105" class="box"/>
+  <text x="165" y="410" text-anchor="middle" class="small"><tspan x="165" font-weight="bold">Mathematical precondition</tspan><tspan x="165" dy="19">invalid dimensions · rank</tspan><tspan x="165" dy="19">non-estimability · invalid</tspan><tspan x="165" dy="19">parameter domain</tspan></text>
+  <rect x="285" y="385" width="190" height="105" class="box"/>
+  <text x="380" y="410" text-anchor="middle" class="small"><tspan x="380" font-weight="bold">DOE semantics</tspan><tspan x="380" dy="19">invalid factor roles</tspan><tspan x="380" dy="19">aliasing requirement</tspan><tspan x="380" dy="19">forbidden imbalance</tspan></text>
+  <rect x="500" y="385" width="190" height="105" class="box"/>
+  <text x="595" y="410" text-anchor="middle" class="small"><tspan x="595" font-weight="bold">Programmer / API misuse</tspan><tspan x="595" dy="19">wrong argument type</tspan><tspan x="595" dy="19">inconsistent lengths</tspan><tspan x="595" dy="19">unsupported math option</tspan></text>
+  <rect x="205" y="560" width="350" height="105" class="box"/>
+  <text x="380" y="588" text-anchor="middle" class="t"><tspan x="380" font-weight="bold">Keep native exception semantics</tspan><tspan x="380" dy="22">ValueError · TypeError · LinAlgError</tspan><tspan x="380" dy="22">or a domain-specific statistical error</tspan></text>
+
+  <rect x="780" y="320" width="680" height="390" class="cluster"/>
+  <text x="1120" y="350" text-anchor="middle" class="h">Operational / external-data boundary</text>
+  <rect x="810" y="385" width="190" height="105" class="box"/>
+  <text x="905" y="410" text-anchor="middle" class="small"><tspan x="905" font-weight="bold">External IO failure</tspan><tspan x="905" dy="19">file read / write</tspan><tspan x="905" dy="19">config parse</tspan><tspan x="905" dy="19">optional dependency</tspan></text>
+  <rect x="1025" y="385" width="190" height="105" class="box"/>
+  <text x="1120" y="410" text-anchor="middle" class="small"><tspan x="1120" font-weight="bold">Tabular / schema failure</tspan><tspan x="1120" dy="19">missing column · dtype</tspan><tspan x="1120" dy="19">missing response data</tspan><tspan x="1120" dy="19">schema mismatch</tspan></text>
+  <rect x="1240" y="385" width="190" height="105" class="box"/>
+  <text x="1335" y="410" text-anchor="middle" class="small"><tspan x="1335" font-weight="bold">Operational transform</tspan><tspan x="1335" dy="19">invalid data for requested</tspan><tspan x="1335" dy="19">transformation with useful</tspan><tspan x="1335" dy="19">field / context metadata</tspan></text>
+  <rect x="945" y="560" width="350" height="105" class="box"/>
+  <text x="1120" y="588" text-anchor="middle" class="t"><tspan x="1120" font-weight="bold">Use DataExcept structured error</tspan><tspan x="1120" dy="22">Preserve field / column / path context</tspan><tspan x="1120" dy="22">and chain the operational cause</tspan></text>
+
+  <path d="M650 258 L165 382" class="line"/><path d="M705 267 L380 382" class="line"/><path d="M730 275 L595 382" class="line"/>
+  <path d="M850 258 L905 382" class="line"/><path d="M820 268 L1120 382" class="line"/><path d="M790 273 L1335 382" class="line"/>
+  <path d="M165 490 L330 558" class="line"/><path d="M380 490 L380 558" class="line"/><path d="M595 490 L430 558" class="line"/>
+  <path d="M905 490 L1070 558" class="line"/><path d="M1120 490 L1120 558" class="line"/><path d="M1335 490 L1170 558" class="line"/>
+
+  <rect x="220" y="760" width="430" height="82" class="box"/>
+  <text x="435" y="788" text-anchor="middle" class="t"><tspan x="435" font-weight="bold">Programmatic caller</tspan><tspan x="435" dy="22">receives the native or structured exception</tspan><tspan x="435" dy="22">without lossy translation</tspan></text>
+  <rect x="850" y="760" width="430" height="82" class="box"/>
+  <text x="1065" y="788" text-anchor="middle" class="t"><tspan x="1065" font-weight="bold">Console boundary</tspan><tspan x="1065" dy="22">known DataExceptError → concise user-facing exit</tspan><tspan x="1065" dy="22">unexpected / programmer exceptions still propagate</tspan></text>
+  <path d="M380 665 L435 758" class="line"/><path d="M1120 665 L510 758" class="line"/><path d="M1120 665 L1065 758" class="line"/>
+
+  <rect x="1050" y="90" width="395" height="130" class="note"/>
+  <text x="1248" y="118" text-anchor="middle" class="small"><tspan x="1248" font-weight="bold">Architecture rule</tspan><tspan x="1248" dy="20">Do not wrap statistical mistakes as</tspan><tspan x="1248" dy="20">infrastructure failures. Do not reduce</tspan><tspan x="1248" dy="20">operational failures to generic ValueError</tspan><tspan x="1248" dy="20">when structured context helps recovery.</tspan></text>
+  <path d="M1050 190 L900 218" class="dash"/>
+</svg>
